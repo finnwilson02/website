@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>photo upload admin</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      body { font-family: sans-serif; padding: 20px; }
+      #preview { max-width: 300px; display: block; margin-bottom: 10px; }
+      #map { height: 300px; margin-bottom: 10px; }
+      input, textarea { display: block; margin-bottom: 10px; width: 300px; }
+    </style>
+  </head>
+  <body>
+    <h1>photo upload admin</h1>
+    <input type="file" id="imageInput" accept="image/*" />
+    <img id="preview" style="display:none;" />
+    <input type="text" id="title" placeholder="title" />
+    <textarea id="description" placeholder="description"></textarea>
+    <input type="text" id="lat" placeholder="latitude" />
+    <input type="text" id="lng" placeholder="longitude" />
+    <div id="map" style="display:none;"></div>
+    <button id="saveBtn">save</button>
+    <pre id="output"></pre>
+
+    <!-- include exif-js and leaflet -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // helper to convert dms array to decimal degrees
+      function dmsToDecimal(dms, ref) {
+        var degrees = dms[0];
+        var minutes = dms[1];
+        var seconds = dms[2];
+        var dd = degrees + minutes / 60 + seconds / 3600;
+        if (ref === 's' || ref === 'w') dd *= -1;
+        return dd;
+      }
+
+      var imageInput = document.getElementById('imageInput');
+      var preview = document.getElementById('preview');
+      var titleInput = document.getElementById('title');
+      var descriptionInput = document.getElementById('description');
+      var latInput = document.getElementById('lat');
+      var lngInput = document.getElementById('lng');
+      var mapDiv = document.getElementById('map');
+      var saveBtn = document.getElementById('saveBtn');
+      var output = document.getElementById('output');
+      var leafletMap, marker;
+
+      imageInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function(event) {
+          preview.src = event.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+
+        // extract exif data from the file
+        EXIF.getData(file, function() {
+          var lat = EXIF.getTag(this, 'GPSLatitude');
+          var latRef = EXIF.getTag(this, 'GPSLatitudeRef');
+          var lng = EXIF.getTag(this, 'GPSLongitude');
+          var lngRef = EXIF.getTag(this, 'GPSLongitudeRef');
+
+          if (lat && lng && latRef && lngRef) {
+            var decLat = dmsToDecimal(lat, latRef.toLowerCase());
+            var decLng = dmsToDecimal(lng, lngRef.toLowerCase());
+            latInput.value = decLat;
+            lngInput.value = decLng;
+            mapDiv.style.display = 'none';
+          } else {
+            // no gps data found; show map for manual selection
+            mapDiv.style.display = 'block';
+            if (!leafletMap) {
+              leafletMap = L.map('map').setView([0, 0], 2);
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; openstreetmap contributors'
+              }).addTo(leafletMap);
+              leafletMap.on('click', function(e) {
+                var latlng = e.latlng;
+                latInput.value = latlng.lat.toFixed(6);
+                lngInput.value = latlng.lng.toFixed(6);
+                if (marker) {
+                  marker.setLatLng(latlng);
+                } else {
+                  marker = L.marker(latlng).addTo(leafletMap);
+                }
+              });
+            }
+          }
+        });
+      });
+
+      saveBtn.addEventListener('click', function() {
+        // gather data and output as json
+        var data = {
+          title: titleInput.value,
+          description: descriptionInput.value,
+          lat: parseFloat(latInput.value),
+          lng: parseFloat(lngInput.value),
+          image: preview.src
+        };
+        output.textContent = JSON.stringify(data, null, 2);
+        alert('data saved (check output below)');
+      });
+    </script>
+  </body>
+</html>

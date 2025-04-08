@@ -1,0 +1,50 @@
+.photo-marker {
+    background: transparent;
+    border: none;
+  }
+  
+  .photo-pin {
+    border-radius: 15%;
+    border: 2px solid white;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    width: 75px;
+    height: 75px;
+    object-fit: cover;
+  }
+  
+  .custom-cluster-icon {
+    background: transparent;
+    border: none;
+  }
+  
+  .cluster-stack {
+    position: relative;
+    width: 50px;
+    height: 50px;
+  }
+  
+  .cluster-stack img {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border-radius: 15%;
+    border: 2px solid white;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  }
+  
+  .cluster-photo-0 {
+    z-index: 3;
+    top: 0;
+    left: 0;
+  }
+  .cluster-photo-1 {
+    z-index: 2;
+    top: 5px;
+    left: 5px;
+  }
+  .cluster-photo-2 {
+    z-index: 1;
+    top: 10px;
+    left: 10px;
+  }
+  

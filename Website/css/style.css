@@ -1,0 +1,167 @@
+/* Base styles */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #fff;
+  }
+  h1, h2, h3, h4 {
+    margin-top: 1em;
+  }
+  h1 {
+    font-size: 2em;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  header {
+    background: #f8f8f8;
+    padding: 0.5rem 0;
+  }
+  header .container {
+    display: flex;
+    align-items: center;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.5em;
+  }
+  #main-nav {
+    margin-left: auto;
+  }
+  #main-nav a {
+    text-decoration: none;
+    color: #333;
+    margin-left: 1rem;
+    font-weight: 500;
+  }
+  #main-nav a:hover {
+    text-decoration: underline;
+  }
+  #main-nav a.active {
+    font-weight: 700;
+  }
+  #nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+  }
+  .profile-pic {
+    max-width: 300px;
+    border-radius: 0%;
+    display: block;
+    margin: 1rem auto;
+  }
+  /* Footer styles */
+  footer {
+    background: #f0f0f0;
+    padding: 1rem 0;
+    margin-top: 2rem;
+  }
+  footer h2 {
+    margin-top: 0;
+  }
+  footer p {
+    margin: 0.2rem 0;
+  }
+  /* Responsive layout */
+  @media (max-width: 600px) {
+    header .container {
+      flex-wrap: wrap;
+    }
+    #nav-toggle {
+      display: block;
+      margin-left: auto;
+    }
+    #main-nav {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+    #main-nav a {
+      margin: 0.5rem 0;
+    }
+    #main-nav.open {
+      display: flex;
+    }
+  }
+  
+  footer {
+    background: #f0f0f0;
+    padding: 20px 0;
+    text-align: center;
+  }
+  footer .container {
+    max-width: 900px;
+    margin: auto;
+    padding: 0 15px;
+  }
+  footer h2 {
+    margin-bottom: 15px;
+  }
+  footer ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 5px;
+    text-align: center;
+  }
+  footer p {
+    margin: 5px 0;
+  }
+  footer ul li {
+    margin: 5px 0;
+  }
+  footer a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+  }
+  footer a:hover {
+    text-decoration: underline;
+  }
+  .social-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 10px;
+  }
+  .social-links a {
+    display: inline-block;
+  }
+  .social-links img {
+    width: 32px;
+    height: 32px;
+    transition: transform 0.2s ease-in-out;
+  }
+  .social-links img:hover {
+    transform: scale(1.1);
+  }
+  
+/* Small links for CV page */
+.small-link {
+  display: inline-block;
+  font-size: 0.7em;
+  margin-left: 0.5em;
+  padding: 0.1em 0.4em;
+  background-color: #f0f3f7;
+  border-radius: 3px;
+  text-decoration: none;
+  color: #3a7bd5;
+  font-weight: normal;
+  transition: all 0.2s ease;
+  border: 1px solid #dde4ee;
+  vertical-align: middle;
+}
+
+.small-link:hover {
+  background-color: #e1e8f2;
+  transform: translateY(-1px);
+}
+  

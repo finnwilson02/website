@@ -1,0 +1,32 @@
+[
+  {
+    "id": "uav-deterrence",
+    "title": "Autonomous UAV Bird Herding Swarm",
+    "image": "img/placeholder_uav.jpg",
+    "summary": "Developed a novel magnetodynamic framework and biomimetic \"wolf-pack\" algorithm for UAV-based bird deterrence, achieving ~91% effectiveness in simulation and drone trials.",
+    "role": "Led algorithm development, created C++ swarm control toolkit, designed simulation environment, conducted hardware trials.",
+    "skills": ["C++", "Python", "ROS", "Control Theory", "Simulation", "Physics Modeling", "Tello EDU Drones"],
+    "links": {
+      "github": "https://github.com/finnwilson02/uav-swarm",
+      "demo": "#",
+      "research": "/research.html#uav-deterrence-paper"
+    },
+    "status": "Research Published (In Prep)",
+    "detailMarkdown": "# UAV Bird Herding Swarm\n\n## Overview\n\nThis project focused on developing a novel magnetodynamic framework for coordinating UAV swarms to efficiently herd birds away from sensitive areas. The approach draws inspiration from natural predator-prey dynamics and achieves remarkable efficiency compared to traditional methods.\n\n## Technical Challenges\n\nOne major challenge was implementing real-time coordination among multiple drones while accounting for the complex, emergent behavior of bird flocks. We developed a biomimetic \"wolf-pack\" algorithm that adapts to flock movements and optimizes herding paths.\n\n```python\n# Example coordination algorithm (simplified)\ndef calculate_herding_vectors(drone_positions, flock_centroid, flock_velocity):\n    # Calculate optimal positioning for each drone\n    herding_vectors = []\n    for position in drone_positions:\n        # Adaptive vector based on flock dynamics\n        vector = optimize_herding_position(position, flock_centroid, flock_velocity)\n        herding_vectors.append(vector)\n    return herding_vectors\n```\n\n## Implementation\n\nThe system was implemented using:\n\n- C++ for the core coordination algorithms\n- ROS (Robot Operating System) for drone communication\n- Python for simulation and data analysis\n- Tello EDU drones for physical testing\n\n## Results\n\nIn controlled trials, our system achieved:\n\n- 91% effectiveness in directing flocks away from protected areas\n- Significant improvement over traditional pursuit methods (65% effectiveness)\n- Reduced energy consumption due to optimized flight paths\n- Successful validation through trials with 10 Tello EDU drones\n\n## Future Work\n\nFuture development will focus on scaling the system to larger drone fleets and integrating machine learning to further improve adaptability to different bird species and environmental conditions."
+  },
+  {
+    "id": "mine-sampling",
+    "title": "Intelligent Mine Sampling Optimisation",
+    "image": "img/placeholder_mining.jpg",
+    "summary": "Applied Gaussian Processes and Random Forests to mine geology data, developing adaptive sampling methods demonstrating a theoretical 40% cost reduction for data collection.",
+    "role": "Developed ML models, designed and validated intelligent sample placement algorithms, co-authored publication (patent pending).",
+    "skills": ["Python", "Machine Learning (GP, RF)", "Bayesian Statistics", "Data Analysis", "Optimization Algorithms", "MATLAB"],
+    "links": {
+      "github": "https://github.com/finnwilson02/mining-optimization",
+      "research": "/research.html#mine-sampling-paper",
+      "patent": "/research.html#mining-patent"
+    },
+    "status": "Research Published (Submitted), Patent Pending",
+    "detailMarkdown": "# Intelligent Mine Sampling Optimisation\n\n## Project Overview\n\nThis project developed innovative approaches to mineral exploration sampling, significantly reducing costs while maintaining or improving accuracy. By applying advanced machine learning techniques to geological data, we created a system that intelligently determines optimal sampling locations.\n\n## The Challenge\n\nTraditional mineral exploration methods rely on uniform or grid-based sampling patterns that are inefficient and cost-prohibitive. These approaches often:\n\n* Require excessive numbers of samples\n* Fail to account for geological heterogeneity\n* Miss high-value targets due to rigid sampling patterns\n* Provide limited uncertainty quantification\n\n## Our Approach\n\nWe developed an adaptive sampling method using a combination of:\n\n* **Gaussian Processes (GP)** for spatial modeling and uncertainty quantification\n* **Random Forests (RF)** for robust feature-based prediction\n* **Bayesian optimization** for determining sampling locations with maximum information gain\n\n```python\ndef determine_next_sample(current_data, uncertainty_map):\n    # Find location with highest uncertainty weighted by potential value\n    candidates = identify_high_uncertainty_regions(uncertainty_map)\n    expected_values = calculate_expected_information_gain(candidates, current_data)\n    return candidates[np.argmax(expected_values)]\n```\n\n## Results\n\nOur approach demonstrated significant improvements over industry-standard techniques:\n\n* **40% reduction** in data collection costs on a test mine site\n* **80%+ accuracy** in ore grade prediction with quantified uncertainty\n* **50% improvement** in information gained per sample compared to uniform sampling\n\n## Applications\n\nThis technology has potential applications in:\n\n* Mineral exploration and mining\n* Environmental monitoring\n* Precision agriculture\n* Any field requiring optimal spatial sampling under resource constraints\n\n## Patent Status\n\nA patent application has been filed for the core algorithms of this system, particularly the adaptive machine learning-based sample placement methodology."
+  }
+]

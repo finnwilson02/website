@@ -1,0 +1,127 @@
+/* Project detail page styling */
+
+.project-detail-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.project-meta {
+  margin-bottom: 20px;
+  color: #666;
+}
+
+.project-banner-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  margin: 20px 0;
+  border-radius: 5px;
+}
+
+.project-body-content {
+  line-height: 1.6;
+}
+
+.back-link {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.back-link a {
+  text-decoration: none;
+  color: #3a7bd5;
+  font-weight: 500;
+}
+
+.back-link a:hover {
+  text-decoration: underline;
+}
+
+/* Markdown rendering styles */
+.project-body-content h2 {
+  margin-top: 2em;
+  color: #1a5276;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.3em;
+}
+
+.project-body-content h3 {
+  margin-top: 1.5em;
+  color: #2c3e50;
+}
+
+.project-body-content ul,
+.project-body-content ol {
+  padding-left: 2em;
+  margin-bottom: 1em;
+}
+
+.project-body-content pre {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 1em;
+  overflow-x: auto; /* Handle long code lines */
+  border-radius: 4px;
+  margin: 1em 0;
+}
+
+.project-body-content code {
+  font-family: monospace;
+  background-color: #f0f0f0; /* Subtle background for inline code */
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+.project-body-content pre code {
+  background-color: transparent; /* Code inside pre doesn't need its own background */
+  padding: 0;
+}
+
+.project-body-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto; /* Center images */
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.project-body-content blockquote {
+  border-left: 4px solid #ccc;
+  padding-left: 1em;
+  margin-left: 0;
+  font-style: italic;
+  color: #555;
+  background-color: #f9f9f9;
+  padding: 0.5em 1em;
+}
+
+.project-body-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+.project-body-content th,
+.project-body-content td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.project-body-content th {
+  background-color: #f2f2f2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .project-detail-content {
+    padding: 10px;
+  }
+  
+  .project-banner-image {
+    max-height: 300px;
+  }
+}

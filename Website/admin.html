@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Website Admin Panel</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+</head>
+<body>
+  <div id="loginSection">
+    <h1>Admin Login</h1>
+    <p style="color: red;">Note: This is basic protection for local use ONLY. Do not rely on this for security on a live server.</p>
+    <label for="password">Password:</label>
+    <input type="password" id="password">
+    <button id="loginButton">Login</button>
+    <p id="loginError" style="color: red; display: none;">Incorrect password.</p>
+  </div>
+
+  <div id="adminContent" style="display: none;">
+    <h1>Website Administration</h1>
+    
+    <div class="admin-warning">
+      <h3>⚠️ Important: Client-Side Changes Only</h3>
+      <p>This admin panel makes changes <strong>in your browser's memory only</strong>. To save changes permanently:</p>
+      <ol>
+        <li>Make your changes using the forms below</li>
+        <li>Go to the "Save Changes" section at the bottom</li>
+        <li>Click "Generate JSON" for the section you modified</li>
+        <li>Copy the generated text or use the download button</li>
+        <li>Manually replace the content of the corresponding file in your project folder</li>
+        <li>Upload the updated file to your web host</li>
+      </ol>
+    </div>
+
+    <section id="bookManagementSection">
+      <h2>Manage Books</h2>
+      <div id="bookListSection">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Rating</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookTableBody">
+            <!-- Book rows will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+      
+      <div id="bookFormSection">
+        <form id="bookForm" style="border: 1px solid #ddd; padding: 15px; margin-top: 20px;">
+          <h3 id="formTitle">Add New Book</h3>
+          <input type="hidden" id="bookIndex" value="">
+          
+          <label for="title">Title:</label>
+          <input type="text" id="title" required>
+          
+          <label for="author">Author:</label>
+          <input type="text" id="author" required>
+          
+          <label for="spineColor">Spine Color:</label>
+          <input type="color" id="spineColor" value="#ca0b0b">
+          
+          <label for="titleColor">Title Text Color:</label>
+          <input type="color" id="titleColor" value="#ffffff">
+          
+          <label for="authorColor">Author Text Color:</label>
+          <input type="color" id="authorColor" value="#ffffff">
+          
+          <label for="rating">Rating (1-5):</label>
+          <select id="rating">
+            <option value="5">★★★★★</option>
+            <option value="4">★★★★☆</option>
+            <option value="3">★★★☆☆</option>
+            <option value="2">★★☆☆☆</option>
+            <option value="1">★☆☆☆☆</option>
+          </select>
+          
+          <label for="genre">Genre(s) (comma-separated):</label>
+          <input type="text" id="genre" placeholder="Fiction, Literature, etc.">
+          
+          <label for="datesRead">Date Read:</label>
+          <input type="text" id="datesRead" placeholder="month year">
+          
+          <label for="review">Review:</label>
+          <textarea id="review" rows="6"></textarea>
+          
+          <div style="margin-top: 15px;">
+            <button type="submit" id="saveBookBtn">Save Book</button>
+            <button type="button" id="cancelBtn">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="photoManagementSection" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
+      <h2>Manage Photos (World Map)</h2>
+      <p>(Functionality to add/edit/delete photos from `data/images.json` - Coming Soon)</p>
+      <div id="photoListSection">
+        <!-- Placeholder for photo list/table -->
+         <table>
+           <thead>
+             <tr>
+               <th>Thumbnail</th>
+               <th>Title</th>
+               <th>Coords</th>
+               <th>Actions</th>
+             </tr>
+           </thead>
+           <tbody id="photoTableBody"></tbody>
+         </table>
+      </div>
+      <div id="photoFormSection">
+        <!-- Placeholder for photo add/edit form -->
+        <form id="photoForm" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
+            <h3>Add/Edit Photo (Stub)</h3>
+            <label>Image File:</label> <input type="file" disabled><br>
+            <label>Title:</label> <input type="text" disabled><br>
+            <label>Description:</label> <textarea disabled></textarea><br>
+             <label>Lat:</label> <input type="text" disabled>
+             <label>Lng:</label> <input type="text" disabled><br>
+            <button type="submit" disabled>Save Photo</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="projectManagementSection" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
+      <h2>Manage Projects</h2>
+      <p>(Functionality to add/edit/delete projects from `data/projects.json` - Coming Soon)</p>
+      <div id="projectListSection">
+        <!-- Placeholder for project list -->
+         <table>
+           <thead>
+             <tr>
+               <th>Title</th>
+               <th>Status</th>
+               <th>Actions</th>
+             </tr>
+           </thead>
+           <tbody id="projectTableBody"></tbody>
+         </table>
+      </div>
+      <div id="projectFormSection">
+         <form id="projectForm" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
+             <h3>Add/Edit Project</h3>
+             <input type="hidden" id="projectEditIndex" value="-1">
+             
+             <label for="projectId">Project ID (Unique, for linking, e.g., 'uav-deterrence'):</label>
+             <input type="text" id="projectId" required>
+             
+             <label for="projectTitle">Title:</label>
+             <input type="text" id="projectTitle" required>
+             
+             <label for="projectImage">Image Path (e.g., 'img/project_image.jpg'):</label>
+             <input type="text" id="projectImage">
+             
+             <label for="projectSummary">Summary (Short, for card):</label>
+             <textarea id="projectSummary" rows="3"></textarea>
+             
+             <label for="projectRole">My Role:</label>
+             <textarea id="projectRole" rows="3"></textarea>
+             
+             <label for="projectSkills">Skills (comma-separated):</label>
+             <input type="text" id="projectSkills">
+             
+             <label for="projectLinks">Links (JSON format, e.g., {"github":"..."}):</label>
+             <textarea id="projectLinks" rows="3" placeholder='{ "github": "...", "demo": "...", "research": "..." }'></textarea>
+             
+             <label for="projectStatus">Status:</label>
+             <input type="text" id="projectStatus">
+             
+             <label for="projectDetailMarkdown">Detail Page Content (Markdown):</label>
+             <textarea id="projectDetailMarkdown"></textarea>
+             
+             <button type="submit" id="projectSubmitButton">Add Project</button>
+             <button type="button" id="projectCancelButton" style="display: none;">Cancel Edit</button>
+         </form>
+      </div>
+    </section>
+
+    <section id="saveSection" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
+      <h2>Save Changes (Manual Step)</h2>
+      <p>Generate the updated JSON for each section below. Copy the text or use the download button, and <strong>manually replace the entire content</strong> of the corresponding file (`data/books.json`, `data/images.json`, `data/projects.json`) in your local project folder before uploading.</p>
+
+      <div class="save-block" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #ccc;">
+        <h3>Books Data</h3>
+        <button id="generateBooksJsonButton">Generate Books JSON</button>
+        <button id="downloadBooksJsonButton" disabled>Download books.json</button>
+        <textarea id="outputBooksJson" readonly class="output-json"></textarea>
+      </div>
+
+      <div class="save-block" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #ccc;">
+        <h3>Photos Data</h3>
+        <button id="generatePhotosJsonButton">Generate Photos JSON</button>
+        <button id="downloadPhotosJsonButton" disabled>Download images.json</button>
+        <textarea id="outputPhotosJson" readonly class="output-json"></textarea>
+      </div>
+
+      <div class="save-block">
+        <h3>Projects Data</h3>
+        <button id="generateProjectsJsonButton">Generate Projects JSON</button>
+        <button id="downloadProjectsJsonButton" disabled>Download projects.json</button>
+        <textarea id="outputProjectsJson" readonly class="output-json"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

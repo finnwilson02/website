@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finn Wilson - Bookshelf</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/bookshelf.css" />
+</head>
+<body>
+  <header></header>
+
+  <main class="container">
+    <section id="bookshelf-section">
+      <h2>bookshelf</h2>
+      <div id="filters">
+        <select id="genreFilter">
+          <option value="all">all genres</option>
+        </select>
+        <select id="ratingFilter">
+          <option value="all">all ratings</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★☆</option>
+          <option value="3">★★★☆☆</option>
+          <option value="2">★★☆☆☆</option>
+          <option value="1">★☆☆☆☆</option>
+        </select>
+        <select id="sortOrder">
+          <option value="date-desc">newest first</option>
+          <option value="date-asc">oldest first</option>
+          <option value="rating-desc">highest rated</option>
+          <option value="rating-asc">lowest rated</option>
+        </select>
+      </div>
+      <div id="bookshelf"></div>
+    </section>
+  </main>
+
+  <footer id="footer"></footer>
+
+  <div id="reviewOverlay">
+    <div id="overlayContent">
+      <button id="closeOverlay">&times;</button>
+      <h2 id="overlayTitle"></h2>
+      <h3 id="overlayAuthor"></h3>
+      <p id="overlayDetails"></p>
+      <div id="overlayReviewText"></div>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+  <script src="js/bookshelf.js"></script>
+</body>
+</html>

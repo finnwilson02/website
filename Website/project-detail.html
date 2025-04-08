@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Detail - Finn Wilson</title> <!-- Title will be updated by JS -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/project-detail.css" /> <!-- Will create next -->
+</head>
+<body>
+  <header></header>
+
+  <main class="container">
+    <article class="project-detail-content">
+      <h1 id="projectTitle">Loading Project...</h1>
+      <div class="project-meta">
+         <p><strong>Status:</strong> <span id="projectStatus"></span></p>
+         <p><strong>Links:</strong> <span id="projectLinks"></span></p>
+      </div>
+      <img src="" alt="Project Banner" id="projectBannerImage" class="project-banner-image" style="display: none;"> <!-- Hide initially -->
+
+      <div id="projectBody" class="project-body-content">
+        <!-- Markdown content will be injected here as HTML -->
+      </div>
+
+      <div class="back-link">
+        <a href="projects.html">← Back to All Projects</a>
+      </div>
+    </article>
+  </main>
+
+  <footer id="footer"></footer>
+
+  <!-- Include Marked.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Include your custom script for this page -->
+  <script src="js/project-detail.js"></script>
+  <!-- Base script for header/footer loading etc. -->
+  <script src="js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+/* bookshelf.css */
+
+/* bookshelf container with extra bottom padding so books don't overlap footer */
+#bookshelf {
+    padding: 2rem 0 100px;
+  }
+  
+  /* container for each row of books */
+  .books-row {
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 0;
+    gap: 10px;
+  }
+  
+  /* shelf bar for a realistic wood shelf */
+  .shelf-bar {
+    height: 10px;
+    background: #8b5a2b;
+    margin-bottom: 20px;
+  }
+  
+  /* book dimensions (doubled) */
+  .book {
+    width: 80px;
+    height: 240px;
+    background-color: #ddd;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  
+  /* rotated spine text, centered in the book frame */
+  .book-spine {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    width: 240px; /* equal to book height */
+    padding: 5px; /* increased padding */
+    box-sizing: border-box; /* include padding in width */
+    text-align: center;
+    white-space: normal;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+  
+  
+  /* review overlay (unchanged) */
+  #reviewOverlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #fff !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.5s ease !important;
+    overflow: auto !important;
+    z-index: 999 !important;
+  }
+  #reviewOverlay.open {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  #reviewOverlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+  #overlayContent {
+    max-width: 600px;
+    margin: 3rem auto;
+    padding: 1.5rem;
+    position: relative;
+  }
+  #closeOverlay {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #333;
+  }
+  #overlayReviewText {
+    white-space: pre-line;
+  }
+  

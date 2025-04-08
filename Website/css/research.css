@@ -1,0 +1,126 @@
+/* css/research.css */
+/* Enhanced styling for research page */
+
+/* Section styling */
+section {
+  margin-bottom: 3rem;
+}
+
+section h2 {
+  border-bottom: 2px solid #3a7bd5;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+/* Entry styling */
+.research-entry {
+  margin-bottom: 2.5em;
+  padding-bottom: 1.5em;
+  border-bottom: 1px solid #eee;
+  transition: transform 0.2s ease;
+}
+
+.research-entry:hover {
+  transform: translateX(3px);
+}
+
+.research-entry:last-child {
+  border-bottom: none;
+}
+
+/* Title styling */
+.entry-title {
+  margin-bottom: 0.3em;
+  font-size: 1.3em;
+  color: #1a5276;
+}
+
+/* Meta information styling */
+.entry-authors, .entry-venue, .entry-date {
+  margin: 0.2em 0;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.entry-authors {
+  font-style: italic;
+}
+
+.entry-authors strong {
+  font-weight: 600;
+  color: #000;
+  font-style: normal;
+}
+
+.entry-venue {
+  color: #666;
+}
+
+.entry-date {
+  color: #777;
+}
+
+/* Abstract styling */
+.entry-abstract {
+  margin: 1em 0;
+  font-size: 0.95em;
+  padding: 0.8em 1.2em;
+  border-left: 3px solid #3a7bd5;
+  background-color: #f7f9fc;
+  border-radius: 0 4px 4px 0;
+}
+
+.entry-abstract p {
+  margin: 0.5em 0;
+  line-height: 1.5;
+}
+
+.entry-abstract p:first-child {
+  margin-top: 0;
+}
+
+.entry-abstract p:last-child {
+  margin-bottom: 0;
+}
+
+/* Links styling */
+.entry-links {
+  margin-top: 1em;
+}
+
+.entry-links a {
+  display: inline-block;
+  margin-right: 1em;
+  margin-bottom: 0.5em;
+  padding: 0.3em 0.8em;
+  background-color: #f0f3f7;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #3a7bd5;
+  font-size: 0.85em;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: 1px solid #dde4ee;
+}
+
+.entry-links a:hover {
+  background-color: #e1e8f2;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .entry-title {
+    font-size: 1.2em;
+  }
+  
+  .entry-abstract {
+    padding: 0.6em 1em;
+  }
+  
+  .entry-links a {
+    margin-bottom: 0.7em;
+  }
+}
