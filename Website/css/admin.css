@@ -80,11 +80,68 @@ button:disabled {
   border: 1px solid #ddd;
 }
 
-/* Section separators */
+/* Tab styles */
+.admin-tabs {
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 20px;
+}
+
+ul.tab-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex; /* Arrange tabs horizontally */
+}
+
+ul.tab-nav li {
+  margin-right: 5px;
+}
+
+a.tab-link {
+  display: inline-block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #007bff;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0; /* Rounded top corners */
+  background-color: #f8f9fa; /* Light background for inactive tabs */
+}
+
+a.tab-link:hover {
+  background-color: #e9ecef; /* Slightly darker on hover */
+  color: #0056b3;
+}
+
+/* Active tab styling */
+a.tab-link.active {
+  background-color: #fff; /* White background for active tab */
+  border-color: #ccc #ccc #fff; /* Border to blend with content area */
+  color: #495057;
+  font-weight: bold;
+}
+
+/* Content pane visibility */
+.tab-content {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-top: none;
+  background-color: #fff;
+}
+
+.tab-pane {
+  display: none; /* Hide inactive panes by default */
+}
+
+.tab-pane.active {
+  display: block; /* Show the active pane */
+}
+
+/* Section styling (no longer needed as separators) */
 section {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #ccc;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 /* Form containers */
@@ -120,4 +177,197 @@ section {
 
 .save-block:last-child {
   border-bottom: none;
+}
+
+/* CV Content Section Styles */
+.cv-section-tabs {
+  margin: 15px 0;
+}
+
+ul.cv-tab-nav {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #ddd;
+}
+
+ul.cv-tab-nav li {
+  margin-right: 2px;
+}
+
+a.cv-tab-link {
+  display: inline-block;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #007bff;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background-color: #f8f9fa;
+  font-size: 0.9em;
+}
+
+a.cv-tab-link:hover {
+  background-color: #e9ecef;
+  color: #0056b3;
+}
+
+a.cv-tab-link.active {
+  background-color: #fff;
+  border-color: #ddd #ddd #fff;
+  color: #495057;
+  font-weight: bold;
+}
+
+.cv-tab-pane {
+  display: none;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-top: none;
+  margin-bottom: 20px;
+}
+
+.cv-tab-pane.active {
+  display: block;
+}
+
+.cv-list-container {
+  margin-bottom: 20px;
+}
+
+.cv-form-container {
+  width: 100%;
+}
+
+.cv-form {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-buttons {
+  margin-top: 15px;
+}
+
+/* Responsive adjustments for CV tabs */
+@media (max-width: 768px) {
+  ul.cv-tab-nav {
+    flex-direction: column;
+  }
+  
+  ul.cv-tab-nav li {
+    margin-bottom: 2px;
+  }
+  
+  a.cv-tab-link {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* EasyMDE Toolbar Visibility Fix */
+.editor-toolbar button,
+.editor-toolbar a {
+    color: #333 !important;
+    opacity: 1 !important;
+}
+
+.editor-toolbar button:hover,
+.editor-toolbar a:hover,
+.editor-toolbar a.active {
+    color: #000 !important;
+    background-color: #e9ecef !important;
+    border-color: #ccc !important;
+}
+
+/* Target FontAwesome icons used within buttons */
+.editor-toolbar button i.fa,
+.editor-toolbar a i.fa {
+    color: #333 !important;
+    opacity: 1 !important;
+}
+
+/* Style for separator */
+.editor-toolbar i.separator {
+    border-left: 1px solid #ddd !important;
+    border-right: 1px solid #f9f9f9 !important;
+}
+
+/* Loading Indicator Styles */
+#loadingIndicator {
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loadingIndicator div {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0, 123, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #007bff;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+/* Notification Styles */
+#adminNotifications {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1050;
+    max-width: 300px;
+}
+
+.notification {
+    padding: 10px 30px 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.notification.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.notification.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.notification.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.notification.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
 }

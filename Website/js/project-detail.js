@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadProjectDetails(projectId) {
     try {
-        const response = await fetch('data/projects.json?_=' + new Date().getTime());
+        const response = await fetch('/api/data/projects');
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const projects = await response.json();
 
@@ -65,7 +65,8 @@ function displayProjectDetails(project) {
     // Set banner image
     const bannerImg = document.getElementById('projectBannerImage');
     if (bannerImg && project.image) {
-        bannerImg.src = project.image; // Assumes path is correct from root
+        // Prepend the img/ directory to the filename stored in project.image
+        bannerImg.src = `img/${project.image}`; // Add img/ prefix to filename
         bannerImg.alt = project.title + " Banner";
         bannerImg.style.display = 'block';
     } else if (bannerImg) {

@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Systems Engineer",
+    "company": "Raytheon Australia",
+    "dates": "Sep 2024 – Present",
+    "description": "- Contributed to the Australian Defence Air Traffic System (ADATS) project under a systems architect, working on a large-scale, fast-paced defense program and exploring cross-team opportunities (space and electronic warfare projects).\n- Created macros to automate tasks in Cameo Systems Modeler, saving colleagues ~2-3 hours per weekly report. Began developing a program to transfer system requirements from PDF documents into requirements management software automatically.\n- Hold Australian Export/Import (EXIM) and Baseline security clearances; NV1 (Secret) clearance in progress."
+  },
+  {
+    "title": "Academic Tutor (MECH5720 Sensors and Signals)",
+    "company": "University of Sydney",
+    "dates": "Aug 2024 – Nov 2024",
+    "description": "- Led lab and tutorial sessions for a senior engineering course on signal processing, sensor technologies, environmental effects on sensing, and advanced topics like object tracking and synthetic aperture radar."
+  },
+  {
+    "title": "Blockchain Development Intern",
+    "company": "Yieldly/Yesports",
+    "dates": "Dec 2021 – Jun 2022",
+    "description": "- Developed and tested smart contracts in Teal (assembly-like language) and JavaScript for Yieldly (a DeFi and esports platform), contributing to three successful independent security audits of the contracts.\n- Worked on NFT minting, metadata handling, distribution, and strategy at Yesports (an esports NFT startup), coding smart contracts in Solidity and integrating with JavaScript front-ends.\n- Oversaw the launch of collaborative NFT collections with multiple esports teams (e.g. Talon, BOOM), reaching a combined audience of over 30 million and driving significant user engagement."
+  }
+]

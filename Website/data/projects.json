@@ -5,7 +5,15 @@
     "image": "img/placeholder_uav.jpg",
     "summary": "Developed a novel magnetodynamic framework and biomimetic \"wolf-pack\" algorithm for UAV-based bird deterrence, achieving ~91% effectiveness in simulation and drone trials.",
     "role": "Led algorithm development, created C++ swarm control toolkit, designed simulation environment, conducted hardware trials.",
-    "skills": ["C++", "Python", "ROS", "Control Theory", "Simulation", "Physics Modeling", "Tello EDU Drones"],
+    "skills": [
+      "C++",
+      "Python",
+      "ROS",
+      "Control Theory",
+      "Simulation",
+      "Physics Modeling",
+      "Tello EDU Drones"
+    ],
     "links": {
       "github": "https://github.com/finnwilson02/uav-swarm",
       "demo": "#",
@@ -20,7 +28,14 @@
     "image": "img/placeholder_mining.jpg",
     "summary": "Applied Gaussian Processes and Random Forests to mine geology data, developing adaptive sampling methods demonstrating a theoretical 40% cost reduction for data collection.",
     "role": "Developed ML models, designed and validated intelligent sample placement algorithms, co-authored publication (patent pending).",
-    "skills": ["Python", "Machine Learning (GP, RF)", "Bayesian Statistics", "Data Analysis", "Optimization Algorithms", "MATLAB"],
+    "skills": [
+      "Python",
+      "Machine Learning (GP, RF)",
+      "Bayesian Statistics",
+      "Data Analysis",
+      "Optimization Algorithms",
+      "MATLAB"
+    ],
     "links": {
       "github": "https://github.com/finnwilson02/mining-optimization",
       "research": "/research.html#mine-sampling-paper",

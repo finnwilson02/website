@@ -47,7 +47,7 @@ fetch('data/countries.geojson')
   });
 
 // load images json and add markers with custom icons
-fetch('data/images.json')
+fetch('/api/data/images')
   .then(function(res) { return res.json(); })
   .then(function(images) {
     images.forEach(function(img) {

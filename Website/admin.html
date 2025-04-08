@@ -19,195 +19,680 @@
   </div>
 
   <div id="adminContent" style="display: none;">
-    <h1>Website Administration</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1>Website Administration</h1>
+      <button id="logoutButton" style="height: 36px; margin-right: 20px;">Logout</button>
+    </div>
+    
+    <!-- Notification area for success/error messages -->
+    <div id="adminNotifications" style="position: fixed; top: 10px; right: 10px; z-index: 1050; max-width: 300px;"></div>
+    
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" style="display: none; padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd; margin-bottom: 15px; text-align: center;">
+      <div style="display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(0, 123, 255, 0.3); border-radius: 50%; border-top-color: #007bff; animation: spin 1s linear infinite; margin-right: 10px;"></div>
+      <span>Loading data...</span>
+    </div>
     
     <div class="admin-warning">
-      <h3>⚠️ Important: Client-Side Changes Only</h3>
-      <p>This admin panel makes changes <strong>in your browser's memory only</strong>. To save changes permanently:</p>
-      <ol>
-        <li>Make your changes using the forms below</li>
-        <li>Go to the "Save Changes" section at the bottom</li>
-        <li>Click "Generate JSON" for the section you modified</li>
-        <li>Copy the generated text or use the download button</li>
-        <li>Manually replace the content of the corresponding file in your project folder</li>
-        <li>Upload the updated file to your web host</li>
-      </ol>
+      <h3>⚠️ Admin Panel</h3>
+      <p>Changes made here will be saved directly to the server.</p>
     </div>
 
-    <section id="bookManagementSection">
-      <h2>Manage Books</h2>
-      <div id="bookListSection">
-        <table>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Author</th>
-              <th>Rating</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="bookTableBody">
-            <!-- Book rows will be inserted here -->
-          </tbody>
-        </table>
-      </div>
-      
-      <div id="bookFormSection">
-        <form id="bookForm" style="border: 1px solid #ddd; padding: 15px; margin-top: 20px;">
-          <h3 id="formTitle">Add New Book</h3>
-          <input type="hidden" id="bookIndex" value="">
-          
-          <label for="title">Title:</label>
-          <input type="text" id="title" required>
-          
-          <label for="author">Author:</label>
-          <input type="text" id="author" required>
-          
-          <label for="spineColor">Spine Color:</label>
-          <input type="color" id="spineColor" value="#ca0b0b">
-          
-          <label for="titleColor">Title Text Color:</label>
-          <input type="color" id="titleColor" value="#ffffff">
-          
-          <label for="authorColor">Author Text Color:</label>
-          <input type="color" id="authorColor" value="#ffffff">
-          
-          <label for="rating">Rating (1-5):</label>
-          <select id="rating">
-            <option value="5">★★★★★</option>
-            <option value="4">★★★★☆</option>
-            <option value="3">★★★☆☆</option>
-            <option value="2">★★☆☆☆</option>
-            <option value="1">★☆☆☆☆</option>
-          </select>
-          
-          <label for="genre">Genre(s) (comma-separated):</label>
-          <input type="text" id="genre" placeholder="Fiction, Literature, etc.">
-          
-          <label for="datesRead">Date Read:</label>
-          <input type="text" id="datesRead" placeholder="month year">
-          
-          <label for="review">Review:</label>
-          <textarea id="review" rows="6"></textarea>
-          
-          <div style="margin-top: 15px;">
-            <button type="submit" id="saveBookBtn">Save Book</button>
-            <button type="button" id="cancelBtn">Cancel</button>
+    <!-- Tab Navigation -->
+    <div class="admin-tabs">
+      <ul class="tab-nav">
+        <li><a href="#books" data-tab-target="#bookManagementSection" class="tab-link active">Books</a></li>
+        <li><a href="#photos" data-tab-target="#photoManagementSection" class="tab-link">Photos</a></li>
+        <li><a href="#projects" data-tab-target="#projectManagementSection" class="tab-link">Projects</a></li>
+        <li><a href="#cv-content" data-tab-target="#cvContentSection" class="tab-link">CV Content</a></li>
+        <li><a href="#research-content" data-tab-target="#researchContentSection" class="tab-link">Edit Research</a></li>
+        <!-- Add future tabs here -->
+      </ul>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Books Management Tab -->
+      <section id="bookManagementSection" class="tab-pane active">
+        <h2>Manage Books</h2>
+        <div id="bookListSection">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Rating</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookTableBody">
+              <!-- Book rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="bookFormSection">
+          <form id="bookForm" style="border: 1px solid #ddd; padding: 15px; margin-top: 20px;">
+            <h3 id="formTitle">Add New Book</h3>
+            <input type="hidden" id="bookIndex" value="">
+            
+            <label for="title">Title:</label>
+            <input type="text" id="title" required>
+            
+            <label for="author">Author:</label>
+            <input type="text" id="author" required>
+            
+            <label for="spineColor">Spine Color:</label>
+            <input type="color" id="spineColor" value="#ca0b0b">
+            
+            <label for="titleColor">Title Text Color:</label>
+            <input type="color" id="titleColor" value="#ffffff">
+            
+            <label for="authorColor">Author Text Color:</label>
+            <input type="color" id="authorColor" value="#ffffff">
+            
+            <label for="rating">Rating (1-5):</label>
+            <select id="rating">
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★☆</option>
+              <option value="3">★★★☆☆</option>
+              <option value="2">★★☆☆☆</option>
+              <option value="1">★☆☆☆☆</option>
+            </select>
+            
+            <label for="genre">Genre(s) (comma-separated):</label>
+            <input type="text" id="genre" placeholder="Fiction, Literature, etc.">
+            
+            <label for="datesRead">Date Read:</label>
+            <input type="text" id="datesRead" placeholder="month year">
+            
+            <label for="review">Review:</label>
+            <textarea id="review" rows="6"></textarea>
+            
+            <div style="margin-top: 15px;">
+              <button type="submit" id="saveBookBtn">Save Book</button>
+              <button type="button" id="cancelBtn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Photos Management Tab -->
+      <section id="photoManagementSection" class="tab-pane">
+        <h2>Manage Photos (World Map)</h2>
+        <div id="photoListSection">
+          <!-- Placeholder for photo list/table -->
+           <table>
+             <thead>
+               <tr>
+                 <th>Thumbnail</th>
+                 <th>Title</th>
+                 <th>Coords</th>
+                 <th>Actions</th>
+               </tr>
+             </thead>
+             <tbody id="photoTableBody"></tbody>
+           </table>
+        </div>
+        <div id="photoFormSection">
+          <!-- Photo add/edit form -->
+          <form id="photoForm" enctype="multipart/form-data" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
+              <h3>Add/Edit Photo</h3>
+              <input type="hidden" id="photoEditIndex" value="-1">
+              <label for="photoFile">Upload New Image (Optional):</label>
+              <input type="file" id="photoFile" name="uploadedImage" accept="image/*">
+              <input type="hidden" id="currentPhotoThumbnail">
+              <p style="font-size: 0.8em; margin-top: -5px;">Leave empty if not changing the image.</p>
+              <label for="photoTitle">Title:</label> <input type="text" id="photoTitle"><br>
+              <label for="photoDate">Date:</label> <input type="text" id="photoDate" placeholder="YYYY-MM-DD"><br>
+              <label for="photoDescription">Description:</label> <textarea id="photoDescription"></textarea><br>
+              <label for="photoLat">Latitude:</label> <input type="text" id="photoLat">
+              <label for="photoLng">Longitude:</label> <input type="text" id="photoLng"><br>
+              <label for="photoRanking">Ranking (1-10):</label>
+              <input type="number" id="photoRanking" min="1" max="10" value="5"><br>
+              <button type="submit" id="photoSubmitButton">Add Photo</button>
+              <button type="button" id="photoCancelButton" style="display: none;">Cancel Edit</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Projects Management Tab -->
+      <section id="projectManagementSection" class="tab-pane">
+        <h2>Manage Projects</h2>
+        <div id="projectListSection">
+          <!-- Placeholder for project list -->
+           <table>
+             <thead>
+               <tr>
+                 <th>Title</th>
+                 <th>Status</th>
+                 <th>Actions</th>
+               </tr>
+             </thead>
+             <tbody id="projectTableBody"></tbody>
+           </table>
+        </div>
+        <div id="projectFormSection">
+           <form id="projectForm" enctype="multipart/form-data" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
+               <h3>Add/Edit Project</h3>
+               <input type="hidden" id="projectEditIndex" value="-1">
+               
+               <label for="projectId">Project ID (Unique, for linking, e.g., 'uav-deterrence'):</label>
+               <input type="text" id="projectId" required>
+               
+               <label for="projectTitle">Title:</label>
+               <input type="text" id="projectTitle" required>
+               
+               <label for="projectFile">Upload New Project Image (Optional):</label>
+               <input type="file" id="projectFile" name="uploadedImage" accept="image/*">
+               <input type="hidden" id="currentProjectImage">
+               <p style="font-size: 0.8em; margin-top: -5px;">Leave empty if not changing the image.</p>
+               
+               <label for="projectSummary">Summary (Short, for card):</label>
+               <textarea id="projectSummary" rows="3"></textarea>
+               
+               <label for="projectRole">My Role:</label>
+               <textarea id="projectRole" rows="3"></textarea>
+               
+               <label for="projectSkills">Skills (comma-separated):</label>
+               <input type="text" id="projectSkills">
+               
+               <label>Project Links:</label>
+               <div id="projectLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+                 <!-- Link rows will be dynamically added here -->
+                 <p id="noLinksMsg" style="color: #888;">No links added yet.</p>
+               </div>
+               <button type="button" id="addProjectLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+               
+               <label for="projectStatus">Status:</label>
+               <input type="text" id="projectStatus">
+               
+               <label for="projectDetailMarkdown">Detail Page Content (Markdown):</label>
+               <textarea id="projectDetailMarkdown"></textarea>
+               
+               <button type="submit" id="projectSubmitButton">Add Project</button>
+               <button type="button" id="projectCancelButton" style="display: none;">Cancel Edit</button>
+           </form>
+        </div>
+      </section>
+
+      <!-- CV Content Section -->
+      <section id="cvContentSection" class="tab-pane">
+        <h2>CV Content Management</h2>
+        
+        <!-- Tab Navigation for CV Sections -->
+        <div class="cv-section-tabs">
+          <ul class="tab-nav cv-tab-nav">
+            <li><a href="#" data-cv-tab="education" class="cv-tab-link active">Education</a></li>
+            <li><a href="#" data-cv-tab="work" class="cv-tab-link">Work Experience</a></li>
+            <li><a href="#" data-cv-tab="research" class="cv-tab-link">Research</a></li>
+            <li><a href="#" data-cv-tab="projects" class="cv-tab-link">Projects</a></li>
+            <li><a href="#" data-cv-tab="skills" class="cv-tab-link">Skills</a></li>
+            <li><a href="#" data-cv-tab="achievements" class="cv-tab-link">Achievements</a></li>
+            <li><a href="#" data-cv-tab="positions" class="cv-tab-link">Positions</a></li>
+          </ul>
+        </div>
+        
+        <!-- CV Section Content -->
+        <div class="cv-tab-content">
+          <!-- Education Section -->
+          <div id="cvEducationSection" class="cv-tab-pane active">
+            <h3>Manage Education</h3>
+            <div class="cv-list-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Institution</th>
+                    <th>Degree</th>
+                    <th>Dates</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="educationTableBody"></tbody>
+              </table>
+            </div>
+            <div class="cv-form-container">
+              <form id="educationForm" class="cv-form">
+                <h4>Add/Edit Education</h4>
+                <input type="hidden" id="educationEditIndex" value="-1">
+                
+                <label for="educationInstitution">Institution:</label>
+                <input type="text" id="educationInstitution" required>
+                
+                <label for="educationDegree">Degree:</label>
+                <input type="text" id="educationDegree" required>
+                
+                <label for="educationHonours">Honours:</label>
+                <input type="text" id="educationHonours">
+                
+                <label for="educationDates">Dates:</label>
+                <input type="text" id="educationDates" placeholder="Jan 2020 - Dec 2024">
+                
+                <div class="form-buttons">
+                  <button type="submit" id="educationSubmitButton">Add Entry</button>
+                  <button type="button" id="educationCancelButton" style="display: none;">Cancel</button>
+                </div>
+              </form>
+            </div>
           </div>
-        </form>
-      </div>
-    </section>
+          
+          <!-- Work Experience Section -->
+          <div id="cvWorkSection" class="cv-tab-pane">
+            <h3>Manage Work Experience</h3>
+            <div class="cv-list-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Company</th>
+                    <th>Dates</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="workTableBody"></tbody>
+              </table>
+            </div>
+            <div class="cv-form-container">
+              <form id="workForm" class="cv-form">
+                <h4>Add/Edit Work Experience</h4>
+                <input type="hidden" id="workEditIndex" value="-1">
+                
+                <label for="workTitle">Title:</label>
+                <input type="text" id="workTitle" required>
+                
+                <label for="workCompany">Company:</label>
+                <input type="text" id="workCompany" required>
+                
+                <label for="workDates">Dates:</label>
+                <input type="text" id="workDates" placeholder="Jan 2020 - Present">
+                
+                <label for="workDescription">Description:</label>
+                <textarea id="workDescription" rows="5"></textarea>
+                
+                <div class="form-buttons">
+                  <button type="submit" id="workSubmitButton">Add Entry</button>
+                  <button type="button" id="workCancelButton" style="display: none;">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Research Section -->
+          <div id="cvResearchSection" class="cv-tab-pane">
+            <h3>Manage Research Experience</h3>
+            <div class="cv-list-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Organization</th>
+                    <th>Dates</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="researchTableBody"></tbody>
+              </table>
+            </div>
+            <div class="cv-form-container">
+              <form id="researchForm" class="cv-form">
+                <h4>Add/Edit Research Experience</h4>
+                <input type="hidden" id="researchEditIndex" value="-1">
+                
+                <label for="researchTitle">Title:</label>
+                <input type="text" id="researchTitle" required>
+                
+                <label for="researchOrganization">Organization:</label>
+                <input type="text" id="researchOrganization" required>
+                
+                <label for="researchDates">Dates:</label>
+                <input type="text" id="researchDates" placeholder="Jan 2020 - Dec 2021">
+                
+                <label for="researchDescription">Description:</label>
+                <textarea id="researchDescription" rows="5"></textarea>
+                
+                <div class="form-buttons">
+                  <button type="submit" id="researchSubmitButton">Add Entry</button>
+                  <button type="button" id="researchCancelButton" style="display: none;">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Projects Section -->
+          <div id="cvProjectsSection" class="cv-tab-pane">
+            <h3>Manage CV Projects</h3>
+            <div class="cv-list-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Dates</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="cvProjectsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="cv-form-container">
+              <form id="cvProjectsForm" class="cv-form">
+                <h4>Add/Edit Project</h4>
+                <input type="hidden" id="cvProjectsEditIndex" value="-1">
+                
+                <label for="cvProjectsTitle">Title:</label>
+                <input type="text" id="cvProjectsTitle" required>
+                
+                <label for="cvProjectsDates">Dates:</label>
+                <input type="text" id="cvProjectsDates" placeholder="Jan 2020 - Mar 2021">
+                
+                <label for="cvProjectsDescription">Description:</label>
+                <textarea id="cvProjectsDescription" rows="5"></textarea>
+                
+                <div class="form-buttons">
+                  <button type="submit" id="cvProjectsSubmitButton">Add Entry</button>
+                  <button type="button" id="cvProjectsCancelButton" style="display: none;">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Skills Section -->
+          <div id="cvSkillsSection" class="cv-tab-pane">
+            <h3>Manage Skills</h3>
+            <div class="cv-form-container" style="width: 100%;">
+              <form id="skillsForm" class="cv-form">
+                <h4>Edit Skills</h4>
+                
+                <label for="programmingSkills">Programming Skills:</label>
+                <input type="text" id="programmingSkills" placeholder="Comma-separated list of skills">
+                
+                <label for="softwareSkills">Software Skills:</label>
+                <input type="text" id="softwareSkills" placeholder="Comma-separated list of skills">
+                
+                <label for="technicalSkills">Technical Skills:</label>
+                <input type="text" id="technicalSkills" placeholder="Comma-separated list of skills">
+                
+                <div class="form-buttons">
+                  <button type="submit" id="skillsSubmitButton">Save Skills</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Achievements Section -->
+          <div id="cvAchievementsSection" class="cv-tab-pane">
+            <h3>Manage Achievements</h3>
+            <div class="cv-list-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Achievement</th>
+                    <th>Year</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="achievementsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="cv-form-container">
+              <form id="achievementsForm" class="cv-form">
+                <h4>Add/Edit Achievement</h4>
+                <input type="hidden" id="achievementsEditIndex" value="-1">
+                
+                <label for="achievementTitle">Achievement:</label>
+                <input type="text" id="achievementTitle" required>
+                
+                <label for="achievementYear">Year:</label>
+                <input type="text" id="achievementYear" placeholder="2021">
+                
+                <div class="form-buttons">
+                  <button type="submit" id="achievementsSubmitButton">Add Entry</button>
+                  <button type="button" id="achievementsCancelButton" style="display: none;">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Positions Section -->
+          <div id="cvPositionsSection" class="cv-tab-pane">
+            <h3>Manage Positions</h3>
+            <div class="cv-list-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Organization</th>
+                    <th>Dates</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="positionsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="cv-form-container">
+              <form id="positionsForm" class="cv-form">
+                <h4>Add/Edit Position</h4>
+                <input type="hidden" id="positionsEditIndex" value="-1">
+                
+                <label for="positionTitle">Title:</label>
+                <input type="text" id="positionTitle" required>
+                
+                <label for="positionOrganization">Organization:</label>
+                <input type="text" id="positionOrganization" required>
+                
+                <label for="positionDates">Dates:</label>
+                <input type="text" id="positionDates" placeholder="Jan 2020 - Present">
+                
+                <label for="positionDescription">Description:</label>
+                <textarea id="positionDescription" rows="5"></textarea>
+                
+                <div class="form-buttons">
+                  <button type="submit" id="positionsSubmitButton">Add Entry</button>
+                  <button type="button" id="positionsCancelButton" style="display: none;">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <section id="photoManagementSection" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
-      <h2>Manage Photos (World Map)</h2>
-      <p>(Functionality to add/edit/delete photos from `data/images.json` - Coming Soon)</p>
-      <div id="photoListSection">
-        <!-- Placeholder for photo list/table -->
-         <table>
-           <thead>
-             <tr>
-               <th>Thumbnail</th>
-               <th>Title</th>
-               <th>Coords</th>
-               <th>Actions</th>
-             </tr>
-           </thead>
-           <tbody id="photoTableBody"></tbody>
-         </table>
-      </div>
-      <div id="photoFormSection">
-        <!-- Placeholder for photo add/edit form -->
-        <form id="photoForm" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
-            <h3>Add/Edit Photo (Stub)</h3>
-            <label>Image File:</label> <input type="file" disabled><br>
-            <label>Title:</label> <input type="text" disabled><br>
-            <label>Description:</label> <textarea disabled></textarea><br>
-             <label>Lat:</label> <input type="text" disabled>
-             <label>Lng:</label> <input type="text" disabled><br>
-            <button type="submit" disabled>Save Photo</button>
-        </form>
-      </div>
-    </section>
-
-    <section id="projectManagementSection" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
-      <h2>Manage Projects</h2>
-      <p>(Functionality to add/edit/delete projects from `data/projects.json` - Coming Soon)</p>
-      <div id="projectListSection">
-        <!-- Placeholder for project list -->
-         <table>
-           <thead>
-             <tr>
-               <th>Title</th>
-               <th>Status</th>
-               <th>Actions</th>
-             </tr>
-           </thead>
-           <tbody id="projectTableBody"></tbody>
-         </table>
-      </div>
-      <div id="projectFormSection">
-         <form id="projectForm" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
-             <h3>Add/Edit Project</h3>
-             <input type="hidden" id="projectEditIndex" value="-1">
-             
-             <label for="projectId">Project ID (Unique, for linking, e.g., 'uav-deterrence'):</label>
-             <input type="text" id="projectId" required>
-             
-             <label for="projectTitle">Title:</label>
-             <input type="text" id="projectTitle" required>
-             
-             <label for="projectImage">Image Path (e.g., 'img/project_image.jpg'):</label>
-             <input type="text" id="projectImage">
-             
-             <label for="projectSummary">Summary (Short, for card):</label>
-             <textarea id="projectSummary" rows="3"></textarea>
-             
-             <label for="projectRole">My Role:</label>
-             <textarea id="projectRole" rows="3"></textarea>
-             
-             <label for="projectSkills">Skills (comma-separated):</label>
-             <input type="text" id="projectSkills">
-             
-             <label for="projectLinks">Links (JSON format, e.g., {"github":"..."}):</label>
-             <textarea id="projectLinks" rows="3" placeholder='{ "github": "...", "demo": "...", "research": "..." }'></textarea>
-             
-             <label for="projectStatus">Status:</label>
-             <input type="text" id="projectStatus">
-             
-             <label for="projectDetailMarkdown">Detail Page Content (Markdown):</label>
-             <textarea id="projectDetailMarkdown"></textarea>
-             
-             <button type="submit" id="projectSubmitButton">Add Project</button>
-             <button type="button" id="projectCancelButton" style="display: none;">Cancel Edit</button>
-         </form>
-      </div>
-    </section>
-
-    <section id="saveSection" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
-      <h2>Save Changes (Manual Step)</h2>
-      <p>Generate the updated JSON for each section below. Copy the text or use the download button, and <strong>manually replace the entire content</strong> of the corresponding file (`data/books.json`, `data/images.json`, `data/projects.json`) in your local project folder before uploading.</p>
-
-      <div class="save-block" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #ccc;">
-        <h3>Books Data</h3>
-        <button id="generateBooksJsonButton">Generate Books JSON</button>
-        <button id="downloadBooksJsonButton" disabled>Download books.json</button>
-        <textarea id="outputBooksJson" readonly class="output-json"></textarea>
-      </div>
-
-      <div class="save-block" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #ccc;">
-        <h3>Photos Data</h3>
-        <button id="generatePhotosJsonButton">Generate Photos JSON</button>
-        <button id="downloadPhotosJsonButton" disabled>Download images.json</button>
-        <textarea id="outputPhotosJson" readonly class="output-json"></textarea>
-      </div>
-
-      <div class="save-block">
-        <h3>Projects Data</h3>
-        <button id="generateProjectsJsonButton">Generate Projects JSON</button>
-        <button id="downloadProjectsJsonButton" disabled>Download projects.json</button>
-        <textarea id="outputProjectsJson" readonly class="output-json"></textarea>
-      </div>
-    </section>
+      <!-- Research Content Section -->
+      <section id="researchContentSection" class="tab-pane">
+        <h2>Edit Research Page Content</h2>
+        
+        <!-- Journal Articles Subsection -->
+        <div class="research-admin-subsection">
+          <h3>Journal Articles</h3>
+          <table style="width:100%; margin-bottom:10px;">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Venue</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="researchJournalTableBody"></tbody>
+          </table>
+          <button type="button" class="admin-add-button" onclick="showResearchEntryForm('journal')">+ Add Journal Article</button>
+          
+          <!-- Journal Article Form (Initially Hidden) -->
+          <form id="researchJournalForm" class="admin-entry-form" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h4>Journal Article Details</h4>
+            <input type="hidden" id="journalEditIndex" value="-1">
+            
+            <label for="journalId">ID (used for anchors, e.g., 'uav-paper'):</label>
+            <input type="text" id="journalId" required>
+            
+            <label for="journalTitle">Title:</label>
+            <input type="text" id="journalTitle" required>
+            
+            <label for="journalAuthors">Authors (use **Finn Wilson** for your name):</label>
+            <input type="text" id="journalAuthors" required>
+            
+            <label for="journalVenue">Venue (journal name):</label>
+            <input type="text" id="journalVenue" required>
+            
+            <label for="journalDate">Date:</label>
+            <input type="text" id="journalDate" placeholder="YYYY">
+            
+            <label for="journalAbstract">Abstract:</label>
+            <textarea id="journalAbstract" rows="6"></textarea>
+            
+            <label>Links:</label>
+            <div id="journalLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+              <!-- Link rows will be dynamically added here -->
+              <p id="journalNoLinksMsg" style="color: #888;">No links added yet.</p>
+            </div>
+            <button type="button" id="addJournalLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+            
+            <div style="margin-top: 15px;">
+              <button type="submit" id="journalSubmitButton">Save Article</button>
+              <button type="button" id="journalCancelButton">Cancel</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Thesis Subsection -->
+        <div class="research-admin-subsection" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc;">
+          <h3>Thesis</h3>
+          <form id="researchThesisForm" style="margin-top: 15px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h4>Edit Thesis Details</h4>
+            
+            <label for="thesisTitle">Title:</label>
+            <input type="text" id="thesisTitle" required>
+            
+            <label for="thesisAuthors">Authors (use **Finn Wilson** for your name):</label>
+            <input type="text" id="thesisAuthors" required>
+            
+            <label for="thesisVenue">Venue (degree/institution):</label>
+            <input type="text" id="thesisVenue" required>
+            
+            <label for="thesisDate">Date:</label>
+            <input type="text" id="thesisDate" placeholder="YYYY">
+            
+            <label for="thesisAbstract">Abstract:</label>
+            <textarea id="thesisAbstract" rows="6"></textarea>
+            
+            <label>Links:</label>
+            <div id="thesisLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+              <!-- Link rows will be dynamically added here -->
+              <p id="thesisNoLinksMsg" style="color: #888;">No links added yet.</p>
+            </div>
+            <button type="button" id="addThesisLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+            
+            <div style="margin-top: 15px;">
+              <button type="button" id="saveThesisButton">Save Thesis</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Conference Papers Subsection -->
+        <div class="research-admin-subsection" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc;">
+          <h3>Conference Papers</h3>
+          <table style="width:100%; margin-bottom:10px;">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Venue</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="researchConferenceTableBody"></tbody>
+          </table>
+          <button type="button" class="admin-add-button" onclick="showResearchEntryForm('conference')">+ Add Conference Paper</button>
+          
+          <!-- Conference Paper Form (Initially Hidden) -->
+          <form id="researchConferenceForm" class="admin-entry-form" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h4>Conference Paper Details</h4>
+            <input type="hidden" id="conferenceEditIndex" value="-1">
+            
+            <label for="conferenceId">ID (used for anchors, e.g., 'acfr-paper'):</label>
+            <input type="text" id="conferenceId" required>
+            
+            <label for="conferenceTitle">Title:</label>
+            <input type="text" id="conferenceTitle" required>
+            
+            <label for="conferenceAuthors">Authors (use **Finn Wilson** for your name):</label>
+            <input type="text" id="conferenceAuthors" required>
+            
+            <label for="conferenceVenue">Venue (conference name):</label>
+            <input type="text" id="conferenceVenue" required>
+            
+            <label for="conferenceDate">Date:</label>
+            <input type="text" id="conferenceDate" placeholder="YYYY">
+            
+            <label for="conferenceAbstract">Abstract:</label>
+            <textarea id="conferenceAbstract" rows="6"></textarea>
+            
+            <label>Links:</label>
+            <div id="conferenceLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+              <!-- Link rows will be dynamically added here -->
+              <p id="conferenceNoLinksMsg" style="color: #888;">No links added yet.</p>
+            </div>
+            <button type="button" id="addConferenceLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+            
+            <div style="margin-top: 15px;">
+              <button type="submit" id="conferenceSubmitButton">Save Paper</button>
+              <button type="button" id="conferenceCancelButton">Cancel</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Patents Subsection -->
+        <div class="research-admin-subsection" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc;">
+          <h3>Patents</h3>
+          <table style="width:100%; margin-bottom:10px;">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="researchPatentTableBody"></tbody>
+          </table>
+          <button type="button" class="admin-add-button" onclick="showResearchEntryForm('patent')">+ Add Patent</button>
+          
+          <!-- Patent Form (Initially Hidden) -->
+          <form id="researchPatentForm" class="admin-entry-form" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h4>Patent Details</h4>
+            <input type="hidden" id="patentEditIndex" value="-1">
+            
+            <label for="patentId">ID (used for anchors, e.g., 'mining-patent'):</label>
+            <input type="text" id="patentId" required>
+            
+            <label for="patentTitle">Title:</label>
+            <input type="text" id="patentTitle" required>
+            
+            <label for="patentAuthors">Authors/Inventors (use **Finn Wilson** for your name):</label>
+            <input type="text" id="patentAuthors" required>
+            
+            <label for="patentVenue">Status (e.g., "Status: Patent Application Filed"):</label>
+            <input type="text" id="patentVenue" required>
+            
+            <label for="patentDate">Date:</label>
+            <input type="text" id="patentDate" placeholder="YYYY">
+            
+            <label for="patentAbstract">Abstract:</label>
+            <textarea id="patentAbstract" rows="6"></textarea>
+            
+            <label>Links:</label>
+            <div id="patentLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+              <!-- Link rows will be dynamically added here -->
+              <p id="patentNoLinksMsg" style="color: #888;">No links added yet.</p>
+            </div>
+            <button type="button" id="addPatentLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+            
+            <div style="margin-top: 15px;">
+              <button type="submit" id="patentSubmitButton">Save Patent</button>
+              <button type="button" id="patentCancelButton">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
   </div>
 
   <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>

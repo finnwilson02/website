@@ -1,7 +1,5 @@
 // js/admin.js
 
-const ADMIN_PASSWORD = "finnwilson"; // CHANGE THIS!
-
 // EasyMDE instance
 let easyMDEInstance = null;
 
@@ -11,6 +9,9 @@ const adminContent = document.getElementById('adminContent');
 const passwordInput = document.getElementById('password');
 const loginButton = document.getElementById('loginButton');
 const loginError = document.getElementById('loginError');
+const logoutButton = document.getElementById('logoutButton');
+const loadingIndicator = document.getElementById('loadingIndicator');
+const notificationArea = document.getElementById('adminNotifications');
 
 // Book management selectors
 const bookTableBody = document.getElementById('bookTableBody');
@@ -31,6 +32,17 @@ const cancelBtn = document.getElementById('cancelBtn');
 
 // Photo management selectors
 const photoTableBody = document.getElementById('photoTableBody');
+const photoForm = document.getElementById('photoForm');
+const photoEditIndex = document.getElementById('photoEditIndex');
+const photoThumbnailInput = document.getElementById('photoThumbnail');
+const photoTitleInput = document.getElementById('photoTitle');
+const photoDateInput = document.getElementById('photoDate');
+const photoDescriptionInput = document.getElementById('photoDescription');
+const photoLatInput = document.getElementById('photoLat');
+const photoLngInput = document.getElementById('photoLng');
+const photoRankingInput = document.getElementById('photoRanking');
+const photoSubmitButton = document.getElementById('photoSubmitButton');
+const photoCancelButton = document.getElementById('photoCancelButton');
 
 // Project management selectors
 const projectTableBody = document.getElementById('projectTableBody');
@@ -42,19 +54,344 @@ const projectImageInput = document.getElementById('projectImage');
 const projectSummaryInput = document.getElementById('projectSummary');
 const projectRoleInput = document.getElementById('projectRole');
 const projectSkillsInput = document.getElementById('projectSkills');
-const projectLinksInput = document.getElementById('projectLinks');
+const projectLinksContainer = document.getElementById('projectLinksContainer');
+const addProjectLinkButton = document.getElementById('addProjectLinkButton');
+const noLinksMsg = document.getElementById('noLinksMsg');
 const projectStatusInput = document.getElementById('projectStatus');
 const projectDetailMarkdownInput = document.getElementById('projectDetailMarkdown');
 const projectSubmitButton = document.getElementById('projectSubmitButton');
 const projectCancelButton = document.getElementById('projectCancelButton');
 
+// Function to create a new link row
+function createLinkRow(linkType = '', linkUrl = '') {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'project-link-row';
+    rowDiv.style.display = 'flex';
+    rowDiv.style.marginBottom = '5px';
+    rowDiv.style.gap = '5px'; // Add spacing between elements
+
+    // Select dropdown for link type
+    const typeSelect = document.createElement('select');
+    typeSelect.className = 'project-link-type';
+    const types = ['GitHub', 'Demo', 'Research', 'Website', 'Other']; // Define link types
+    types.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type.toLowerCase(); // Use lowercase for consistency
+        option.textContent = type;
+        if (type.toLowerCase() === linkType.toLowerCase()) {
+            option.selected = true;
+        }
+        typeSelect.appendChild(option);
+    });
+
+    // Input for URL
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.className = 'project-link-url';
+    urlInput.placeholder = 'Link URL (e.g., https://...)';
+    urlInput.value = linkUrl;
+    urlInput.style.flexGrow = '1'; // Allow URL input to take available space
+
+    // Remove button
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.textContent = 'Remove';
+    removeButton.className = 'remove-link-button';
+    removeButton.onclick = function() { // Attach onclick handler directly
+        rowDiv.remove(); // Remove this row div
+        // Check if container is empty and show message
+        if (projectLinksContainer && projectLinksContainer.querySelectorAll('.project-link-row').length === 0) {
+            if(noLinksMsg) noLinksMsg.style.display = 'block';
+        }
+    };
+
+    rowDiv.appendChild(typeSelect);
+    rowDiv.appendChild(urlInput);
+    rowDiv.appendChild(removeButton);
+
+    return rowDiv;
+}
+
+// Add link button listener
+if (addProjectLinkButton && projectLinksContainer) {
+    addProjectLinkButton.addEventListener('click', () => {
+        const newRow = createLinkRow(); // Create a new blank row
+        projectLinksContainer.appendChild(newRow);
+        if(noLinksMsg) noLinksMsg.style.display = 'none'; // Hide the 'no links' message
+    });
+}
+
 // Store data arrays globally
 let books = [];
 let photos = [];
 let projects = [];
+let pageContent = {}; // Global variable to hold loaded page content
+let pageContentEditors = {}; // To hold EasyMDE instances for page content
+
+// Helper to upload a file and get the server path
+async function uploadFile(fileInputId) {
+    const fileInput = document.getElementById(fileInputId);
+    console.log(`DEBUG uploadFile: checking for files in ${fileInputId}`);
+    
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        console.log(`DEBUG uploadFile: No file selected, returning success with null filePath`);
+        return { success: true, filePath: null }; // No file selected, treat as success
+    }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    // 'uploadedImage' MUST match the name expected by multer.single() on the backend
+    formData.append('uploadedImage', file);
+
+    console.log(`DEBUG uploadFile: Uploading ${file.name}, size: ${file.size}, type: ${file.type}`);
+    // Show uploading indicator to user
+    showNotification(`Uploading ${file.name}...`, 'info');
+
+    try {
+        console.log(`DEBUG uploadFile: Sending fetch request to /api/upload/image`);
+        const response = await fetch('/api/upload/image', {
+            method: 'POST',
+            body: formData
+            // DO NOT set Content-Type header, browser does it for FormData
+        });
+        
+        console.log(`DEBUG uploadFile: Response received - status: ${response.status}, ok: ${response.ok}`);
+        
+        const result = await response.json(); // Always try to parse JSON
+        console.log(`DEBUG uploadFile: Parsed response:`, result);
+
+        if (!response.ok) {
+            // Handle specific errors like 401 (auth) or 400 (validation)
+            if (response.status === 401) {
+                console.warn("Session expired or invalid during upload. Redirecting to login.");
+                showNotification("Your session has expired. Please log in again.", 'error');
+                if(adminContent) adminContent.style.display = 'none';
+                if(loginSection) loginSection.style.display = 'block';
+                if(passwordInput) passwordInput.value = '';
+                const returnValue = { success: false, error: 'Unauthorized' };
+                console.log(`DEBUG uploadFile: Returning due to unauthorized:`, returnValue);
+                return returnValue;
+            }
+            throw new Error(result.error || `Upload failed with status ${response.status}`);
+        }
+
+        if (!result.success || !result.filename) {
+            throw new Error(result.error || 'Upload succeeded but no filename returned.');
+        }
+
+        console.log('Upload successful, filename:', result.filename);
+        const returnValue = { success: true, filename: result.filename };
+        console.log(`DEBUG uploadFile: Returning success:`, returnValue);
+        showNotification(`File ${file.name} uploaded successfully!`, 'success');
+        return returnValue; // Return the filename from server
+
+    } catch (error) {
+        console.error('File upload failed:', error);
+        showNotification(`Error uploading file: ${error.message}`, 'error');
+        const returnValue = { success: false, error: error.message };
+        console.log(`DEBUG uploadFile: Returning error:`, returnValue);
+        return returnValue;
+    } finally {
+        console.log(`DEBUG uploadFile: Function completed`);
+    }
+}
+
+// Helper function for showing notifications
+function showNotification(message, type = 'info') {
+  if (!notificationArea) return;
+  
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.style.padding = '10px 15px';
+  notification.style.marginBottom = '10px';
+  notification.style.borderRadius = '4px';
+  notification.style.fontSize = '14px';
+  notification.style.position = 'relative';
+  
+  // Set color based on type
+  switch(type) {
+    case 'success':
+      notification.style.backgroundColor = '#d4edda';
+      notification.style.color = '#155724';
+      notification.style.border = '1px solid #c3e6cb';
+      break;
+    case 'error':
+      notification.style.backgroundColor = '#f8d7da';
+      notification.style.color = '#721c24';
+      notification.style.border = '1px solid #f5c6cb';
+      break;
+    case 'warning':
+      notification.style.backgroundColor = '#fff3cd';
+      notification.style.color = '#856404';
+      notification.style.border = '1px solid #ffeeba';
+      break;
+    case 'info':
+    default:
+      notification.style.backgroundColor = '#d1ecf1';
+      notification.style.color = '#0c5460';
+      notification.style.border = '1px solid #bee5eb';
+  }
+  
+  // Add close button
+  const closeBtn = document.createElement('span');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.position = 'absolute';
+  closeBtn.style.right = '10px';
+  closeBtn.style.top = '5px';
+  closeBtn.style.cursor = 'pointer';
+  closeBtn.style.fontWeight = 'bold';
+  closeBtn.onclick = function() {
+    notification.remove();
+  };
+  
+  // Add message
+  notification.textContent = message;
+  notification.appendChild(closeBtn);
+  
+  // Add to notification area
+  notificationArea.appendChild(notification);
+  
+  // Auto-remove after 5 seconds for success messages
+  if (type === 'success') {
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+}
+
+// Helper function to show/hide loading indicator
+function toggleLoading(show) {
+  if (loadingIndicator) {
+    loadingIndicator.style.display = show ? 'flex' : 'none';
+  }
+}
+
+// CV data objects
+let cvEducation = [];
+let cvWork = [];
+let cvResearch = [];
+let cvProjects = [];
+let cvSkills = { programming: [], software: [], technical: [] };
+let cvAchievements = [];
+let cvPositions = [];
+
+// Research data objects
+let researchJournal = [];
+let researchThesis = {};
+let researchConference = [];
+let researchPatent = [];
+let researchEditors = {}; // For storing EasyMDE instances
 
 // Flag to prevent multiple initializations
 let isInitialized = false;
+
+// Common function to save data to the API
+async function saveData(dataType, data, buttonElement = null) {
+  console.log(`DEBUG saveData: Function called with dataType = ${dataType}`);
+  console.log(`DEBUG saveData: Data structure:`, data);
+  console.log(`DEBUG saveData: ButtonElement provided:`, buttonElement ? true : false);
+
+  const endpointMap = {
+    books: '/api/save/books',
+    images: '/api/save/images',
+    projects: '/api/save/projects',
+    page_content: '/api/save/page_content',
+    'cv/education': '/api/save/cv/education',
+    'cv/work': '/api/save/cv/work',
+    'cv/research': '/api/save/cv/research',
+    'cv/projects': '/api/save/cv/projects',
+    'cv/skills': '/api/save/cv/skills',
+    'cv/achievements': '/api/save/cv/achievements',
+    'cv/positions': '/api/save/cv/positions',
+    'research/journal': '/api/save/research/journal',
+    'research/thesis': '/api/save/research/thesis',
+    'research/conference': '/api/save/research/conference',
+    'research/patent': '/api/save/research/patent'
+  };
+  
+  const endpoint = endpointMap[dataType];
+  console.log(`DEBUG saveData: Using endpoint: ${endpoint}`);
+  
+  if (!endpoint) {
+    console.error(`Invalid data type for saving: ${dataType}`);
+    showNotification(`Error: Cannot save data for type ${dataType}.`, 'error');
+    return false; // Indicate failure
+  }
+
+  // Store original button text if a button was provided
+  let originalButtonText = '';
+  if (buttonElement) {
+    originalButtonText = buttonElement.textContent || 'Save';
+    buttonElement.textContent = 'Saving...';
+    buttonElement.disabled = true;
+    console.log(`DEBUG saveData: Original button text: "${originalButtonText}"`);
+  }
+
+  console.log(`Attempting to save ${dataType} data...`);
+  try {
+    console.log(`DEBUG saveData: Preparing fetch request to ${endpoint}`);
+    console.log(`DEBUG saveData: Data payload size: ${JSON.stringify(data).length} bytes`);
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data) // Send the data (array or object depending on type)
+    });
+    
+    console.log(`DEBUG saveData: Response received - status: ${response.status}, ok: ${response.ok}`);
+
+    if (!response.ok) {
+      // Check for unauthorized error (session expired)
+      if (response.status === 401) {
+          console.warn("Session expired or invalid. Redirecting to login.");
+          console.log(`DEBUG saveData: Auth error detected, status 401`);
+          showNotification("Your session has expired. Please log in again.", 'error');
+          // Hide admin content, show login form
+          if(adminContent) adminContent.style.display = 'none';
+          if(loginSection) loginSection.style.display = 'block';
+          if(passwordInput) passwordInput.value = ''; // Clear password field
+          return false; // Indicate save failure
+      }
+      
+      // Handle other errors
+      let errorMsg = `HTTP error! Status: ${response.status}`;
+      try {
+         const errData = await response.json();
+         console.log(`DEBUG saveData: Error JSON parsed:`, errData);
+         errorMsg += ` - ${errData.error || 'Unknown server error'}`;
+      } catch (parseError) { 
+         console.log(`DEBUG saveData: Failed to parse error JSON:`, parseError);
+         /* Ignore if response wasn't JSON */ 
+      }
+      throw new Error(errorMsg);
+    }
+
+    const result = await response.json();
+    console.log(`DEBUG saveData: Success response parsed:`, result);
+    console.log(`Save successful for ${dataType}:`, result.message);
+    showNotification(`${dataType.charAt(0).toUpperCase() + dataType.slice(1).replace('/', ' ')} data saved successfully.`, 'success');
+    return true; // Indicate success
+
+  } catch (error) {
+    console.error(`Failed to save ${dataType} data:`, error);
+    console.log(`DEBUG saveData: Exception caught:`, error);
+    showNotification(`Error saving ${dataType} data: ${error.message}`, 'error');
+    return false; // Indicate failure
+  } finally {
+    // Restore button state regardless of success/failure
+    if (buttonElement) {
+      console.log(`DEBUG saveData: Restoring button text to "${originalButtonText}"`);
+      buttonElement.textContent = originalButtonText;
+      buttonElement.disabled = false;
+    }
+    console.log(`DEBUG saveData: Function completed`);
+  }
+}
 
 function initializeMarkdownEditor() {
     if (document.getElementById('projectDetailMarkdown') && !easyMDEInstance) {
@@ -78,29 +415,176 @@ function initializeAdminPanel() {
     loadBooks();
     loadPhotos();
     loadProjects();
+    loadPageContent(); // Load page content for legacy content
+    loadCvData(); // Load all CV data from structured files
+    loadResearchData(); // Load all research data from structured files
     initializeMarkdownEditor(); // Initialize the editor
+    setupTabNavigation(); // Initialize tab navigation
+    setupCvTabNavigation(); // Initialize CV sub-tab navigation
     isInitialized = true;
 }
 
-// Login functionality
+// Tab navigation functionality
+function setupTabNavigation() {
+    const tabNav = document.querySelector('.admin-tabs ul.tab-nav');
+
+    if (tabNav) {
+        tabNav.addEventListener('click', (event) => {
+            // Check if the clicked element is a tab link
+            if (event.target.matches('a.tab-link')) {
+                event.preventDefault(); // Stop browser from following href="#"
+
+                const clickedTab = event.target;
+                const targetPaneSelector = clickedTab.dataset.tabTarget;
+                const targetPane = document.querySelector(targetPaneSelector);
+
+                if (!targetPane) {
+                    console.warn(`Target pane not found for selector: ${targetPaneSelector}`);
+                    return;
+                }
+
+                // Remove active class from all tabs and panes first
+                tabNav.querySelectorAll('.tab-link.active').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-content .tab-pane.active').forEach(pane => {
+                    pane.classList.remove('active');
+                });
+
+                // Add active class to the clicked tab and its target pane
+                clickedTab.classList.add('active');
+                targetPane.classList.add('active');
+
+                // Special case: Re-initialize EasyMDE if the Projects tab becomes active
+                if (targetPaneSelector === '#projectManagementSection') {
+                    // Check if the instance exists and try to refresh or re-init if needed
+                    if (easyMDEInstance && typeof easyMDEInstance.codemirror !== 'undefined') {
+                        // Might need a slight delay for the element to become fully visible
+                        setTimeout(() => {
+                            try {
+                                easyMDEInstance.codemirror.refresh();
+                                console.log("Project EasyMDE refreshed.");
+                            } catch (e) { 
+                                console.error("Error refreshing Project EasyMDE:", e);
+                            }
+                        }, 10); // Small delay
+                    } else {
+                        // If not initialized, try initializing now
+                        initializeMarkdownEditor();
+                    }
+                }
+                
+                // Refresh page content editors if CV or Research tab becomes active
+                if (targetPaneSelector === '#cvContentSection' || targetPaneSelector === '#researchContentSection') {
+                    // Get the prefix for the current tab
+                    const prefix = targetPaneSelector === '#cvContentSection' ? 'cv_' : 'research_';
+                    
+                    // Refresh all relevant EasyMDE instances
+                    setTimeout(() => {
+                        Object.keys(pageContentEditors).forEach(key => {
+                            if (key.startsWith(prefix)) {
+                                try {
+                                    if (pageContentEditors[key] && pageContentEditors[key].codemirror) {
+                                        pageContentEditors[key].codemirror.refresh();
+                                    }
+                                } catch (e) {
+                                    console.error(`Error refreshing ${key} editor:`, e);
+                                }
+                            }
+                        });
+                        console.log(`${prefix} content editors refreshed.`);
+                    }, 10); // Small delay for render
+                }
+            }
+        });
+    }
+}
+
+// Login functionality with server-side authentication
 if (loginButton) {
-    loginButton.addEventListener('click', () => {
-        if (passwordInput.value === ADMIN_PASSWORD) {
-            loginSection.style.display = 'none';
-            loginError.style.display = 'none';
-            adminContent.style.display = 'block';
-            initializeAdminPanel(); // Load data only AFTER successful login
+    loginButton.addEventListener('click', async () => {
+        try {
+            const password = passwordInput.value;
             
-            // Setup save buttons AFTER data might be loaded
-            setupSaveSection('Books', 'generateBooksJsonButton', 'downloadBooksJsonButton', 'outputBooksJson', books, 'books.json');
-            setupSaveSection('Photos', 'generatePhotosJsonButton', 'downloadPhotosJsonButton', 'outputPhotosJson', photos, 'images.json');
-            setupSaveSection('Projects', 'generateProjectsJsonButton', 'downloadProjectsJsonButton', 'outputProjectsJson', projects, 'projects.json');
-        } else {
+            // Send login request to server
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password }) // Send password to server
+            });
+            
+            if (response.ok) {
+                // Login successful
+                loginSection.style.display = 'none';
+                loginError.style.display = 'none';
+                adminContent.style.display = 'block';
+                initializeAdminPanel(); // Load data only AFTER successful login
+            } else {
+                // Login failed
+                const errorData = await response.json();
+                loginError.textContent = errorData.message || 'Login failed.';
+                loginError.style.display = 'block';
+                passwordInput.value = ''; // Clear password field
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            loginError.textContent = 'Network error. Please try again.';
             loginError.style.display = 'block';
-            passwordInput.value = ''; // Clear password field
         }
     });
 }
+
+// Logout functionality
+if (logoutButton) {
+    logoutButton.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            if (response.ok) {
+                // Clear any loaded data
+                books = [];
+                photos = [];
+                projects = [];
+                
+                // Show login section, hide admin content
+                adminContent.style.display = 'none';
+                loginSection.style.display = 'block';
+                passwordInput.value = ''; // Clear password field
+                loginError.style.display = 'none';
+            } else {
+                showNotification('Logout failed. Please try again.', 'error');
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            showNotification('Network error during logout. Please try again.', 'error');
+        }
+    });
+}
+
+// Check authentication status on page load (optional)
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetch('/api/auth/status');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.isAuthenticated) {
+                // User is already authenticated, show admin panel directly
+                loginSection.style.display = 'none';
+                adminContent.style.display = 'block';
+                initializeAdminPanel();
+            }
+        }
+    } catch (error) {
+        console.error('Error checking authentication status:', error);
+    }
+});
 
 // Add listener for Enter key on password input
 if (passwordInput) {
@@ -114,17 +598,28 @@ if (passwordInput) {
 
 // --- Book Management Functions ---
 async function loadBooks() {
+    toggleLoading(true);
     try {
-        const response = await fetch('data/books.json?_=' + new Date().getTime()); // Cache busting
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch('/api/data/books');
+        if (!response.ok) {
+            let errorMsg = `HTTP error! Status: ${response.status}`;
+            try { 
+                const errData = await response.json(); 
+                errorMsg += ` - ${errData.error || 'Unknown'}`; 
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
         const data = await response.json();
         books = Array.isArray(data) ? data : [];
         renderBookTable();
     } catch (error) {
         console.error("Could not load books:", error);
+        showNotification("Error loading books: " + error.message, 'error');
         if (bookTableBody) {
             bookTableBody.innerHTML = '<tr><td colspan="4">Error loading books. Check console or data/books.json.</td></tr>';
         }
+    } finally {
+        toggleLoading(false);
     }
 }
 
@@ -180,13 +675,39 @@ function handleEditBook(event) {
     bookForm.scrollIntoView({ behavior: 'smooth' });
 }
 
-function handleDeleteBook(event) {
-    const index = event.target.dataset.index;
+async function handleDeleteBook(event) {
+    const index = parseInt(event.target.dataset.index, 10);
     const book = books[index];
     
     if (confirm(`Are you sure you want to delete "${book.title}" by ${book.author}?`)) {
-        books.splice(index, 1);
-        renderBookTable();
+        let isSuccess = false;
+        
+        // Create a copy and modify it
+        const updatedBooks = [...books]; // Create a shallow copy
+        if (index >= 0 && index < updatedBooks.length) {
+            updatedBooks.splice(index, 1); // Modify the copy
+        } else {
+            console.error("Invalid index for deleting book:", index);
+            showNotification("Error: Could not delete book due to invalid index.", 'error');
+            return; // Stop processing
+        }
+        
+        // Attempt to save the ENTIRE updated COPY array
+        isSuccess = await saveData('books', updatedBooks);
+        
+        // Handle result
+        if (isSuccess) {
+            books = updatedBooks; // SUCCESS: Update the main array
+            renderBookTable();    // Re-render table
+            // Reset form if the deleted item was being edited
+            if (parseInt(bookIndex.value, 10) === index) {
+                resetBookForm();
+            }
+        } else {
+            // FAILURE: Alert already shown by saveData
+            // Do nothing here, original 'books' array is unchanged
+            console.log("Delete failed. Local data array remains unchanged.");
+        }
     }
 }
 
@@ -202,7 +723,7 @@ function resetBookForm() {
 
 // Book form submission handler
 if (bookForm) {
-    bookForm.addEventListener('submit', function(event) {
+    bookForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         
         const bookData = {
@@ -217,17 +738,37 @@ if (bookForm) {
             review: reviewInput.value
         };
         
-        const index = bookIndex.value;
-        if (index === '') {
-            // Add new book
-            books.push(bookData);
+        const editIndex = bookIndex.value === '' ? -1 : parseInt(bookIndex.value, 10);
+        let isSuccess = false;
+        
+        // Create a copy and modify it
+        const updatedBooks = [...books]; // Create a shallow copy
+        if (editIndex === -1) {
+            updatedBooks.unshift(bookData); // Add to beginning of the copy
         } else {
-            // Update existing book
-            books[index] = bookData;
+            if (editIndex >= 0 && editIndex < updatedBooks.length) {
+                updatedBooks[editIndex] = bookData; // Modify the copy
+            } else {
+                console.error("Invalid index for editing book:", editIndex);
+                showNotification("Error: Could not update book due to invalid index.", 'error');
+                return; // Stop processing
+            }
         }
         
-        renderBookTable();
-        resetBookForm();
+        // Attempt to save the ENTIRE updated COPY array with button reference
+        isSuccess = await saveData('books', updatedBooks, saveBookBtn);
+        
+        // Handle result
+        if (isSuccess) {
+            books = updatedBooks; // SUCCESS: Update the main array
+            renderBookTable();    // Re-render table
+            resetBookForm();      // Reset form
+        } else {
+            // FAILURE: Notification already shown by saveData
+            // Do nothing here, original 'books' array is unchanged
+            // Form is not reset, allowing user to retry
+            console.log("Save failed. Local data array remains unchanged.");
+        }
     });
 }
 
@@ -238,44 +779,243 @@ if (cancelBtn) {
 
 // --- Photo Management Functions ---
 async function loadPhotos() {
+    toggleLoading(true);
     try {
-        const response = await fetch('data/images.json?_=' + new Date().getTime()); // Cache busting
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch('/api/data/images');
+        if (!response.ok) {
+            let errorMsg = `HTTP error! Status: ${response.status}`;
+            try { 
+                const errData = await response.json(); 
+                errorMsg += ` - ${errData.error || 'Unknown'}`; 
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
         const data = await response.json();
         photos = Array.isArray(data) ? data : [];
         renderPhotoTable();
     } catch (error) {
         console.error("Could not load photos:", error);
+        showNotification("Error loading photos: " + error.message, 'error');
         if (photoTableBody) {
             photoTableBody.innerHTML = '<tr><td colspan="4">Error loading photos. Check console or data/images.json.</td></tr>';
         }
+    } finally {
+        toggleLoading(false);
     }
 }
 
 function renderPhotoTable() {
-    if (!photoTableBody) return;
+    console.log("DEBUG renderPhotoTable: Starting to render photo table");
+    if (!photoTableBody) {
+        console.log("DEBUG renderPhotoTable: photoTableBody not found, exiting");
+        return;
+    }
     photoTableBody.innerHTML = '';
+    console.log(`DEBUG renderPhotoTable: Rendering ${photos.length} photos`);
+    
     photos.forEach((photo, index) => {
+        console.log(`DEBUG renderPhotoTable: Rendering photo at index ${index}:`, photo);
         const row = photoTableBody.insertRow();
         // Example: Show thumbnail, title, coords
         const thumbCell = row.insertCell();
-        // Note: Adjust path if needed. Assumes images are relative to root 'img/'
-        thumbCell.innerHTML = photo.thumbnail ? `<img src="img/${photo.thumbnail}" alt="thumbnail" width="50" height="50" style="object-fit: cover;">` : 'No thumb';
+        
+        console.log(`DEBUG renderPhotoTable: Photo thumbnail filename: "${photo.thumbnail}"`);
+        // The thumbnail in the data is just the filename, so we need to prepend the img/ path
+        const imgSrc = photo.thumbnail || '';
+        const imgPath = imgSrc ? `img/${imgSrc}` : '';
+        
+        const imgHtml = imgSrc ? `<img src="${imgPath}" alt="thumbnail" width="50" height="50" style="object-fit: cover;">` : 'No thumb';
+        console.log(`DEBUG renderPhotoTable: Image HTML: ${imgHtml}`);
+        thumbCell.innerHTML = imgHtml;
+        
         row.insertCell().textContent = photo.title || 'N/A';
         row.insertCell().textContent = (photo.lat && photo.lng) ? `${photo.lat.toFixed(4)}, ${photo.lng.toFixed(4)}` : 'N/A';
         const actionsCell = row.insertCell();
         actionsCell.innerHTML = `
-            <button data-index="${index}" class="edit-photo-btn" disabled>Edit</button>
-            <button data-index="${index}" class="delete-photo-btn" disabled>Delete</button>
+            <button data-index="${index}" class="edit-photo-btn">Edit</button>
+            <button data-index="${index}" class="delete-photo-btn">Delete</button>
         `;
     });
+    
+    // Add event listeners to the buttons
+    document.querySelectorAll('.edit-photo-btn').forEach(button => {
+        button.addEventListener('click', handleEditPhoto);
+    });
+    
+    document.querySelectorAll('.delete-photo-btn').forEach(button => {
+        button.addEventListener('click', handleDeletePhoto);
+    });
+}
+
+function handleEditPhoto(event) {
+    const index = event.target.dataset.index;
+    const photo = photos[index];
+    
+    photoEditIndex.value = index;
+    // Store the existing path in the hidden input
+    document.getElementById('currentPhotoThumbnail').value = photo.thumbnail || '';
+    // Clear the file input field
+    document.getElementById('photoFile').value = null;
+    
+    photoTitleInput.value = photo.title || '';
+    photoDateInput.value = photo.date || '';
+    photoDescriptionInput.value = photo.description || '';
+    photoLatInput.value = photo.lat || '';
+    photoLngInput.value = photo.lng || '';
+    photoRankingInput.value = photo.ranking || '5';
+    
+    photoSubmitButton.textContent = 'Update Photo';
+    photoCancelButton.style.display = 'inline-block';
+    
+    photoForm.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function handleDeletePhoto(event) {
+    const index = parseInt(event.target.dataset.index, 10);
+    const photo = photos[index];
+    
+    if (confirm(`Are you sure you want to delete the photo "${photo.title || 'Untitled'}"?`)) {
+        let isSuccess = false;
+        
+        // Create a copy and modify it
+        const updatedPhotos = [...photos]; // Create a shallow copy
+        if (index >= 0 && index < updatedPhotos.length) {
+            updatedPhotos.splice(index, 1); // Modify the copy
+        } else {
+            console.error("Invalid index for deleting photo:", index);
+            showNotification("Error: Could not delete photo due to invalid index.", 'error');
+            return; // Stop processing
+        }
+        
+        // Attempt to save the ENTIRE updated COPY array
+        isSuccess = await saveData('images', updatedPhotos);
+        
+        // Handle result
+        if (isSuccess) {
+            photos = updatedPhotos; // SUCCESS: Update the main array
+            renderPhotoTable();     // Re-render table
+            // Reset form if the deleted item was being edited
+            if (parseInt(photoEditIndex.value, 10) === index) {
+                resetPhotoForm();
+            }
+        } else {
+            // FAILURE: Alert already shown by saveData
+            // Do nothing here, original 'photos' array is unchanged
+            console.log("Delete failed. Local data array remains unchanged.");
+        }
+    }
+}
+
+function resetPhotoForm() {
+    photoEditIndex.value = '-1';
+    photoForm.reset();
+    photoRankingInput.value = '5'; // Set default ranking
+    
+    // Clear the file input and current path
+    document.getElementById('photoFile').value = null;
+    document.getElementById('currentPhotoThumbnail').value = '';
+    
+    photoSubmitButton.textContent = 'Add Photo';
+    photoCancelButton.style.display = 'none';
+}
+
+// Photo form submission handler
+if (photoForm) {
+    photoForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        console.log("DEBUG photoForm: Form submission started");
+        
+        // First, handle the file upload if a file is selected
+        console.log("DEBUG photoForm: Calling uploadFile('photoFile')");
+        const uploadResult = await uploadFile('photoFile');
+        console.log("DEBUG photoForm: Upload Result:", uploadResult);
+        
+        // If upload failed, stop processing. Error notification already shown by uploadFile
+        if (!uploadResult.success && uploadResult.error !== undefined) {
+            console.log("DEBUG photoForm: Upload failed, stopping form processing");
+            return;
+        }
+        
+        // Get the existing filename from hidden input
+        const existingFilename = document.getElementById('currentPhotoThumbnail').value;
+        console.log("DEBUG photoForm: Existing Filename:", existingFilename);
+        
+        // Determine the thumbnail filename to use
+        let thumbnailFilename;
+        if (uploadResult.filename) {
+            // If a new file was uploaded, use its filename
+            thumbnailFilename = uploadResult.filename;
+            console.log("DEBUG photoForm: Using new uploaded filename");
+        } else {
+            // If no new file, use the existing filename from hidden input
+            thumbnailFilename = existingFilename;
+            console.log("DEBUG photoForm: Using existing filename (no new file)");
+        }
+        console.log("DEBUG photoForm: Final Thumbnail Filename:", thumbnailFilename);
+        
+        const photoData = {
+            thumbnail: thumbnailFilename, // Just storing the filename
+            title: photoTitleInput.value,
+            date: photoDateInput.value,
+            description: photoDescriptionInput.value,
+            lat: parseFloat(photoLatInput.value) || 0,
+            lng: parseFloat(photoLngInput.value) || 0,
+            ranking: parseInt(photoRankingInput.value) || 5
+        };
+        console.log("DEBUG photoForm: Photo Data Object:", photoData);
+        
+        const editIndex = photoEditIndex.value === '-1' ? -1 : parseInt(photoEditIndex.value, 10);
+        console.log("DEBUG photoForm: Edit Index:", editIndex, "isNew:", editIndex === -1);
+        let isSuccess = false;
+        
+        // Create a copy and modify it
+        const updatedPhotos = [...photos]; // Create a shallow copy
+        if (editIndex === -1) {
+            console.log("DEBUG photoForm: Adding new photo to beginning of array");
+            updatedPhotos.unshift(photoData); // Add to beginning of the copy
+        } else {
+            if (editIndex >= 0 && editIndex < updatedPhotos.length) {
+                console.log("DEBUG photoForm: Updating existing photo at index", editIndex);
+                updatedPhotos[editIndex] = photoData; // Modify the copy
+            } else {
+                console.error("Invalid index for editing photo:", editIndex);
+                showNotification("Error: Could not update photo due to invalid index.", 'error');
+                console.log("DEBUG photoForm: Invalid index, stopping processing");
+                return; // Stop processing
+            }
+        }
+        
+        // Attempt to save the ENTIRE updated COPY array with button reference
+        console.log("DEBUG photoForm: Calling saveData with updated photos array");
+        isSuccess = await saveData('images', updatedPhotos, photoSubmitButton);
+        console.log("DEBUG photoForm: Save result:", isSuccess);
+        
+        // Handle result
+        if (isSuccess) {
+            console.log("DEBUG photoForm: Save successful, updating local array and UI");
+            photos = updatedPhotos; // SUCCESS: Update the main array
+            renderPhotoTable();     // Re-render table
+            resetPhotoForm();       // Reset form
+        } else {
+            // FAILURE: Notification already shown by saveData
+            // Do nothing here, original 'photos' array is unchanged
+            // Form is not reset, allowing user to retry
+            console.log("DEBUG photoForm: Save failed. Local data array remains unchanged.");
+        }
+    });
+}
+
+// Photo cancel button handler
+if (photoCancelButton) {
+    photoCancelButton.addEventListener('click', resetPhotoForm);
 }
 
 // --- Project Management Functions ---
 async function loadProjects() {
+    toggleLoading(true);
     try {
         // Try to load projects.json, create it if it doesn't exist
-        const response = await fetch('data/projects.json?_=' + new Date().getTime()); // Cache busting
+        const response = await fetch('/api/data/projects');
         if (!response.ok) {
             console.log("projects.json not found, using empty array");
             projects = [];
@@ -286,23 +1026,35 @@ async function loadProjects() {
         renderProjectList();
     } catch (error) {
         console.error("Could not load projects:", error);
+        showNotification("Error loading projects: " + error.message, 'error');
         projects = []; // Use empty array
         if (projectTableBody) {
             projectTableBody.innerHTML = `<tr><td colspan="3">Error loading projects. Check console or ensure 'data/projects.json' exists and is valid JSON. ${error.message}</td></tr>`;
         }
+    } finally {
+        toggleLoading(false);
     }
 }
 
 function renderProjectList() {
-    if (!projectTableBody) return;
+    console.log("DEBUG renderProjectList: Starting to render project list");
+    if (!projectTableBody) {
+        console.log("DEBUG renderProjectList: projectTableBody not found, exiting");
+        return;
+    }
     projectTableBody.innerHTML = '';
     
+    console.log(`DEBUG renderProjectList: Projects array length: ${projects.length}`);
     if (projects.length === 0) {
+        console.log("DEBUG renderProjectList: No projects found");
         projectTableBody.innerHTML = '<tr><td colspan="3">No projects found. Use "Generate Projects JSON" to create initial data.</td></tr>';
         return;
     }
     
     projects.forEach((project, index) => {
+        console.log(`DEBUG renderProjectList: Rendering project at index ${index}:`, project);
+        console.log(`DEBUG renderProjectList: Project image path: "${project.image}"`);
+        
         const row = projectTableBody.insertRow();
         row.insertCell().textContent = project.title || 'N/A';
         row.insertCell().textContent = project.status || 'N/A';
@@ -331,12 +1083,31 @@ function handleEditProject(event) {
     projectEditIndex.value = index;
     projectIdInput.value = project.id || '';
     projectTitleInput.value = project.title || '';
-    projectImageInput.value = project.image || '';
+    
+    // Store the existing path in the hidden input
+    document.getElementById('currentProjectImage').value = project.image || '';
+    // Clear the file input field
+    document.getElementById('projectFile').value = null;
+    
     projectSummaryInput.value = project.summary || '';
     projectRoleInput.value = project.role || '';
     projectSkillsInput.value = Array.isArray(project.skills) ? project.skills.join(', ') : '';
-    projectLinksInput.value = project.links ? JSON.stringify(project.links, null, 2) : '{}';
     projectStatusInput.value = project.status || '';
+    
+    // Populate dynamic links
+    projectLinksContainer.innerHTML = ''; // Clear existing rows first
+    let hasLinks = false;
+    if (project.links && typeof project.links === 'object') {
+        Object.entries(project.links).forEach(([type, url]) => {
+            if (url) { // Only create rows for links that have a URL
+                const linkRow = createLinkRow(type, url);
+                projectLinksContainer.appendChild(linkRow);
+                hasLinks = true;
+            }
+        });
+    }
+    // Show/hide the 'no links' message
+    if(noLinksMsg) noLinksMsg.style.display = hasLinks ? 'none' : 'block';
     
     // Set the EasyMDE content
     if (easyMDEInstance) {
@@ -351,13 +1122,39 @@ function handleEditProject(event) {
     projectForm.scrollIntoView({ behavior: 'smooth' });
 }
 
-function handleDeleteProject(event) {
-    const index = event.target.dataset.index;
+async function handleDeleteProject(event) {
+    const index = parseInt(event.target.dataset.index, 10);
     const project = projects[index];
     
     if (confirm(`Are you sure you want to delete the project "${project.title}"?`)) {
-        projects.splice(index, 1);
-        renderProjectList();
+        let isSuccess = false;
+        
+        // Create a copy and modify it
+        const updatedProjects = [...projects]; // Create a shallow copy
+        if (index >= 0 && index < updatedProjects.length) {
+            updatedProjects.splice(index, 1); // Modify the copy
+        } else {
+            console.error("Invalid index for deleting project:", index);
+            showNotification("Error: Could not delete project due to invalid index.", 'error');
+            return; // Stop processing
+        }
+        
+        // Attempt to save the ENTIRE updated COPY array
+        isSuccess = await saveData('projects', updatedProjects);
+        
+        // Handle result
+        if (isSuccess) {
+            projects = updatedProjects; // SUCCESS: Update the main array
+            renderProjectList();        // Re-render list
+            // Reset form if the deleted item was being edited
+            if (parseInt(projectEditIndex.value, 10) === index) {
+                resetProjectForm();
+            }
+        } else {
+            // FAILURE: Alert already shown by saveData
+            // Do nothing here, original 'projects' array is unchanged
+            console.log("Delete failed. Local data array remains unchanged.");
+        }
     }
 }
 
@@ -365,10 +1162,18 @@ function resetProjectForm() {
     projectEditIndex.value = '-1';
     projectForm.reset();
     
+    // Clear the file input and current path
+    document.getElementById('projectFile').value = null;
+    document.getElementById('currentProjectImage').value = '';
+    
     // Clear the EasyMDE editor
     if (easyMDEInstance) {
         easyMDEInstance.value('');
     }
+    
+    // Clear dynamic links
+    if (projectLinksContainer) projectLinksContainer.innerHTML = '';
+    if(noLinksMsg) noLinksMsg.style.display = 'block'; // Show 'no links' message
     
     // Reset button text and hide cancel button
     projectSubmitButton.textContent = 'Add Project';
@@ -377,56 +1182,122 @@ function resetProjectForm() {
 
 // Add event listeners for the project form
 if (projectForm) {
-    projectForm.addEventListener('submit', function(event) {
+    projectForm.addEventListener('submit', async function(event) {
         event.preventDefault();
+        console.log("DEBUG projectForm: Form submission started");
         
         try {
+            // First, handle the file upload if a file is selected
+            console.log("DEBUG projectForm: Calling uploadFile('projectFile')");
+            const uploadResult = await uploadFile('projectFile');
+            console.log("DEBUG projectForm: Upload Result:", uploadResult);
+            
+            // If upload failed, stop processing. Error notification already shown by uploadFile
+            if (!uploadResult.success && uploadResult.error !== undefined) {
+                console.log("DEBUG projectForm: Upload failed, stopping form processing");
+                return;
+            }
+            
+            // Get the existing filename from hidden input
+            const existingFilename = document.getElementById('currentProjectImage').value;
+            console.log("DEBUG projectForm: Existing Filename:", existingFilename);
+            
+            // Determine the image filename to use
+            let imageFilename;
+            if (uploadResult.filename) {
+                // If a new file was uploaded, use its filename
+                imageFilename = uploadResult.filename;
+                console.log("DEBUG projectForm: Using new uploaded filename");
+            } else {
+                // If no new file, use the existing filename from hidden input
+                imageFilename = existingFilename;
+                console.log("DEBUG projectForm: Using existing filename (no new file)");
+            }
+            console.log("DEBUG projectForm: Final Image Filename:", imageFilename);
+            
             // Parse skills string to array
             const skillsArray = projectSkillsInput.value
                 .split(',')
                 .map(skill => skill.trim())
                 .filter(skill => skill !== '');
+            console.log("DEBUG projectForm: Skills Array:", skillsArray);
             
-            // Parse links JSON string to object
-            let linksObject = {};
-            try {
-                linksObject = JSON.parse(projectLinksInput.value);
-            } catch (e) {
-                console.error('Error parsing links JSON:', e);
-                alert('Error parsing links. Please check the JSON format.');
-                return;
-            }
+            // Collect links from dynamic UI
+            const collectedLinks = {};
+            const linkRows = projectLinksContainer.querySelectorAll('.project-link-row');
+            linkRows.forEach(rowDiv => {
+                const typeSelect = rowDiv.querySelector('.project-link-type');
+                const urlInput = rowDiv.querySelector('.project-link-url');
+                if (typeSelect && urlInput) {
+                    const linkType = typeSelect.value; // e.g., 'github', 'demo'
+                    const linkUrl = urlInput.value.trim();
+                    if (linkUrl) { // Only add if URL is not empty
+                        collectedLinks[linkType] = linkUrl;
+                    }
+                }
+            });
+            console.log("DEBUG projectForm: Collected Links:", collectedLinks);
             
             // Get markdown content from EasyMDE
             const markdownContent = easyMDEInstance ? easyMDEInstance.value() : '';
+            console.log("DEBUG projectForm: Markdown Content Length:", markdownContent.length);
             
             // Create project data object
             const projectData = {
                 id: projectIdInput.value,
                 title: projectTitleInput.value,
-                image: projectImageInput.value,
+                image: imageFilename, // Just storing the filename
                 summary: projectSummaryInput.value,
                 role: projectRoleInput.value,
                 skills: skillsArray,
-                links: linksObject,
+                links: collectedLinks,
                 status: projectStatusInput.value,
                 detailMarkdown: markdownContent
             };
+            console.log("DEBUG projectForm: Project Data Object:", projectData);
             
-            const index = projectEditIndex.value;
-            if (index === '-1') {
-                // Add new project
-                projects.push(projectData);
+            const editIndex = projectEditIndex.value === '-1' ? -1 : parseInt(projectEditIndex.value, 10);
+            console.log("DEBUG projectForm: Edit Index:", editIndex, "isNew:", editIndex === -1);
+            let isSuccess = false;
+            
+            // Create a copy and modify it
+            const updatedProjects = [...projects]; // Create a shallow copy
+            if (editIndex === -1) {
+                console.log("DEBUG projectForm: Adding new project to beginning of array");
+                updatedProjects.unshift(projectData); // Add to beginning of the copy
             } else {
-                // Update existing project
-                projects[index] = projectData;
+                if (editIndex >= 0 && editIndex < updatedProjects.length) {
+                    console.log("DEBUG projectForm: Updating existing project at index", editIndex);
+                    updatedProjects[editIndex] = projectData; // Modify the copy
+                } else {
+                    console.error("Invalid index for editing project:", editIndex);
+                    showNotification("Error: Could not update project due to invalid index.", 'error');
+                    console.log("DEBUG projectForm: Invalid index, stopping processing");
+                    return; // Stop processing
+                }
             }
             
-            renderProjectList();
-            resetProjectForm();
+            // Attempt to save the ENTIRE updated COPY array with button reference
+            console.log("DEBUG projectForm: Calling saveData with updated projects array");
+            isSuccess = await saveData('projects', updatedProjects, projectSubmitButton);
+            console.log("DEBUG projectForm: Save result:", isSuccess);
+            
+            // Handle result
+            if (isSuccess) {
+                console.log("DEBUG projectForm: Save successful, updating local array and UI");
+                projects = updatedProjects; // SUCCESS: Update the main array
+                renderProjectList();        // Re-render list
+                resetProjectForm();         // Reset form
+            } else {
+                // FAILURE: Notification already shown by saveData
+                // Do nothing here, original 'projects' array is unchanged
+                // Form is not reset, allowing user to retry
+                console.log("DEBUG projectForm: Save failed. Local data array remains unchanged.");
+            }
         } catch (error) {
             console.error('Error saving project:', error);
-            alert('An error occurred while saving the project. Please try again.');
+            showNotification('An error occurred while saving the project: ' + error.message, 'error');
+            console.log("DEBUG projectForm: Exception caught:", error);
         }
     });
 }
@@ -435,49 +1306,1828 @@ if (projectCancelButton) {
     projectCancelButton.addEventListener('click', resetProjectForm);
 }
 
-// --- Helper function for JSON generation/download ---
-function setupSaveSection(dataType, generateBtnId, downloadBtnId, outputAreaId, dataArray, fileName) {
-    const generateBtn = document.getElementById(generateBtnId);
-    const downloadBtn = document.getElementById(downloadBtnId);
-    const outputArea = document.getElementById(outputAreaId);
+// Manual save section has been removed as we now save directly to the API
 
-    if (generateBtn && outputArea) {
-        generateBtn.addEventListener('click', () => {
+// CV Management Functions
+async function loadCvData() {
+    console.log("Loading CV data...");
+    toggleLoading(true);
+    try {
+        const results = await Promise.allSettled([
+            fetchCvSection('education'),
+            fetchCvSection('work'),
+            fetchCvSection('research'),
+            fetchCvSection('projects'),
+            fetchCvSection('skills'),
+            fetchCvSection('achievements'),
+            fetchCvSection('positions')
+        ]);
+
+        // Process results and show errors if any
+        let errors = [];
+        results.forEach((result, index) => {
+            const sections = ['education', 'work', 'research', 'projects', 'skills', 'achievements', 'positions'];
+            const section = sections[index];
+            
+            if (result.status === 'fulfilled') {
+                console.log(`Successfully loaded CV ${section} data`);
+            } else {
+                console.error(`Failed to load CV ${section} data:`, result.reason);
+                errors.push(`${section}: ${result.reason.message}`);
+            }
+        });
+
+        // Show error notification if any
+        if (errors.length > 0) {
+            showNotification(`Error loading some CV data: ${errors.join('; ')}`, 'error');
+        }
+
+        // Render the tables now that data is loaded
+        renderCvEducationTable();
+        renderCvWorkTable();
+        renderCvResearchTable();
+        renderCvProjectsTable();
+        renderCvSkillsForm();
+        renderCvAchievementsTable();
+        renderCvPositionsTable();
+
+    } catch (error) {
+        console.error("Failed to load CV data:", error);
+        showNotification(`Error loading CV data: ${error.message}`, 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+async function fetchCvSection(section) {
+    try {
+        const response = await fetch(`/api/data/cv/${section}`);
+        if (!response.ok) {
+            let errorMsg = `HTTP error! Status: ${response.status}`;
+            try { 
+                const errData = await response.json(); 
+                errorMsg += ` - ${errData.error || 'Unknown'}`; 
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
+        
+        const data = await response.json();
+        
+        // Update the global variable based on the section
+        switch(section) {
+            case 'education':
+                cvEducation = Array.isArray(data) ? data : [];
+                break;
+            case 'work':
+                cvWork = Array.isArray(data) ? data : [];
+                break;
+            case 'research':
+                cvResearch = Array.isArray(data) ? data : [];
+                break;
+            case 'projects':
+                cvProjects = Array.isArray(data) ? data : [];
+                break;
+            case 'skills':
+                cvSkills = (typeof data === 'object' && data !== null) ? data : { programming: [], software: [], technical: [] };
+                break;
+            case 'achievements':
+                cvAchievements = Array.isArray(data) ? data : [];
+                break;
+            case 'positions':
+                cvPositions = Array.isArray(data) ? data : [];
+                break;
+        }
+        
+        return data;
+    } catch (error) {
+        console.error(`Error fetching CV ${section} data:`, error);
+        // Show error in the corresponding table
+        const tableBody = document.getElementById(`${section}TableBody`);
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="4">Error loading ${section} data: ${error.message}</td></tr>`;
+        }
+        throw error; // Re-throw to propagate
+    }
+}
+
+// Function to save a specific CV section
+async function saveCvData(section, data, buttonElement = null) {
+    return await saveData(`cv/${section}`, data, buttonElement);
+}
+
+// Helper function to setup CV sub-tab navigation
+function setupCvTabNavigation() {
+    const cvTabNav = document.querySelector('.cv-tab-nav');
+    
+    if (cvTabNav) {
+        cvTabNav.addEventListener('click', (event) => {
+            // Check if the clicked element is a CV tab link
+            if (event.target.matches('a.cv-tab-link')) {
+                event.preventDefault();
+                
+                const clickedTab = event.target;
+                const targetTab = clickedTab.dataset.cvTab;
+                
+                // Remove active class from all CV tabs and panes
+                cvTabNav.querySelectorAll('.cv-tab-link').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('.cv-tab-pane').forEach(pane => {
+                    pane.classList.remove('active');
+                });
+                
+                // Add active class to clicked tab and corresponding pane
+                clickedTab.classList.add('active');
+                document.getElementById(`cv${targetTab.charAt(0).toUpperCase() + targetTab.slice(1)}Section`).classList.add('active');
+            }
+        });
+    }
+}
+
+// --- Education Management ---
+function renderCvEducationTable() {
+    const tableBody = document.getElementById('educationTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    cvEducation.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.institution || 'N/A';
+        row.insertCell().textContent = item.degree || 'N/A';
+        row.insertCell().textContent = item.dates || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-education-btn">Edit</button>
+            <button data-index="${index}" class="delete-education-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-education-btn').forEach(btn => {
+        btn.addEventListener('click', handleEditEducation);
+    });
+    
+    document.querySelectorAll('.delete-education-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeleteEducation);
+    });
+}
+
+function handleEditEducation(event) {
+    const index = event.target.dataset.index;
+    const item = cvEducation[index];
+    
+    document.getElementById('educationEditIndex').value = index;
+    document.getElementById('educationInstitution').value = item.institution || '';
+    document.getElementById('educationDegree').value = item.degree || '';
+    document.getElementById('educationHonours').value = item.honours || '';
+    document.getElementById('educationDates').value = item.dates || '';
+    
+    document.getElementById('educationSubmitButton').textContent = 'Update Entry';
+    document.getElementById('educationCancelButton').style.display = 'inline-block';
+    
+    document.getElementById('educationForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function handleDeleteEducation(event) {
+    const index = parseInt(event.target.dataset.index);
+    const item = cvEducation[index];
+    
+    if (confirm(`Are you sure you want to delete the education entry for "${item.institution || 'Unknown Institution'}"?`)) {
+        const updatedEducation = [...cvEducation];
+        updatedEducation.splice(index, 1);
+        
+        const isSuccess = await saveCvData('education', updatedEducation);
+        
+        if (isSuccess) {
+            cvEducation = updatedEducation;
+            renderCvEducationTable();
+            
+            if (parseInt(document.getElementById('educationEditIndex').value) === index) {
+                resetEducationForm();
+            }
+        }
+    }
+}
+
+function resetEducationForm() {
+    document.getElementById('educationEditIndex').value = '-1';
+    document.getElementById('educationForm').reset();
+    document.getElementById('educationSubmitButton').textContent = 'Add Entry';
+    document.getElementById('educationCancelButton').style.display = 'none';
+}
+
+// Education form submit handler
+const educationForm = document.getElementById('educationForm');
+if (educationForm) {
+    educationForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const formData = {
+            institution: document.getElementById('educationInstitution').value,
+            degree: document.getElementById('educationDegree').value,
+            honours: document.getElementById('educationHonours').value,
+            dates: document.getElementById('educationDates').value
+        };
+        
+        const editIndex = document.getElementById('educationEditIndex').value;
+        const index = editIndex === '-1' ? -1 : parseInt(editIndex);
+        
+        const updatedEducation = [...cvEducation];
+        
+        if (index === -1) {
+            updatedEducation.unshift(formData);
+        } else {
+            updatedEducation[index] = formData;
+        }
+        
+        const isSuccess = await saveCvData('education', updatedEducation);
+        
+        if (isSuccess) {
+            cvEducation = updatedEducation;
+            renderCvEducationTable();
+            resetEducationForm();
+        }
+    });
+}
+
+// Education cancel button
+const educationCancelButton = document.getElementById('educationCancelButton');
+if (educationCancelButton) {
+    educationCancelButton.addEventListener('click', resetEducationForm);
+}
+
+// --- Work Experience Management ---
+function renderCvWorkTable() {
+    const tableBody = document.getElementById('workTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    cvWork.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.title || 'N/A';
+        row.insertCell().textContent = item.company || 'N/A';
+        row.insertCell().textContent = item.dates || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-work-btn">Edit</button>
+            <button data-index="${index}" class="delete-work-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-work-btn').forEach(btn => {
+        btn.addEventListener('click', handleEditWork);
+    });
+    
+    document.querySelectorAll('.delete-work-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeleteWork);
+    });
+}
+
+function handleEditWork(event) {
+    const index = event.target.dataset.index;
+    const item = cvWork[index];
+    
+    document.getElementById('workEditIndex').value = index;
+    document.getElementById('workTitle').value = item.title || '';
+    document.getElementById('workCompany').value = item.company || '';
+    document.getElementById('workDates').value = item.dates || '';
+    document.getElementById('workDescription').value = item.description || '';
+    
+    document.getElementById('workSubmitButton').textContent = 'Update Entry';
+    document.getElementById('workCancelButton').style.display = 'inline-block';
+    
+    document.getElementById('workForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function handleDeleteWork(event) {
+    const index = parseInt(event.target.dataset.index);
+    const item = cvWork[index];
+    
+    if (confirm(`Are you sure you want to delete the work entry "${item.title || 'Unknown Position'}" at "${item.company || 'Unknown Company'}"?`)) {
+        const updatedWork = [...cvWork];
+        updatedWork.splice(index, 1);
+        
+        const isSuccess = await saveCvData('work', updatedWork);
+        
+        if (isSuccess) {
+            cvWork = updatedWork;
+            renderCvWorkTable();
+            
+            if (parseInt(document.getElementById('workEditIndex').value) === index) {
+                resetWorkForm();
+            }
+        }
+    }
+}
+
+function resetWorkForm() {
+    document.getElementById('workEditIndex').value = '-1';
+    document.getElementById('workForm').reset();
+    document.getElementById('workSubmitButton').textContent = 'Add Entry';
+    document.getElementById('workCancelButton').style.display = 'none';
+}
+
+// Work form submit handler
+const workForm = document.getElementById('workForm');
+if (workForm) {
+    workForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const formData = {
+            title: document.getElementById('workTitle').value,
+            company: document.getElementById('workCompany').value,
+            dates: document.getElementById('workDates').value,
+            description: document.getElementById('workDescription').value
+        };
+        
+        const editIndex = document.getElementById('workEditIndex').value;
+        const index = editIndex === '-1' ? -1 : parseInt(editIndex);
+        
+        const updatedWork = [...cvWork];
+        
+        if (index === -1) {
+            updatedWork.unshift(formData);
+        } else {
+            updatedWork[index] = formData;
+        }
+        
+        const isSuccess = await saveCvData('work', updatedWork);
+        
+        if (isSuccess) {
+            cvWork = updatedWork;
+            renderCvWorkTable();
+            resetWorkForm();
+        }
+    });
+}
+
+// Work cancel button
+const workCancelButton = document.getElementById('workCancelButton');
+if (workCancelButton) {
+    workCancelButton.addEventListener('click', resetWorkForm);
+}
+
+// --- Research Experience Management ---
+function renderCvResearchTable() {
+    const tableBody = document.getElementById('researchTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    cvResearch.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.title || 'N/A';
+        row.insertCell().textContent = item.organization || 'N/A';
+        row.insertCell().textContent = item.dates || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-research-btn">Edit</button>
+            <button data-index="${index}" class="delete-research-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-research-btn').forEach(btn => {
+        btn.addEventListener('click', handleEditResearch);
+    });
+    
+    document.querySelectorAll('.delete-research-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeleteResearch);
+    });
+}
+
+function handleEditResearch(event) {
+    const index = event.target.dataset.index;
+    const item = cvResearch[index];
+    
+    document.getElementById('researchEditIndex').value = index;
+    document.getElementById('researchTitle').value = item.title || '';
+    document.getElementById('researchOrganization').value = item.organization || '';
+    document.getElementById('researchDates').value = item.dates || '';
+    document.getElementById('researchDescription').value = item.description || '';
+    
+    document.getElementById('researchSubmitButton').textContent = 'Update Entry';
+    document.getElementById('researchCancelButton').style.display = 'inline-block';
+    
+    document.getElementById('researchForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function handleDeleteResearch(event) {
+    const index = parseInt(event.target.dataset.index);
+    const item = cvResearch[index];
+    
+    if (confirm(`Are you sure you want to delete the research entry "${item.title || 'Unknown Position'}" at "${item.organization || 'Unknown Organization'}"?`)) {
+        const updatedResearch = [...cvResearch];
+        updatedResearch.splice(index, 1);
+        
+        const isSuccess = await saveCvData('research', updatedResearch);
+        
+        if (isSuccess) {
+            cvResearch = updatedResearch;
+            renderCvResearchTable();
+            
+            if (parseInt(document.getElementById('researchEditIndex').value) === index) {
+                resetResearchForm();
+            }
+        }
+    }
+}
+
+function resetResearchForm() {
+    document.getElementById('researchEditIndex').value = '-1';
+    document.getElementById('researchForm').reset();
+    document.getElementById('researchSubmitButton').textContent = 'Add Entry';
+    document.getElementById('researchCancelButton').style.display = 'none';
+}
+
+// Research form submit handler
+const researchForm = document.getElementById('researchForm');
+if (researchForm) {
+    researchForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const formData = {
+            title: document.getElementById('researchTitle').value,
+            organization: document.getElementById('researchOrganization').value,
+            dates: document.getElementById('researchDates').value,
+            description: document.getElementById('researchDescription').value
+        };
+        
+        const editIndex = document.getElementById('researchEditIndex').value;
+        const index = editIndex === '-1' ? -1 : parseInt(editIndex);
+        
+        const updatedResearch = [...cvResearch];
+        
+        if (index === -1) {
+            updatedResearch.unshift(formData);
+        } else {
+            updatedResearch[index] = formData;
+        }
+        
+        const isSuccess = await saveCvData('research', updatedResearch);
+        
+        if (isSuccess) {
+            cvResearch = updatedResearch;
+            renderCvResearchTable();
+            resetResearchForm();
+        }
+    });
+}
+
+// Research cancel button
+const researchCancelButton = document.getElementById('researchCancelButton');
+if (researchCancelButton) {
+    researchCancelButton.addEventListener('click', resetResearchForm);
+}
+
+// --- Projects Management ---
+function renderCvProjectsTable() {
+    const tableBody = document.getElementById('cvProjectsTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    cvProjects.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.title || 'N/A';
+        row.insertCell().textContent = item.dates || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-cvprojects-btn">Edit</button>
+            <button data-index="${index}" class="delete-cvprojects-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-cvprojects-btn').forEach(btn => {
+        btn.addEventListener('click', handleEditCvProjects);
+    });
+    
+    document.querySelectorAll('.delete-cvprojects-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeleteCvProjects);
+    });
+}
+
+function handleEditCvProjects(event) {
+    const index = event.target.dataset.index;
+    const item = cvProjects[index];
+    
+    document.getElementById('cvProjectsEditIndex').value = index;
+    document.getElementById('cvProjectsTitle').value = item.title || '';
+    document.getElementById('cvProjectsDates').value = item.dates || '';
+    document.getElementById('cvProjectsDescription').value = item.description || '';
+    
+    document.getElementById('cvProjectsSubmitButton').textContent = 'Update Entry';
+    document.getElementById('cvProjectsCancelButton').style.display = 'inline-block';
+    
+    document.getElementById('cvProjectsForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function handleDeleteCvProjects(event) {
+    const index = parseInt(event.target.dataset.index);
+    const item = cvProjects[index];
+    
+    if (confirm(`Are you sure you want to delete the project entry "${item.title || 'Unknown Project'}"?`)) {
+        const updatedProjects = [...cvProjects];
+        updatedProjects.splice(index, 1);
+        
+        const isSuccess = await saveCvData('projects', updatedProjects);
+        
+        if (isSuccess) {
+            cvProjects = updatedProjects;
+            renderCvProjectsTable();
+            
+            if (parseInt(document.getElementById('cvProjectsEditIndex').value) === index) {
+                resetCvProjectsForm();
+            }
+        }
+    }
+}
+
+function resetCvProjectsForm() {
+    document.getElementById('cvProjectsEditIndex').value = '-1';
+    document.getElementById('cvProjectsForm').reset();
+    document.getElementById('cvProjectsSubmitButton').textContent = 'Add Entry';
+    document.getElementById('cvProjectsCancelButton').style.display = 'none';
+}
+
+// CV Projects form submit handler
+const cvProjectsForm = document.getElementById('cvProjectsForm');
+if (cvProjectsForm) {
+    cvProjectsForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const formData = {
+            title: document.getElementById('cvProjectsTitle').value,
+            dates: document.getElementById('cvProjectsDates').value,
+            description: document.getElementById('cvProjectsDescription').value
+        };
+        
+        const editIndex = document.getElementById('cvProjectsEditIndex').value;
+        const index = editIndex === '-1' ? -1 : parseInt(editIndex);
+        
+        const updatedProjects = [...cvProjects];
+        
+        if (index === -1) {
+            updatedProjects.unshift(formData);
+        } else {
+            updatedProjects[index] = formData;
+        }
+        
+        const isSuccess = await saveCvData('projects', updatedProjects);
+        
+        if (isSuccess) {
+            cvProjects = updatedProjects;
+            renderCvProjectsTable();
+            resetCvProjectsForm();
+        }
+    });
+}
+
+// CV Projects cancel button
+const cvProjectsCancelButton = document.getElementById('cvProjectsCancelButton');
+if (cvProjectsCancelButton) {
+    cvProjectsCancelButton.addEventListener('click', resetCvProjectsForm);
+}
+
+// --- Skills Management ---
+function renderCvSkillsForm() {
+    const programmingSkillsInput = document.getElementById('programmingSkills');
+    const softwareSkillsInput = document.getElementById('softwareSkills');
+    const technicalSkillsInput = document.getElementById('technicalSkills');
+    
+    if (programmingSkillsInput) {
+        programmingSkillsInput.value = cvSkills.programming ? cvSkills.programming.join(', ') : '';
+    }
+    
+    if (softwareSkillsInput) {
+        softwareSkillsInput.value = cvSkills.software ? cvSkills.software.join(', ') : '';
+    }
+    
+    if (technicalSkillsInput) {
+        technicalSkillsInput.value = cvSkills.technical ? cvSkills.technical.join(', ') : '';
+    }
+}
+
+// Skills form submit handler
+const skillsForm = document.getElementById('skillsForm');
+if (skillsForm) {
+    skillsForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const programmingSkills = document.getElementById('programmingSkills').value.split(',').map(s => s.trim()).filter(s => s);
+        const softwareSkills = document.getElementById('softwareSkills').value.split(',').map(s => s.trim()).filter(s => s);
+        const technicalSkills = document.getElementById('technicalSkills').value.split(',').map(s => s.trim()).filter(s => s);
+        
+        const updatedSkills = {
+            programming: programmingSkills,
+            software: softwareSkills,
+            technical: technicalSkills
+        };
+        
+        const submitButton = document.getElementById('saveSkillsButton');
+        const isSuccess = await saveCvData('skills', updatedSkills, submitButton);
+        
+        if (isSuccess) {
+            cvSkills = updatedSkills;
+            // Notification shown by saveData function
+        }
+    });
+}
+
+// --- Achievements Management ---
+function renderCvAchievementsTable() {
+    const tableBody = document.getElementById('achievementsTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    cvAchievements.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.award || 'N/A';
+        row.insertCell().textContent = item.year || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-achievements-btn">Edit</button>
+            <button data-index="${index}" class="delete-achievements-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-achievements-btn').forEach(btn => {
+        btn.addEventListener('click', handleEditAchievements);
+    });
+    
+    document.querySelectorAll('.delete-achievements-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeleteAchievements);
+    });
+}
+
+function handleEditAchievements(event) {
+    const index = event.target.dataset.index;
+    const item = cvAchievements[index];
+    
+    document.getElementById('achievementsEditIndex').value = index;
+    document.getElementById('achievementTitle').value = item.award || '';
+    document.getElementById('achievementYear').value = item.year || '';
+    
+    document.getElementById('achievementsSubmitButton').textContent = 'Update Entry';
+    document.getElementById('achievementsCancelButton').style.display = 'inline-block';
+    
+    document.getElementById('achievementsForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function handleDeleteAchievements(event) {
+    const index = parseInt(event.target.dataset.index);
+    const item = cvAchievements[index];
+    
+    if (confirm(`Are you sure you want to delete the achievement "${item.award || 'Unknown Achievement'}"?`)) {
+        const updatedAchievements = [...cvAchievements];
+        updatedAchievements.splice(index, 1);
+        
+        const isSuccess = await saveCvData('achievements', updatedAchievements);
+        
+        if (isSuccess) {
+            cvAchievements = updatedAchievements;
+            renderCvAchievementsTable();
+            
+            if (parseInt(document.getElementById('achievementsEditIndex').value) === index) {
+                resetAchievementsForm();
+            }
+        }
+    }
+}
+
+function resetAchievementsForm() {
+    document.getElementById('achievementsEditIndex').value = '-1';
+    document.getElementById('achievementsForm').reset();
+    document.getElementById('achievementsSubmitButton').textContent = 'Add Entry';
+    document.getElementById('achievementsCancelButton').style.display = 'none';
+}
+
+// Achievements form submit handler
+const achievementsForm = document.getElementById('achievementsForm');
+if (achievementsForm) {
+    achievementsForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const formData = {
+            award: document.getElementById('achievementTitle').value,
+            year: document.getElementById('achievementYear').value
+        };
+        
+        const editIndex = document.getElementById('achievementsEditIndex').value;
+        const index = editIndex === '-1' ? -1 : parseInt(editIndex);
+        
+        const updatedAchievements = [...cvAchievements];
+        
+        if (index === -1) {
+            updatedAchievements.unshift(formData);
+        } else {
+            updatedAchievements[index] = formData;
+        }
+        
+        const isSuccess = await saveCvData('achievements', updatedAchievements);
+        
+        if (isSuccess) {
+            cvAchievements = updatedAchievements;
+            renderCvAchievementsTable();
+            resetAchievementsForm();
+        }
+    });
+}
+
+// Achievements cancel button
+const achievementsCancelButton = document.getElementById('achievementsCancelButton');
+if (achievementsCancelButton) {
+    achievementsCancelButton.addEventListener('click', resetAchievementsForm);
+}
+
+// --- Positions Management ---
+function renderCvPositionsTable() {
+    const tableBody = document.getElementById('positionsTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    cvPositions.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.role || 'N/A';
+        row.insertCell().textContent = item.organization || 'N/A';
+        row.insertCell().textContent = item.dates || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-positions-btn">Edit</button>
+            <button data-index="${index}" class="delete-positions-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-positions-btn').forEach(btn => {
+        btn.addEventListener('click', handleEditPositions);
+    });
+    
+    document.querySelectorAll('.delete-positions-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeletePositions);
+    });
+}
+
+function handleEditPositions(event) {
+    const index = event.target.dataset.index;
+    const item = cvPositions[index];
+    
+    document.getElementById('positionsEditIndex').value = index;
+    document.getElementById('positionTitle').value = item.role || '';
+    document.getElementById('positionOrganization').value = item.organization || '';
+    document.getElementById('positionDates').value = item.dates || '';
+    document.getElementById('positionDescription').value = item.description || '';
+    
+    document.getElementById('positionsSubmitButton').textContent = 'Update Entry';
+    document.getElementById('positionsCancelButton').style.display = 'inline-block';
+    
+    document.getElementById('positionsForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function handleDeletePositions(event) {
+    const index = parseInt(event.target.dataset.index);
+    const item = cvPositions[index];
+    
+    if (confirm(`Are you sure you want to delete the position "${item.role || 'Unknown Position'}" at "${item.organization || 'Unknown Organization'}"?`)) {
+        const updatedPositions = [...cvPositions];
+        updatedPositions.splice(index, 1);
+        
+        const isSuccess = await saveCvData('positions', updatedPositions);
+        
+        if (isSuccess) {
+            cvPositions = updatedPositions;
+            renderCvPositionsTable();
+            
+            if (parseInt(document.getElementById('positionsEditIndex').value) === index) {
+                resetPositionsForm();
+            }
+        }
+    }
+}
+
+function resetPositionsForm() {
+    document.getElementById('positionsEditIndex').value = '-1';
+    document.getElementById('positionsForm').reset();
+    document.getElementById('positionsSubmitButton').textContent = 'Add Entry';
+    document.getElementById('positionsCancelButton').style.display = 'none';
+}
+
+// Positions form submit handler
+const positionsForm = document.getElementById('positionsForm');
+if (positionsForm) {
+    positionsForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const formData = {
+            role: document.getElementById('positionTitle').value,
+            organization: document.getElementById('positionOrganization').value,
+            dates: document.getElementById('positionDates').value,
+            description: document.getElementById('positionDescription').value
+        };
+        
+        const editIndex = document.getElementById('positionsEditIndex').value;
+        const index = editIndex === '-1' ? -1 : parseInt(editIndex);
+        
+        const updatedPositions = [...cvPositions];
+        
+        if (index === -1) {
+            updatedPositions.unshift(formData);
+        } else {
+            updatedPositions[index] = formData;
+        }
+        
+        const isSuccess = await saveCvData('positions', updatedPositions);
+        
+        if (isSuccess) {
+            cvPositions = updatedPositions;
+            renderCvPositionsTable();
+            resetPositionsForm();
+        }
+    });
+}
+
+// Positions cancel button
+const positionsCancelButton = document.getElementById('positionsCancelButton');
+if (positionsCancelButton) {
+    positionsCancelButton.addEventListener('click', resetPositionsForm);
+}
+
+// Legacy Page Content Functions - Kept for Research tab
+async function loadPageContent() {
+    console.log("Loading page content...");
+    try {
+        const response = await fetch('/api/data/page_content');
+        if (!response.ok) {
+            // Try parsing error from backend
+            let errorMsg = `HTTP error! Status: ${response.status}`;
+             try { const errData = await response.json(); errorMsg += ` - ${errData.error || 'Unknown'}`; } catch(e){}
+            throw new Error(errorMsg);
+        }
+        pageContent = await response.json();
+        console.log("Page content loaded:", pageContent);
+        populateContentEditors(); // Populate editors AFTER content is loaded
+    } catch (error) {
+        console.error("Failed to load page content:", error);
+        alert(`Error loading page content: ${error.message}`);
+        // Display error in editor containers
+        const researchContainer = document.getElementById('researchEditorContainer');
+        if (researchContainer) researchContainer.innerHTML = `<p style="color:red;">Failed to load Research content.</p>`;
+    }
+}
+
+function populateContentEditors() {
+    const researchContainer = document.getElementById('researchEditorContainer');
+
+    if (!researchContainer) {
+         console.error("Research editor container not found!");
+         return;
+    }
+    researchContainer.innerHTML = '';
+    pageContentEditors = {}; // Clear old instances
+
+    // Sort keys for consistent order
+    const sortedKeys = Object.keys(pageContent).sort();
+
+    sortedKeys.forEach(key => {
+        if (!key.startsWith('research_')) return; // Skip non-research keys
+        
+        const container = researchContainer;
+        const editorWrapper = document.createElement('div');
+        editorWrapper.style.marginBottom = '15px';
+
+        const label = document.createElement('label');
+        label.textContent = `Content for: ${key}`; // Use key as label
+        label.style.fontWeight = 'bold';
+        label.style.display = 'block';
+        label.style.marginBottom = '5px';
+        label.htmlFor = `page-content-${key}`;
+
+        const textarea = document.createElement('textarea');
+        textarea.id = `page-content-${key}`;
+
+        editorWrapper.appendChild(label);
+        editorWrapper.appendChild(textarea);
+        container.appendChild(editorWrapper);
+
+        // Initialize EasyMDE for this textarea
+        try {
+            const editorInstance = new EasyMDE({
+                element: textarea,
+                spellChecker: false,
+                minHeight: '150px',
+            });
+            editorInstance.value(pageContent[key] || ''); // Set initial value
+            pageContentEditors[key] = editorInstance; // Store the instance
+        } catch (e) {
+            console.error(`Failed to initialize EasyMDE for key ${key}:`, e);
+            // Optionally display an error message instead of the editor
+            textarea.value = `Error initializing editor for ${key}.`;
+            textarea.disabled = true;
+        }
+    });
+    console.log("Populated research content editors", pageContentEditors);
+}
+
+// Save button handler for research content
+document.addEventListener('DOMContentLoaded', () => {
+    // Research content save button
+    const saveResearchContentButton = document.getElementById('saveResearchContentButton');
+    if (saveResearchContentButton) {
+        saveResearchContentButton.addEventListener('click', async () => {
+            // Create a copy of the current content
+            const updatedContent = { ...pageContent };
+            
+            // Update Research-related keys
+            Object.keys(pageContentEditors).forEach(key => {
+                if (key.startsWith('research_')) {
+                    updatedContent[key] = pageContentEditors[key].value();
+                }
+            });
+            
+            // Save to server with button reference
+            const isSuccess = await saveData('page_content', updatedContent, saveResearchContentButton);
+            if (isSuccess) {
+                // Update our local copy (notification shown by saveData)
+                pageContent = updatedContent;
+            }
+        });
+    }
+});
+
+// === Research Management Functions ===
+
+// Load all research data from APIs
+async function loadResearchData() {
+    console.log("Loading research data...");
+    toggleLoading(true);
+    try {
+        const results = await Promise.allSettled([
+            fetchResearchSection('journal'),
+            fetchResearchSection('thesis'),
+            fetchResearchSection('conference'),
+            fetchResearchSection('patent')
+        ]);
+
+        // Process results and show errors if any
+        let errors = [];
+        results.forEach((result, index) => {
+            const sections = ['journal', 'thesis', 'conference', 'patent'];
+            const section = sections[index];
+            
+            if (result.status === 'fulfilled') {
+                console.log(`Successfully loaded research ${section} data`);
+            } else {
+                console.error(`Failed to load research ${section} data:`, result.reason);
+                errors.push(`${section}: ${result.reason.message}`);
+            }
+        });
+
+        // Show error notification if any
+        if (errors.length > 0) {
+            showNotification(`Error loading some research data: ${errors.join('; ')}`, 'error');
+        }
+
+        // Render the tables now that data is loaded
+        renderResearchJournalTable();
+        renderResearchThesisForm();
+        renderResearchConferenceTable();
+        renderResearchPatentTable();
+
+    } catch (error) {
+        console.error("Failed to load research data:", error);
+        showNotification(`Error loading research data: ${error.message}`, 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+// Fetch a specific research section from the API
+async function fetchResearchSection(section) {
+    try {
+        const response = await fetch(`/api/data/research/${section}`);
+        if (!response.ok) {
+            let errorMsg = `HTTP error! Status: ${response.status}`;
+            try { 
+                const errData = await response.json(); 
+                errorMsg += ` - ${errData.error || 'Unknown'}`; 
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
+        
+        const data = await response.json();
+        
+        // Update the global variable based on the section
+        switch(section) {
+            case 'journal':
+                researchJournal = Array.isArray(data) ? data : [];
+                break;
+            case 'thesis':
+                researchThesis = (typeof data === 'object' && data !== null) ? data : {};
+                break;
+            case 'conference':
+                researchConference = Array.isArray(data) ? data : [];
+                break;
+            case 'patent':
+                researchPatent = Array.isArray(data) ? data : [];
+                break;
+        }
+        
+        return data;
+    } catch (error) {
+        console.error(`Error fetching research ${section} data:`, error);
+        // Show error in the corresponding table
+        const tableId = section === 'thesis' ? null : `research${section.charAt(0).toUpperCase() + section.slice(1)}TableBody`;
+        if (tableId) {
+            const tableBody = document.getElementById(tableId);
+            if (tableBody) {
+                tableBody.innerHTML = `<tr><td colspan="4">Error loading ${section} data: ${error.message}</td></tr>`;
+            }
+        }
+        throw error; // Re-throw to propagate
+    }
+}
+
+// Function to save a specific research section
+async function saveResearchData(section, data) {
+    return await saveData(`research/${section}`, data);
+}
+
+// Create a research link row for the form
+function createResearchLinkRow(type = '', url = '') {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'research-link-row';
+    rowDiv.style.display = 'flex';
+    rowDiv.style.marginBottom = '5px';
+    rowDiv.style.gap = '5px'; // Add spacing between elements
+
+    // Input for type
+    const typeInput = document.createElement('input');
+    typeInput.type = 'text';
+    typeInput.className = 'research-link-type';
+    typeInput.placeholder = 'Type (e.g., pdf, code, project)';
+    typeInput.value = type;
+    typeInput.style.width = '30%';
+
+    // Input for URL
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.className = 'research-link-url';
+    urlInput.placeholder = 'Link URL (e.g., https://...)';
+    urlInput.value = url;
+    urlInput.style.flexGrow = '1'; // Allow URL input to take available space
+
+    // Remove button
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.textContent = 'Remove';
+    removeButton.className = 'remove-link-button';
+    removeButton.onclick = function() { 
+        rowDiv.remove(); // Remove this row div
+        // Check if container is empty and show message
+        const parentId = rowDiv.parentNode.id;
+        const noLinksMsg = document.getElementById(parentId.replace('Container', 'NoLinksMsg'));
+        if (noLinksMsg && rowDiv.parentNode.querySelectorAll('.research-link-row').length === 0) {
+            noLinksMsg.style.display = 'block';
+        }
+    };
+
+    rowDiv.appendChild(typeInput);
+    rowDiv.appendChild(urlInput);
+    rowDiv.appendChild(removeButton);
+
+    return rowDiv;
+}
+
+// Initialize EasyMDE for research form abstract fields
+function initializeResearchEditors() {
+    // Journal Abstract
+    if (document.getElementById('journalAbstract') && !researchEditors.journal) {
+        try {
+            researchEditors.journal = new EasyMDE({
+                element: document.getElementById('journalAbstract'),
+                spellChecker: false,
+                minHeight: "200px",
+                toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "code", "|", "preview", "side-by-side", "fullscreen"]
+            });
+        } catch (e) {
+            console.error("Failed to initialize Journal EasyMDE:", e);
+        }
+    }
+    
+    // Thesis Abstract
+    if (document.getElementById('thesisAbstract') && !researchEditors.thesis) {
+        try {
+            researchEditors.thesis = new EasyMDE({
+                element: document.getElementById('thesisAbstract'),
+                spellChecker: false,
+                minHeight: "200px",
+                toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "code", "|", "preview", "side-by-side", "fullscreen"]
+            });
+        } catch (e) {
+            console.error("Failed to initialize Thesis EasyMDE:", e);
+        }
+    }
+    
+    // Conference Abstract
+    if (document.getElementById('conferenceAbstract') && !researchEditors.conference) {
+        try {
+            researchEditors.conference = new EasyMDE({
+                element: document.getElementById('conferenceAbstract'),
+                spellChecker: false,
+                minHeight: "200px",
+                toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "code", "|", "preview", "side-by-side", "fullscreen"]
+            });
+        } catch (e) {
+            console.error("Failed to initialize Conference EasyMDE:", e);
+        }
+    }
+    
+    // Patent Abstract
+    if (document.getElementById('patentAbstract') && !researchEditors.patent) {
+        try {
+            researchEditors.patent = new EasyMDE({
+                element: document.getElementById('patentAbstract'),
+                spellChecker: false,
+                minHeight: "200px",
+                toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "code", "|", "preview", "side-by-side", "fullscreen"]
+            });
+        } catch (e) {
+            console.error("Failed to initialize Patent EasyMDE:", e);
+        }
+    }
+}
+
+// Refresh EasyMDE editors when tab becomes visible
+function refreshResearchEditors() {
+    Object.keys(researchEditors).forEach(key => {
+        if (researchEditors[key] && researchEditors[key].codemirror) {
             try {
-                // Optional: Add sorting here if needed before stringify
-                const jsonString = JSON.stringify(dataArray, null, 2);
-                outputArea.value = jsonString;
-                outputArea.style.display = 'block';
-                if (downloadBtn) downloadBtn.disabled = false; // Enable download
-            } catch (error) {
-                console.error(`Error generating ${dataType} JSON:`, error);
-                outputArea.value = `Error generating ${dataType} JSON. See console.`;
-                outputArea.style.display = 'block';
-                if (downloadBtn) downloadBtn.disabled = true;
+                setTimeout(() => {
+                    researchEditors[key].codemirror.refresh();
+                    console.log(`${key} editor refreshed`);
+                }, 10);
+            } catch (e) {
+                console.error(`Error refreshing ${key} editor:`, e);
             }
-        });
-    }
+        }
+    });
+}
 
-    if (downloadBtn && outputArea) {
-        downloadBtn.disabled = true; // Start disabled
-        downloadBtn.addEventListener('click', () => {
-            const jsonString = outputArea.value;
-            if (!jsonString || jsonString.startsWith("Error")) {
-                alert(`Please generate the ${dataType} JSON first or resolve errors.`);
-                return;
+// --- Journal Articles Functions ---
+
+function renderResearchJournalTable() {
+    const tableBody = document.getElementById('researchJournalTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    if (researchJournal.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4">No journal articles found. Use the "Add Journal Article" button below.</td></tr>';
+        return;
+    }
+    
+    researchJournal.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.title || 'N/A';
+        row.insertCell().textContent = item.venue || 'N/A';
+        row.insertCell().textContent = item.date || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-journal-btn">Edit</button>
+            <button data-index="${index}" class="delete-journal-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-journal-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            showResearchEntryForm('journal', index);
+        });
+    });
+    
+    document.querySelectorAll('.delete-journal-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            handleDeleteResearchEntry('journal', index);
+        });
+    });
+}
+
+// Journal Add Link button listener
+const addJournalLinkButton = document.getElementById('addJournalLinkButton');
+if (addJournalLinkButton) {
+    addJournalLinkButton.addEventListener('click', function() {
+        const container = document.getElementById('journalLinksContainer');
+        const noLinksMsg = document.getElementById('journalNoLinksMsg');
+        if (container) {
+            const newRow = createResearchLinkRow(); // Create a new blank row
+            container.appendChild(newRow);
+            if (noLinksMsg) noLinksMsg.style.display = 'none'; // Hide the 'no links' message
+        }
+    });
+}
+
+// --- Thesis Functions ---
+
+function renderResearchThesisForm() {
+    // Initialize the editor first to avoid UI glitches
+    if (!researchEditors.thesis) {
+        initializeResearchEditors();
+    }
+    
+    // Populate form fields
+    const titleInput = document.getElementById('thesisTitle');
+    const authorsInput = document.getElementById('thesisAuthors');
+    const venueInput = document.getElementById('thesisVenue');
+    const dateInput = document.getElementById('thesisDate');
+    const linksContainer = document.getElementById('thesisLinksContainer');
+    const noLinksMsg = document.getElementById('thesisNoLinksMsg');
+    
+    if (titleInput) titleInput.value = researchThesis.title || '';
+    if (authorsInput) authorsInput.value = researchThesis.authors || '';
+    if (venueInput) venueInput.value = researchThesis.venue || '';
+    if (dateInput) dateInput.value = researchThesis.date || '';
+    
+    // Set abstract content if the editor is initialized
+    if (researchEditors.thesis) {
+        researchEditors.thesis.value(researchThesis.abstract || '');
+    }
+    
+    // Clear and repopulate links
+    if (linksContainer) {
+        linksContainer.innerHTML = '';
+        
+        // Add the "no links" message back
+        if (noLinksMsg) linksContainer.appendChild(noLinksMsg);
+        
+        // If there are links, add them as rows and hide the no links message
+        let hasLinks = false;
+        if (researchThesis.links && typeof researchThesis.links === 'object') {
+            Object.entries(researchThesis.links).forEach(([type, url]) => {
+                if (url) { // Only create rows for links that have a URL
+                    const linkRow = createResearchLinkRow(type, url);
+                    linksContainer.appendChild(linkRow);
+                    hasLinks = true;
+                }
+            });
+        }
+        
+        // Show/hide the 'no links' message
+        if (noLinksMsg) noLinksMsg.style.display = hasLinks ? 'none' : 'block';
+    }
+}
+
+// Thesis Add Link button listener
+const addThesisLinkButton = document.getElementById('addThesisLinkButton');
+if (addThesisLinkButton) {
+    addThesisLinkButton.addEventListener('click', function() {
+        const container = document.getElementById('thesisLinksContainer');
+        const noLinksMsg = document.getElementById('thesisNoLinksMsg');
+        if (container) {
+            const newRow = createResearchLinkRow(); // Create a new blank row
+            container.appendChild(newRow);
+            if (noLinksMsg) noLinksMsg.style.display = 'none'; // Hide the 'no links' message
+        }
+    });
+}
+
+// Thesis Save button listener
+const saveThesisButton = document.getElementById('saveThesisButton');
+if (saveThesisButton) {
+    saveThesisButton.addEventListener('click', async function() {
+        // Gather form data
+        const title = document.getElementById('thesisTitle').value;
+        const authors = document.getElementById('thesisAuthors').value;
+        const venue = document.getElementById('thesisVenue').value;
+        const date = document.getElementById('thesisDate').value;
+        const abstract = researchEditors.thesis ? researchEditors.thesis.value() : '';
+        
+        // Validate required fields
+        if (!title || !authors || !venue) {
+            showNotification("Please fill in all required fields.", 'error');
+            return;
+        }
+        
+        // Collect links
+        const links = {};
+        const linkRows = document.querySelectorAll('#thesisLinksContainer .research-link-row');
+        linkRows.forEach(row => {
+            const typeInput = row.querySelector('.research-link-type');
+            const urlInput = row.querySelector('.research-link-url');
+            if (typeInput && urlInput && typeInput.value && urlInput.value) {
+                links[typeInput.value] = urlInput.value;
             }
-            const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', fileName);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+        });
+        
+        // Create updated thesis data
+        const updatedThesis = {
+            title,
+            authors,
+            venue,
+            date,
+            abstract,
+            links
+        };
+        
+        // Save the data
+        const isSuccess = await saveResearchData('thesis', updatedThesis);
+        
+        // Handle result
+        if (isSuccess) {
+            researchThesis = updatedThesis; // Update the local copy
+            showNotification('Thesis data saved successfully!', 'success');
+        }
+    });
+}
+
+// --- Conference Papers Functions ---
+
+function renderResearchConferenceTable() {
+    const tableBody = document.getElementById('researchConferenceTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    if (researchConference.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4">No conference papers found. Use the "Add Conference Paper" button below.</td></tr>';
+        return;
+    }
+    
+    researchConference.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.title || 'N/A';
+        row.insertCell().textContent = item.venue || 'N/A';
+        row.insertCell().textContent = item.date || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-conference-btn">Edit</button>
+            <button data-index="${index}" class="delete-conference-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-conference-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            showResearchEntryForm('conference', index);
+        });
+    });
+    
+    document.querySelectorAll('.delete-conference-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            handleDeleteResearchEntry('conference', index);
+        });
+    });
+}
+
+// Conference Add Link button listener
+const addConferenceLinkButton = document.getElementById('addConferenceLinkButton');
+if (addConferenceLinkButton) {
+    addConferenceLinkButton.addEventListener('click', function() {
+        const container = document.getElementById('conferenceLinksContainer');
+        const noLinksMsg = document.getElementById('conferenceNoLinksMsg');
+        if (container) {
+            const newRow = createResearchLinkRow(); // Create a new blank row
+            container.appendChild(newRow);
+            if (noLinksMsg) noLinksMsg.style.display = 'none'; // Hide the 'no links' message
+        }
+    });
+}
+
+// --- Patent Functions ---
+
+function renderResearchPatentTable() {
+    const tableBody = document.getElementById('researchPatentTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    if (researchPatent.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4">No patents found. Use the "Add Patent" button below.</td></tr>';
+        return;
+    }
+    
+    researchPatent.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.insertCell().textContent = item.title || 'N/A';
+        row.insertCell().textContent = item.venue || 'N/A';
+        row.insertCell().textContent = item.date || 'N/A';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-patent-btn">Edit</button>
+            <button data-index="${index}" class="delete-patent-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-patent-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            showResearchEntryForm('patent', index);
+        });
+    });
+    
+    document.querySelectorAll('.delete-patent-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            handleDeleteResearchEntry('patent', index);
+        });
+    });
+}
+
+// Patent Add Link button listener
+const addPatentLinkButton = document.getElementById('addPatentLinkButton');
+if (addPatentLinkButton) {
+    addPatentLinkButton.addEventListener('click', function() {
+        const container = document.getElementById('patentLinksContainer');
+        const noLinksMsg = document.getElementById('patentNoLinksMsg');
+        if (container) {
+            const newRow = createResearchLinkRow(); // Create a new blank row
+            container.appendChild(newRow);
+            if (noLinksMsg) noLinksMsg.style.display = 'none'; // Hide the 'no links' message
+        }
+    });
+}
+
+// --- Generic Research Entry Form Functions ---
+
+// Show the form for adding or editing a research entry
+function showResearchEntryForm(type, index = -1) {
+    // Get form and relevant data
+    const formId = `research${type.charAt(0).toUpperCase() + type.slice(1)}Form`;
+    const form = document.getElementById(formId);
+    const dataArray = type === 'journal' ? researchJournal : 
+                      type === 'conference' ? researchConference : 
+                      type === 'patent' ? researchPatent : [];
+                      
+    // Initialize the editor if not already done
+    if (!researchEditors[type]) {
+        initializeResearchEditors();
+    }
+    
+    if (!form) return;
+    
+    // Make form visible
+    form.style.display = 'block';
+    
+    // Set up form for add or edit
+    const editIndexInput = document.getElementById(`${type}EditIndex`);
+    if (editIndexInput) editIndexInput.value = index;
+    
+    // Clear form or populate with existing data
+    if (index === -1) {
+        // Adding new entry - clear form
+        resetResearchEntryForm(type);
+    } else {
+        // Editing existing entry - populate form
+        const item = dataArray[index];
+        if (!item) {
+            console.error(`Invalid index ${index} for ${type} data`);
+            return;
+        }
+        
+        // Fill in the form fields
+        document.getElementById(`${type}Id`).value = item.id || '';
+        document.getElementById(`${type}Title`).value = item.title || '';
+        document.getElementById(`${type}Authors`).value = item.authors || '';
+        document.getElementById(`${type}Venue`).value = item.venue || '';
+        document.getElementById(`${type}Date`).value = item.date || '';
+        
+        // Set abstract content in EasyMDE
+        if (researchEditors[type]) {
+            researchEditors[type].value(item.abstract || '');
+        }
+        
+        // Clear and repopulate links
+        const linksContainer = document.getElementById(`${type}LinksContainer`);
+        const noLinksMsg = document.getElementById(`${type}NoLinksMsg`);
+        if (linksContainer) {
+            linksContainer.innerHTML = '';
+            
+            // Add the "no links" message back
+            if (noLinksMsg) linksContainer.appendChild(noLinksMsg);
+            
+            // Add link rows for existing links
+            let hasLinks = false;
+            if (item.links && typeof item.links === 'object') {
+                Object.entries(item.links).forEach(([linkType, url]) => {
+                    if (url) { // Only create rows for links that have a URL
+                        const linkRow = createResearchLinkRow(linkType, url);
+                        linksContainer.appendChild(linkRow);
+                        hasLinks = true;
+                    }
+                });
+            }
+            
+            // Show/hide the 'no links' message
+            if (noLinksMsg) noLinksMsg.style.display = hasLinks ? 'none' : 'block';
+        }
+        
+        // Update submit button text
+        const submitButton = document.getElementById(`${type}SubmitButton`);
+        if (submitButton) {
+            submitButton.textContent = `Update ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        }
+        
+        // Show cancel button
+        const cancelButton = document.getElementById(`${type}CancelButton`);
+        if (cancelButton) {
+            cancelButton.style.display = 'inline-block';
+        }
+    }
+    
+    // Refresh the EasyMDE editor to ensure it's visible and rendered properly
+    if (researchEditors[type] && researchEditors[type].codemirror) {
+        setTimeout(() => {
+            researchEditors[type].codemirror.refresh();
+        }, 10);
+    }
+    
+    // Scroll to the form
+    form.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Reset a research entry form to default state
+function resetResearchEntryForm(type) {
+    const formId = `research${type.charAt(0).toUpperCase() + type.slice(1)}Form`;
+    const form = document.getElementById(formId);
+    const editIndexInput = document.getElementById(`${type}EditIndex`);
+    
+    if (!form || !editIndexInput) return;
+    
+    // Reset form state
+    form.reset();
+    editIndexInput.value = '-1';
+    
+    // Clear EasyMDE content
+    if (researchEditors[type]) {
+        researchEditors[type].value('');
+    }
+    
+    // Clear links container
+    const linksContainer = document.getElementById(`${type}LinksContainer`);
+    const noLinksMsg = document.getElementById(`${type}NoLinksMsg`);
+    if (linksContainer) {
+        linksContainer.innerHTML = '';
+        
+        // Add the "no links" message back
+        if (noLinksMsg) {
+            linksContainer.appendChild(noLinksMsg);
+            noLinksMsg.style.display = 'block';
+        }
+    }
+    
+    // Update submit button text
+    const submitButton = document.getElementById(`${type}SubmitButton`);
+    if (submitButton) {
+        submitButton.textContent = `Save ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    }
+    
+    // Hide cancel button
+    const cancelButton = document.getElementById(`${type}CancelButton`);
+    if (cancelButton) {
+        cancelButton.style.display = 'none';
+    }
+}
+
+// Handle deleting a research entry
+async function handleDeleteResearchEntry(type, index) {
+    // Determine which data array to use
+    let dataArray, renderFunction;
+    switch (type) {
+        case 'journal':
+            dataArray = researchJournal;
+            renderFunction = renderResearchJournalTable;
+            break;
+        case 'conference':
+            dataArray = researchConference;
+            renderFunction = renderResearchConferenceTable;
+            break;
+        case 'patent':
+            dataArray = researchPatent;
+            renderFunction = renderResearchPatentTable;
+            break;
+        default:
+            console.error(`Invalid research type: ${type}`);
+            return;
+    }
+    
+    const item = dataArray[index];
+    if (!item) {
+        console.error(`Invalid index ${index} for ${type} data`);
+        return;
+    }
+    
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete "${item.title || 'Untitled'}"?`)) {
+        return;
+    }
+    
+    // Create a copy of the array and remove the item
+    const updatedArray = [...dataArray];
+    updatedArray.splice(index, 1);
+    
+    // Save the updated array
+    const isSuccess = await saveResearchData(type, updatedArray);
+    
+    // Handle result
+    if (isSuccess) {
+        // Update the local data and re-render
+        switch (type) {
+            case 'journal': researchJournal = updatedArray; break;
+            case 'conference': researchConference = updatedArray; break;
+            case 'patent': researchPatent = updatedArray; break;
+        }
+        
+        renderFunction();
+        
+        // Reset form if currently editing the deleted item
+        const editIndexInput = document.getElementById(`${type}EditIndex`);
+        if (editIndexInput && parseInt(editIndexInput.value) === index) {
+            resetResearchEntryForm(type);
+            
+            // Also hide the form
+            const form = document.getElementById(`research${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
+            if (form) form.style.display = 'none';
+        }
+    }
+}
+
+// Set up form submit handlers for research entries
+document.addEventListener('DOMContentLoaded', function() {
+    // Journal form submit
+    const journalForm = document.getElementById('researchJournalForm');
+    if (journalForm) {
+        journalForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            await handleResearchFormSubmit('journal');
         });
     }
-    // Hide textareas initially
-    if(outputArea) outputArea.style.display = 'none';
+    
+    // Conference form submit
+    const conferenceForm = document.getElementById('researchConferenceForm');
+    if (conferenceForm) {
+        conferenceForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            await handleResearchFormSubmit('conference');
+        });
+    }
+    
+    // Patent form submit
+    const patentForm = document.getElementById('researchPatentForm');
+    if (patentForm) {
+        patentForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            await handleResearchFormSubmit('patent');
+        });
+    }
+    
+    // Cancel buttons
+    const cancelButtons = {
+        journal: document.getElementById('journalCancelButton'),
+        conference: document.getElementById('conferenceCancelButton'),
+        patent: document.getElementById('patentCancelButton')
+    };
+    
+    Object.entries(cancelButtons).forEach(([type, button]) => {
+        if (button) {
+            button.addEventListener('click', function() {
+                resetResearchEntryForm(type);
+                
+                // Hide the form
+                const form = document.getElementById(`research${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
+                if (form) form.style.display = 'none';
+            });
+        }
+    });
+    
+    // Make research editors refresh when the tab is shown
+    document.querySelectorAll('[data-tab-target="#researchContentSection"]').forEach(tab => {
+        tab.addEventListener('click', function() {
+            setTimeout(refreshResearchEditors, 50);
+            
+            // Initialize editors if they haven't been created yet
+            if (!researchEditors.journal) {
+                initializeResearchEditors();
+            }
+        });
+    });
+});
+
+// Handle form submission for research entries
+async function handleResearchFormSubmit(type) {
+    // Get form and field elements
+    const idInput = document.getElementById(`${type}Id`);
+    const titleInput = document.getElementById(`${type}Title`);
+    const authorsInput = document.getElementById(`${type}Authors`);
+    const venueInput = document.getElementById(`${type}Venue`);
+    const dateInput = document.getElementById(`${type}Date`);
+    const editIndexInput = document.getElementById(`${type}EditIndex`);
+    const linksContainer = document.getElementById(`${type}LinksContainer`);
+    
+    // Validate required fields
+    if (!idInput.value || !titleInput.value || !authorsInput.value || !venueInput.value) {
+        showNotification("Please fill in all required fields.", 'error');
+        return;
+    }
+    
+    // Collect links
+    const links = {};
+    const linkRows = linksContainer.querySelectorAll('.research-link-row');
+    linkRows.forEach(row => {
+        const typeInput = row.querySelector('.research-link-type');
+        const urlInput = row.querySelector('.research-link-url');
+        if (typeInput && urlInput && typeInput.value && urlInput.value) {
+            links[typeInput.value] = urlInput.value;
+        }
+    });
+    
+    // Create research entry object
+    const entry = {
+        id: idInput.value,
+        title: titleInput.value,
+        authors: authorsInput.value,
+        venue: venueInput.value,
+        date: dateInput.value,
+        abstract: researchEditors[type] ? researchEditors[type].value() : '',
+        links: links
+    };
+    
+    // Determine if adding or editing
+    const index = editIndexInput.value === '-1' ? -1 : parseInt(editIndexInput.value);
+    
+    // Get the correct data array and render function
+    let dataArray, renderFunction;
+    switch (type) {
+        case 'journal':
+            dataArray = researchJournal;
+            renderFunction = renderResearchJournalTable;
+            break;
+        case 'conference':
+            dataArray = researchConference;
+            renderFunction = renderResearchConferenceTable;
+            break;
+        case 'patent':
+            dataArray = researchPatent;
+            renderFunction = renderResearchPatentTable;
+            break;
+        default:
+            console.error(`Invalid research type: ${type}`);
+            return;
+    }
+    
+    // Create updated array
+    const updatedArray = [...dataArray];
+    
+    if (index === -1) {
+        // Adding new entry
+        updatedArray.unshift(entry);
+    } else {
+        // Editing existing entry
+        if (index >= 0 && index < updatedArray.length) {
+            updatedArray[index] = entry;
+        } else {
+            console.error(`Invalid index ${index} for ${type} data`);
+            showNotification(`Error: Invalid index ${index}.`, 'error');
+            return;
+        }
+    }
+    
+    // Save the updated array
+    const isSuccess = await saveResearchData(type, updatedArray);
+    
+    // Handle result
+    if (isSuccess) {
+        // Update the local data and re-render
+        switch (type) {
+            case 'journal': researchJournal = updatedArray; break;
+            case 'conference': researchConference = updatedArray; break;
+            case 'patent': researchPatent = updatedArray; break;
+        }
+        
+        renderFunction();
+        
+        // Reset and hide the form
+        resetResearchEntryForm(type);
+        const form = document.getElementById(`research${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
+        if (form) form.style.display = 'none';
+    }
 }

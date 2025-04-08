@@ -1,8 +1,8 @@
 /* bookshelf.js */
 let booksData = [];
 
-// fetch books data from books.json
-fetch('data/books.json')
+// fetch books data from API
+fetch('/api/data/books')
   .then(response => response.json())
   .then(data => {
     booksData = data;

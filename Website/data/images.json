@@ -1,21 +1,29 @@
 [
-    {
-      "lat": -33.8688,
-      "lng": 151.2093,
-      "title": "sydney harbour",
-      "date": "2023-04-15",
-      "thumbnail": "DSC04400 (1).JPG",
-      "description": "a sunny day in sydney harbour.",
-      "ranking": 10
-    },
-    {
-        "lat": -32.8688,
-        "lng": 151.2093,
-        "title": "sydney harbour",
-        "date": "2023-04-15",
-        "thumbnail": "IMG_4308.JPG",
-        "description": "a sunny day in sydney harbour.",
-        "ranking": 9
-      }
+  {
+    "thumbnail": "upload-1744117071504-491310019.jpg",
+    "title": "title",
+    "date": "2025-01-01",
+    "description": "description",
+    "lat": -30,
+    "lng": 151,
+    "ranking": 5
+  },
+  {
+    "lat": -33.8688,
+    "lng": 151.2093,
+    "title": "sydney harbour",
+    "date": "2023-04-15",
+    "thumbnail": "DSC04400 (1).JPG",
+    "description": "a sunny day in sydney harbour.",
+    "ranking": 10
+  },
+  {
+    "lat": -32.8688,
+    "lng": 151.2093,
+    "title": "sydney harbour",
+    "date": "2023-04-15",
+    "thumbnail": "IMG_4308.JPG",
+    "description": "a sunny day in sydney harbour.",
+    "ranking": 9
+  }
 ]
-  
