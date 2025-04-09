@@ -37,41 +37,40 @@ async function initializeGlobeViewer() {
     Cesium.Ion.defaultAccessToken = cesiumToken;
 
     try {
-        console.log("Initializing Cesium.Viewer...");
+        console.log("Initializing Cesium.Viewer with pickers ENABLED initially...");
         const viewer = new Cesium.Viewer('cesiumContainer', {
-            // --- Viewer Options ---
+            // --- Let Viewer choose defaults & Ensure pickers initialize ---
+            // No explicit imageryProvider or terrainProvider - use defaults
             
-            // Let Cesium Viewer handle default terrain initialization
-            // terrainProvider: Cesium.createWorldTerrain(), // Removed to fix initialization error
+            // --- Enable Pickers during init ---
+            baseLayerPicker: true, // Enable for proper initialization
+            sceneModePicker: true, // Enable for proper initialization
             
-            // UI elements configuration
-            animation: false, // Hide animation widget
-            baseLayerPicker: true, // Show base layer picker
-            fullscreenButton: false, // Hide fullscreen button
-            vrButton: false, // Hide VR button
-            geocoder: true, // Show geocoder search
-            homeButton: true, // Show Home button
-            infoBox: true, // Show InfoBox on click (needed later)
-            sceneModePicker: true, // Allow switching between 3D, 2D, Columbus View
-            selectionIndicator: true, // Show indicator when selecting entities
-            timeline: false, // Hide timeline widget
-            navigationHelpButton: false, // Hide navigation help button
+            // --- UI elements configuration ---
+            animation: false,
+            fullscreenButton: false,
+            vrButton: false,
+            geocoder: true,
+            homeButton: true,
+            infoBox: true,
+            selectionIndicator: true,
+            timeline: false,
+            navigationHelpButton: false,
             navigationInstructionsInitiallyVisible: false,
             
             // Improve rendering quality
-            requestRenderMode: true, // Only render on change (saves resources)
+            requestRenderMode: true,
             maximumRenderTimeChange: Infinity,
         });
 
-        // Set default view to show a good view of the entire Earth
-        viewer.camera.setView({
-            destination: Cesium.Cartesian3.fromDegrees(0, 20, 20000000),
-            orientation: {
-                heading: Cesium.Math.toRadians(0.0),
-                pitch: Cesium.Math.toRadians(-45.0),
-                roll: 0.0
-            }
-        });
+        // Fly to home view immediately to ensure we start looking at the whole globe
+        viewer.camera.flyHome(0);
+        console.log("Cesium Viewer constructor finished.");
+        
+        // --- Hide Pickers Immediately After Init ---
+        hideViewerWidgets(viewer); // Call helper function to hide them
+        
+        console.log("Cesium Viewer initialized successfully (pickers hidden post-init).");
 
         // --- Add event listeners for loading progress and errors ---
         viewer.scene.globe.tileLoadProgressEvent.addEventListener(function(numberOfPendingTiles) {
@@ -101,26 +100,157 @@ async function initializeGlobeViewer() {
 // Function to load photo data and add entities to the globe
 async function loadAndPlaceGlobeMarkers(viewer) {
     console.log("Loading photo data for globe...");
-    // Placeholder for Phase G.2 logic
+    if (!viewer) {
+        console.error("Viewer not available for placing markers.");
+        return;
+    }
+
     try {
         const response = await fetch('/api/data/images');
-        if(!response.ok) throw new Error("Failed to fetch images for globe");
+        if (!response.ok) {
+            let errorMsg = `Failed to fetch images: ${response.status}`;
+            try { 
+                const err = await response.json(); 
+                errorMsg += ` - ${err.error}`; 
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
         const images = await response.json();
-        console.log(`Found ${images.length} photos, filtering those with coordinates...`);
+        if (!Array.isArray(images)) throw new Error("Invalid image data format.");
+
+        console.log(`Processing ${images.length} images for globe placement...`);
+        let placedCount = 0;
+
+        // Use PinBuilder for creating pin graphics
+        const pinBuilder = new Cesium.PinBuilder();
+
+        // Fetch trips data for descriptions if available
+        let trips = [];
+        try {
+            const tripsResponse = await fetch('/api/data/trips');
+            if (tripsResponse.ok) {
+                trips = await tripsResponse.json();
+                console.log(`Loaded ${trips.length} trips for reference.`);
+            }
+        } catch (tripError) {
+            console.warn("Could not load trips data:", tripError);
+        }
+
+        // Use Promise.all to handle async pin creation efficiently
+        const entityPromises = images.map(async (image, index) => {
+            // Ensure lat/lng are numbers
+            const lat = parseFloat(image.lat);
+            const lng = parseFloat(image.lng);
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                // Add original index for linking back later
+                image.originalIndex = index;
+                try {
+                    await createPhotoPinEntity(viewer, pinBuilder, image, trips);
+                    placedCount++;
+                } catch (entityError) {
+                    console.error(`Failed to create entity for ${image.title || 'Untitled'}:`, entityError);
+                }
+            } else {
+                console.warn(`Skipping photo "${image.title || 'Untitled'}" due to invalid coordinates.`);
+            }
+        });
         
-        // Filter images with valid coordinates
-        const imagesWithCoords = images.filter(img => 
-            img.lat !== undefined && img.lng !== undefined &&
-            !isNaN(parseFloat(img.lat)) && !isNaN(parseFloat(img.lng))
-        );
-        
-        console.log(`${imagesWithCoords.length} photos have valid coordinates for globe placement.`);
-        // Phase G.2: Loop through images and call viewer.entities.add(...)
-        // Will be implemented in the next phase
-        
+        await Promise.all(entityPromises); // Wait for all entities to be processed
+        console.log(`${placedCount} photo locations added to the globe.`);
+
     } catch (error) {
-        console.error("Error loading/placing globe markers:", error);
+        console.error("Error loading or placing globe markers:", error);
         showNotification(`Error loading photo locations: ${error.message}`, 'error');
+    }
+}
+
+// Create photo pin entities and add them to the globe
+async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
+    const lat = parseFloat(image.lat);
+    const lng = parseFloat(image.lng);
+    // Position slightly above ground - adjust height as needed
+    const position = Cesium.Cartesian3.fromDegrees(lng, lat, 50.0);
+
+    // Generate the pin graphic (returns a Promise)
+    let pinUrl;
+    try {
+        // Create a blue pin with 'camera' icon
+        pinUrl = await pinBuilder.fromMakiIconId('camera', Cesium.Color.DODGERBLUE, 48);
+    } catch (pinError) {
+        console.error("Error generating pin graphic:", pinError);
+        // Fallback to a simple color pin if icon fails
+        pinUrl = await pinBuilder.fromColor(Cesium.Color.ROYALBLUE, 48);
+    }
+
+    // Prepare InfoBox description (HTML)
+    const thumbUrl = image.thumbnail ? `img/${image.thumbnail}` : '';
+    let descriptionHtml = `<h3>${image.title || 'Untitled'}</h3>`;
+    if (image.date) descriptionHtml += `<p><em>Date: ${image.date}</em></p>`;
+    if (image.country) descriptionHtml += `<p><em>Country: ${image.country}</em></p>`;
+    if (image.tripId) {
+        const tripInfo = trips.find(t => t.id === image.tripId);
+        if (tripInfo) descriptionHtml += `<p><em>Trip: ${tripInfo.name}</em></p>`;
+    }
+    // Add thumbnail to description if available
+    if (thumbUrl) {
+        descriptionHtml += `<p><img src="${thumbUrl}" alt="thumbnail" style="max-width: 200px; height: auto;"></p>`;
+    }
+    if (image.description) descriptionHtml += `<p>${image.description}</p>`;
+    // Add button placeholder for lightbox (Phase G.4)
+    descriptionHtml += `<p><button type="button" class="cesium-infobox-lightbox-button" data-photo-index="${image.originalIndex}">View Full Size</button></p>`;
+
+    // Add the entity
+    viewer.entities.add({
+        name: image.title || 'Photo Location', // Text on hover
+        position: position,
+        billboard: {
+            image: pinUrl, // Use the generated pin URL/canvas
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // Anchor pin at the bottom center
+            // Optional: Make pin smaller when far away
+            scaleByDistance: new Cesium.NearFarScalar(1.5e2, 1.0, 8.0e6, 0.2)
+        },
+        description: descriptionHtml, // Content for InfoBox on click
+        properties: { // Store custom data for later access
+            photoIndex: image.originalIndex, // Link back to allPhotos array index
+            photoData: image // Store the original image data object
+        }
+    });
+}
+
+// Helper function to hide specific Cesium UI widgets via CSS class
+function hideViewerWidgets(viewerInstance) {
+    console.log("Attempting to hide picker widgets...");
+    try {
+        // Cesium adds classes to the container or creates specific elements.
+        const container = viewerInstance.container;
+
+        const layerPicker = container.querySelector('.cesium-baseLayerPicker-dropDown');
+        if (layerPicker) {
+             layerPicker.style.display = 'none';
+             console.log("BaseLayerPicker dropdown hidden.");
+        } else { console.warn("Could not find BaseLayerPicker element to hide."); }
+        
+        // Also hide the button itself which might be separate
+        const layerPickerButton = container.querySelector('.cesium-viewer-toolbar .cesium-baseLayerPicker-selected');
+        // Or sometimes just the button container directly:
+        const layerPickerButtonContainer = container.querySelector('.cesium-baseLayerPicker-button');
+        if (layerPickerButtonContainer) {
+             layerPickerButtonContainer.style.display = 'none';
+             console.log("BaseLayerPicker button hidden.");
+        } else if (layerPickerButton) {
+             layerPickerButton.style.display = 'none'; // Fallback if container class changes
+             console.log("BaseLayerPicker selected button part hidden.");
+        } else { console.warn("Could not find BaseLayerPicker button element to hide."); }
+
+        const sceneModePicker = container.querySelector('.cesium-sceneModePicker-wrapper');
+        if (sceneModePicker) {
+            sceneModePicker.style.display = 'none';
+            console.log("SceneModePicker hidden.");
+        } else { console.warn("Could not find SceneModePicker element to hide."); }
+
+    } catch(e) {
+         console.error("Error trying to hide widgets:", e);
     }
 }
 
