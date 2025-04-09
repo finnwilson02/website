@@ -5,7 +5,6 @@ let allPhotos = [];      // Master list of all photos loaded
 let filteredPhotos = []; // Array holding currently visible photos
 let uniqueTags = new Set(); // To store all unique tags
 let availableTrips = []; // Will be populated later for potential future usage
-let photoswipeData = []; // Array for PhotoSwipe gallery data
 
 // DOM Element References
 const filterDateStart = document.getElementById('filterDateStart');
@@ -211,43 +210,7 @@ fetch('/api/data/images')
     console.log(`Unique Countries Found: ${sortedCountries.length}`);
     populateCountryFilter(sortedCountries);
     
-    // Prepare data for PhotoSwipe v5
-    photoswipeData = allPhotos.map((img, index) => {
-        const fullImageUrl = `img/${img.imageFull || img.thumbnail}`; // Fallback to thumbnail if no full image specified
-        const thumbUrl = `img/${img.thumbnail}`;
-        
-        // Ensure width and height are numbers, not strings (PhotoSwipe v5 requires numbers)
-        const width = typeof img.fullWidth === 'string' ? parseInt(img.fullWidth, 10) : (img.fullWidth || 1200); 
-        const height = typeof img.fullHeight === 'string' ? parseInt(img.fullHeight, 10) : (img.fullHeight || 900);
-        
-        console.log(`Creating PhotoSwipe data for image ${index}: ${img.title || 'Untitled'}`);
-        
-        // Build the photo data in the format expected by PhotoSwipe v5
-        const photoData = {
-            src: fullImageUrl,
-            width: width,     // PhotoSwipe v5 uses width/height property names
-            height: height,   // (not w/h like older versions)
-            thumbUrl: thumbUrl, // For thumbnail
-            alt: img.description || img.title || 'Map Photo',
-            title: `${img.title || 'Untitled'} ${img.date ? `(${img.date})` : ''} ${img.description ? `- ${img.description}` : ''}`,
-            // Keep additional metadata for our own use
-            country: img.country || '',
-            tripId: img.tripId || '',
-            originalIndex: index // Store the original index for reference
-        };
-        
-        // Debug log width and height to confirm they're numbers
-        console.log(`  Image ${index} dimensions: width=${typeof photoData.width}:${photoData.width}, height=${typeof photoData.height}:${photoData.height}`);
-        
-        return photoData;
-    });
-    
-    console.log("PhotoSwipe data prepared:", photoswipeData.length, "items");
-    // Log the first item as a sample
-    if (photoswipeData.length > 0) {
-        console.log("Sample PhotoSwipe item 0:", photoswipeData[0]);
-    }
-    console.log("PhotoSwipe data prepared:", photoswipeData);
+    // No need to prepare photoswipe data - GLightbox will be initialized on-demand
 
     // Initial map population using the filtered list
     console.log("Calling updateMapMarkers for initial population...");
@@ -457,24 +420,24 @@ function addMarkersToClusterGroup(photosToShow) {
       
       // Single click handler for all markers, with different behavior based on icon type
       marker.on('click', function(e) {
-        // Stop event propagation FIRST to prevent cluster zoom behavior on individual markers
+        // Stop event propagation to prevent cluster zoom behavior
         L.DomEvent.stopPropagation(e);
         
         const targetMarker = e.target;
         
         if (!targetMarker.options.isPhotoIcon) {
-            // Simple icon - zoom in first, then open PhotoSwipe after zoom completes
+            // Simple icon - zoom in first, then open GLightbox after zoom completes
             console.log("Simple icon clicked, zooming in first...");
             map.flyTo(e.latlng, ZOOM_THRESHOLD, {
                 duration: 0.5 // Shorter zoom duration
             }).once('moveend', function() {
-                console.log("Zoom complete, now opening PhotoSwipe...");
-                openPhotoSwipeForMarker(targetMarker);
+                console.log("Zoom complete, now opening GLightbox...");
+                openGLightboxForMarker(targetMarker);
             });
         } else {
-            // Already photo icon, just open PhotoSwipe directly
-            console.log("Photo icon clicked, opening PhotoSwipe directly...");
-            openPhotoSwipeForMarker(targetMarker);
+            // Already photo icon, just open GLightbox directly
+            console.log("Photo icon clicked, opening GLightbox directly...");
+            openGLightboxForMarker(targetMarker);
         }
       });
       
@@ -986,24 +949,24 @@ function showMarkersForCountry(countryName) {
             
             // Single click handler for all markers, with different behavior based on icon type
             marker.on('click', function(e) {
-                // Stop event propagation FIRST to prevent cluster zoom behavior on individual markers
+                // Stop event propagation to prevent cluster zoom behavior
                 L.DomEvent.stopPropagation(e);
                 
                 const targetMarker = e.target;
                 
                 if (!targetMarker.options.isPhotoIcon) {
-                    // Simple icon - zoom in first, then open PhotoSwipe after zoom completes
+                    // Simple icon - zoom in first, then open GLightbox after zoom completes
                     console.log("Simple icon clicked in country view, zooming in first...");
                     map.flyTo(e.latlng, ZOOM_THRESHOLD, {
                         duration: 0.5 // Shorter zoom duration
                     }).once('moveend', function() {
-                        console.log("Zoom complete, now opening PhotoSwipe from country view...");
-                        openPhotoSwipeForMarker(targetMarker);
+                        console.log("Zoom complete, now opening GLightbox from country view...");
+                        openGLightboxForMarker(targetMarker);
                     });
                 } else {
-                    // Already photo icon, just open PhotoSwipe directly
-                    console.log("Photo icon clicked in country view, opening PhotoSwipe directly...");
-                    openPhotoSwipeForMarker(targetMarker);
+                    // Already photo icon, just open GLightbox directly
+                    console.log("Photo icon clicked in country view, opening GLightbox directly...");
+                    openGLightboxForMarker(targetMarker);
                 }
             });
             
@@ -1080,24 +1043,24 @@ function showMarkersForTrip(tripId) {
         
         // Single click handler for all markers, with different behavior based on icon type
         marker.on('click', function(e) {
-            // Stop event propagation FIRST to prevent cluster zoom behavior on individual markers
+            // Stop event propagation to prevent cluster zoom behavior
             L.DomEvent.stopPropagation(e);
             
             const targetMarker = e.target;
             
             if (!targetMarker.options.isPhotoIcon) {
-                // Simple icon - zoom in first, then open PhotoSwipe after zoom completes
+                // Simple icon - zoom in first, then open GLightbox after zoom completes
                 console.log("Simple icon clicked in trip view, zooming in first...");
                 map.flyTo(e.latlng, ZOOM_THRESHOLD, {
                     duration: 0.5 // Shorter zoom duration
                 }).once('moveend', function() {
-                    console.log("Zoom complete, now opening PhotoSwipe from trip view...");
-                    openPhotoSwipeForMarker(targetMarker);
+                    console.log("Zoom complete, now opening GLightbox from trip view...");
+                    openGLightboxForMarker(targetMarker);
                 });
             } else {
-                // Already photo icon, just open PhotoSwipe directly
-                console.log("Photo icon clicked in trip view, opening PhotoSwipe directly...");
-                openPhotoSwipeForMarker(targetMarker);
+                // Already photo icon, just open GLightbox directly
+                console.log("Photo icon clicked in trip view, opening GLightbox directly...");
+                openGLightboxForMarker(targetMarker);
             }
         });
         
@@ -1149,139 +1112,186 @@ if (filterCountrySelect) {
     });
 }
 
-// Helper function to open PhotoSwipe for a marker
-function openPhotoSwipeForMarker(markerInstance) {
+// Helper function to open GLightbox for a marker
+function openGLightboxForMarker(markerInstance) {
   const clickedPhotoIndex = markerInstance.options.photoIndex;
   
-  console.log(`--- Preparing PhotoSwipe ---`);
-  console.log(`Clicked Index: ${clickedPhotoIndex}`);
-
-  // Check if Library objects exist
-  console.log(`typeof PhotoSwipeLightbox: ${typeof PhotoSwipeLightbox}`);
-  console.log(`typeof PhotoSwipe: ${typeof PhotoSwipe}`);
-
-  // Check dataSource validity
-  console.log(`photoswipeData is Array: ${Array.isArray(photoswipeData)}`);
-  console.log(`photoswipeData length: ${photoswipeData.length}`);
-  if (photoswipeData.length > 0 && clickedPhotoIndex >= 0 && clickedPhotoIndex < photoswipeData.length) {
-       console.log(`Data for index ${clickedPhotoIndex}:`, JSON.stringify(photoswipeData[clickedPhotoIndex])); // Log specific item
-       
-       // Create a clean copy of the item for PhotoSwipe v5 format
-       const originalItem = photoswipeData[clickedPhotoIndex];
-       
-       // In PhotoSwipe v5, the items need width and height (not w and h)
-       const cleanItem = {
-           src: originalItem.src,
-           width: typeof originalItem.width === 'number' ? originalItem.width : 
-                (typeof originalItem.w === 'number' ? originalItem.w : 1200),
-           height: typeof originalItem.height === 'number' ? originalItem.height : 
-                 (typeof originalItem.h === 'number' ? originalItem.h : 900),
-           alt: originalItem.alt || originalItem.title || 'Photo',
-           title: originalItem.title
-       };
-       
-       // Replace the item in the array with the clean version
-       photoswipeData[clickedPhotoIndex] = cleanItem;
-       
-       console.log(`Prepared clean item for PhotoSwipe v5:`, cleanItem);
-  } else if (photoswipeData.length > 0) {
-       console.error(`ERROR: clickedPhotoIndex ${clickedPhotoIndex} is out of bounds for dataSource length ${photoswipeData.length}`);
-       return false;
-  } else {
-       console.error(`ERROR: photoswipeData is empty!`);
-       return false;
-  }
-
-  // Ensure library objects are valid before proceeding
-  if (typeof PhotoSwipe === 'undefined') {
-      console.error("PhotoSwipe library not found! Stopping.");
-      alert("Gallery library error: PhotoSwipe not loaded");
-      return false;
+  console.log(`--- Preparing GLightbox ---`);
+  console.log(`Clicked Photo Index: ${clickedPhotoIndex}`);
+  
+  // Ensure GLightbox library is loaded
+  if (typeof GLightbox === 'undefined') {
+    console.error("GLightbox is not loaded!");
+    alert("Error: Photo gallery library failed to load.");
+    return;
   }
   
-  if (!Array.isArray(photoswipeData) || photoswipeData.length === 0) {
-      console.error("PhotoSwipe dataSource is invalid or empty! Stopping.");
-      alert("No photo data available for gallery.");
-      return false;
+  // Get the data for the clicked photo from the master array
+  if (clickedPhotoIndex === undefined || clickedPhotoIndex < 0 || clickedPhotoIndex >= allPhotos.length) {
+    console.error("Invalid photo index:", clickedPhotoIndex);
+    alert("Error retrieving photo data.");
+    return;
   }
   
-  if (clickedPhotoIndex === undefined || clickedPhotoIndex < 0 || clickedPhotoIndex >= photoswipeData.length) {
-      console.error("Invalid starting index for PhotoSwipe! Stopping.");
-      alert("Error determining starting photo for gallery.");
-      return false;
-  }
+  const clickedPhotoData = allPhotos[clickedPhotoIndex];
+  
+  // Use the buildAndOpenLightbox helper function with 'trip' as the default context
+  buildAndOpenLightbox(clickedPhotoData, 'trip');
+}
 
-  // --- Initialize PhotoSwipe v5 directly (not using PhotoSwipeLightbox) ---
-  console.log("Proceeding with PhotoSwipe v5 initialization...");
+// Helper function to build and open a contextual lightbox
+function buildAndOpenLightbox(clickedPhoto, initialContext = 'trip') {
+  let currentContext = initialContext;
+  let galleryPhotos = [];
+  let contextDescription = ""; // Description for the gallery title/UI
+  
+  // Function to filter and sort photos for a given context
+  function getContextPhotos(contextType) {
+    let photosInContext = [];
+    let contextValue = null;
+    contextDescription = "";
+    
+    if (contextType === 'trip') {
+      contextValue = clickedPhoto.tripId;
+      if (contextValue) { // If photo has a tripId
+        photosInContext = allPhotos.filter(p => p.tripId === contextValue);
+        const tripInfo = availableTrips.find(t => t.id === contextValue);
+        contextDescription = `Trip: ${tripInfo ? tripInfo.name : contextValue}`;
+      } else {
+        // Fallback to country if no tripId
+        console.log("No tripId found, falling back to country context.");
+        return getContextPhotos('country'); // Recursive call for fallback
+      }
+    } else { // contextType === 'country'
+      contextValue = clickedPhoto.country;
+      if (contextValue) { // If photo has a country
+        photosInContext = allPhotos.filter(p => p.country === contextValue);
+        contextDescription = `Country: ${contextValue}`;
+      } else {
+        // If no country either, just show the single photo
+        console.log("No country or trip found, showing single photo.");
+        photosInContext = [clickedPhoto];
+        contextDescription = "Single Photo";
+      }
+    }
+    
+    // Sort by date
+    photosInContext.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    return photosInContext;
+  }
+  
+  // Get initial photos based on default context
+  galleryPhotos = getContextPhotos(currentContext);
+  
+  // If fallback resulted in single photo and initial context was trip, set context to country
+  if (galleryPhotos.length === 1 && galleryPhotos[0] === clickedPhoto && initialContext === 'trip' && clickedPhoto.country) {
+    currentContext = 'country';
+    galleryPhotos = getContextPhotos(currentContext);
+  }
+  
+  // Map to GLightbox format
+  const galleryElements = galleryPhotos.map(p => {
+    const fullImageUrl = `img/${p.imageFull || p.thumbnail}`;
+    let description = `<strong>${p.title || 'Untitled'}</strong>`;
+    
+    if (p.date) description += ` (${p.date})`;
+    
+    // Add the *other* context info
+    if (currentContext === 'trip' && p.country) {
+      description += `<br><em>Country: ${p.country}</em>`;
+    }
+    
+    if (currentContext === 'country' && p.tripId) {
+      const tripInfo = availableTrips.find(t => t.id === p.tripId);
+      if (tripInfo) description += `<br><em>Trip: ${tripInfo.name}</em>`;
+    }
+    
+    if (p.description) description += `<br>${p.description}`;
+    
+    return {
+      'href': fullImageUrl,
+      'type': 'image',
+      'title': p.title || 'Untitled',
+      'description': description,
+      'alt': p.description || (p.title || 'Untitled'),
+      // Store original photo object reference for potential toggle later
+      'photoData': p
+    };
+  });
+  
+  if (galleryElements.length === 0) {
+    console.error("No photos found for the context:", currentContext);
+    alert("No photos found in this context.");
+    return;
+  }
+  
+  // Find the index of the originally clicked photo in the new gallery list
+  const startIndex = galleryElements.findIndex(el => el.photoData === clickedPhoto); // Compare object reference
+  
+  if (startIndex === -1) {
+    console.error("Clicked photo not found in its own context gallery! This shouldn't happen.");
+    return;
+  }
+  
+  // Initialize GLightbox
+  const lightboxOptions = {
+    elements: galleryElements,
+    startAt: startIndex,
+    loop: true, // Loop within the context
+    touchNavigation: true,
+    keyboardNavigation: true,
+    openEffect: 'zoom',
+    closeEffect: 'fade'
+  };
+  
+  console.log(`Initializing GLightbox (${contextDescription}) with ${galleryElements.length} elements, starting at ${startIndex}`);
   
   try {
-      // With PhotoSwipe v5, we can initialize it directly without needing PhotoSwipeLightbox
-      const photoSwipeInstance = new PhotoSwipe({
-          dataSource: {
-              list: photoswipeData
-          },
-          index: clickedPhotoIndex,
-          pswpElement: document.querySelector('.pswp') || document.querySelector('#pswp-template .pswp'),
-          bgOpacity: 0.8,
-          showHideAnimationType: 'fade',
-          closeTitle: 'Close'
-      });
-      
-      console.log("Opening PhotoSwipe...");
-      photoSwipeInstance.init();
-      console.log("PhotoSwipe init called successfully");
-      return true;
+    const lightbox = GLightbox(lightboxOptions);
+    lightbox.open();
+    console.log("GLightbox open() called successfully");
+    
+    // Show a temporary notification about the context
+    showNotification(`Showing photos from ${contextDescription}`, 'info');
   } catch (initError) {
-      console.error("ERROR during PhotoSwipe initialization:", initError);
-      console.error("Stack trace:", initError.stack);
-      alert(`Gallery Error: ${initError.message || 'Unknown error'}`);
-      return false;
+    console.error("ERROR initializing or opening GLightbox:", initError);
+    alert(`Gallery Error: ${initError.message}`);
   }
+}
+
+// Helper function to show a temporary notification
+function showNotification(message, type = 'info') {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `map-notification ${type}`;
+  notification.textContent = message;
+  notification.style.position = 'fixed';
+  notification.style.bottom = '20px';
+  notification.style.left = '50%';
+  notification.style.transform = 'translateX(-50%)';
+  notification.style.backgroundColor = type === 'info' ? 'rgba(0, 120, 255, 0.9)' : 'rgba(255, 0, 0, 0.9)';
+  notification.style.color = 'white';
+  notification.style.padding = '10px 20px';
+  notification.style.borderRadius = '5px';
+  notification.style.zIndex = '1000';
+  notification.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+  
+  // Add to body
+  document.body.appendChild(notification);
+  
+  // Remove after delay
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transition = 'opacity 0.5s ease';
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 500);
+  }, 3000);
 }
 
 // Wait for DOM to be fully loaded before initializing
 document.addEventListener('DOMContentLoaded', function() {
   console.log("DOM fully loaded, ensuring map is initialized...");
-  
-  // Debug: Check if PhotoSwipe gallery container exists
-  const galleryElement = document.getElementById('gallery--map');
-  console.log("PhotoSwipe gallery container found:", !!galleryElement);
-  if (galleryElement) {
-    console.log("Gallery element:", galleryElement);
-    console.log("Gallery CSS display:", window.getComputedStyle(galleryElement).display);
-  }
-  
-  // Debug: Check if PhotoSwipe library objects are available
-  console.log("PhotoSwipe library available:", typeof PhotoSwipe !== 'undefined');
-  console.log("PhotoSwipeLightbox library available:", typeof PhotoSwipeLightbox !== 'undefined');
-  
-  // Detailed library inspection
-  console.log("PhotoSwipe library details:", PhotoSwipe ? {
-    name: PhotoSwipe.name,
-    constructor: !!PhotoSwipe.constructor,
-    prototype: !!PhotoSwipe.prototype,
-    toString: PhotoSwipe.toString().substring(0, 100) + '...'
-  } : 'Not available');
-  
-  console.log("PhotoSwipeLightbox library details:", PhotoSwipeLightbox ? {
-    name: PhotoSwipeLightbox.name,
-    constructor: !!PhotoSwipeLightbox.constructor,
-    prototype: !!PhotoSwipeLightbox.prototype,
-    toString: PhotoSwipeLightbox.toString().substring(0, 100) + '...'
-  } : 'Not available');
-  
-  // Test direct initialization
-  console.log("Attempting to create test PhotoSwipe instances...");
-  try {
-    const testLightbox = new PhotoSwipeLightbox({
-      gallery: '#gallery--map',
-      children: 'a',
-      pswpModule: PhotoSwipe
-    });
-    console.log("PhotoSwipeLightbox test instance created successfully:", !!testLightbox);
-  } catch(e) {
-    console.error("Failed to create PhotoSwipeLightbox test instance:", e);
-  }
   
   setTimeout(() => {
     // Force map to recalculate its container size

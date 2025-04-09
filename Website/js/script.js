@@ -43,7 +43,12 @@ document.addEventListener('DOMContentLoaded', function() {
   fetch("footer.html")
     .then(response => response.text())
     .then(data => {
-      document.getElementById("footer").innerHTML = data;
+      const footerElement = document.getElementById("footer");
+      if (footerElement) {
+        footerElement.innerHTML = data;
+      } else {
+        console.warn("Footer element not found in the page");
+      }
     })
     .catch(error => console.error("Error loading footer:", error));
 });

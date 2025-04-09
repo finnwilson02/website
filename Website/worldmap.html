@@ -7,7 +7,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-  <link rel="stylesheet" href="https://unpkg.com/photoswipe@5/dist/photoswipe.css" />
+  <!-- GLightbox CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/worldmap.css" />
   <style>#map { height: calc(100vh - 120px); width: 100%; }</style>
@@ -73,111 +74,14 @@
   
   <!-- Map interface simplified - no location list container -->
 
-  <!-- PhotoSwipe container will be created by the library -->
-  <div class="pswp-gallery" id="gallery--map">
-    <!-- Add a test image for PhotoSwipe (for testing only) -->
-    <a href="img/placeholder.jpg" 
-       data-pswp-width="1200" 
-       data-pswp-height="900" 
-       target="_blank">
-      <img src="img/placeholder-thumb.jpg" alt="Test image" style="display:none" />
-    </a>
-  </div>
-  
-  <!-- PhotoSwipe UI template element (required by PhotoSwipe 5) -->
-  <template id="pswp-template">
-    <div class="pswp" tabindex="-1" role="dialog">
-      <div class="pswp__bg"></div>
-      <div class="pswp__scroll-wrap">
-        <div class="pswp__container">
-          <div class="pswp__item"></div>
-          <div class="pswp__item"></div>
-          <div class="pswp__item"></div>
-        </div>
-        <div class="pswp__ui pswp__ui--hidden">
-          <div class="pswp__top-bar">
-            <div class="pswp__counter"></div>
-            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
-            <button class="pswp__button pswp__button--share" title="Share"></button>
-            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
-            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
-            <div class="pswp__preloader">
-              <div class="pswp__preloader__icn">
-                <div class="pswp__preloader__cut">
-                  <div class="pswp__preloader__donut"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
-            <div class="pswp__share-tooltip"></div>
-          </div>
-          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
-          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
-          <div class="pswp__caption">
-            <div class="pswp__caption__center"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </template>
+  <!-- GLightbox will be initialized via JavaScript -->
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <!-- Replaced unpkg with jsdelivr for more reliable MIME types -->
-  <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.umd.min.js"></script>
-  
-  <!-- Direct test of PhotoSwipe initialization -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log("STANDALONE TEST: Checking PhotoSwipe availability");
-      console.log("PhotoSwipe available:", typeof PhotoSwipe);
-      console.log("PhotoSwipeLightbox available:", typeof PhotoSwipeLightbox);
-      
-      // Test direct initialization of the gallery
-      if (typeof PhotoSwipeLightbox !== 'undefined') {
-        try {
-          const testLightbox = new PhotoSwipeLightbox({
-            gallery: '#gallery--map',
-            children: 'a',
-            pswpModule: PhotoSwipe
-          });
-          
-          testLightbox.on('uiRegister', function() {
-            console.log("PhotoSwipe UI registered successfully");
-          });
-          
-          testLightbox.init();
-          console.log("PhotoSwipe lightbox initialized in standalone test");
-          
-          // Add a test button to trigger PhotoSwipe manually
-          const testButton = document.createElement('button');
-          testButton.textContent = 'Test PhotoSwipe Gallery';
-          testButton.style.position = 'fixed';
-          testButton.style.bottom = '20px';
-          testButton.style.right = '20px';
-          testButton.style.zIndex = '1000';
-          testButton.style.padding = '10px';
-          testButton.style.background = '#f00';
-          testButton.style.color = '#fff';
-          
-          testButton.addEventListener('click', function() {
-            console.log("Test button clicked, opening PhotoSwipe");
-            testLightbox.loadAndOpen(0);
-          });
-          
-          document.body.appendChild(testButton);
-        } catch(e) {
-          console.error("STANDALONE TEST: Error initializing PhotoSwipe:", e);
-        }
-      } else {
-        console.error("STANDALONE TEST: PhotoSwipeLightbox not available");
-      }
-    });
-  </script>
+  <!-- GLightbox JS -->
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
   
   <script src="js/script.js"></script>
-<script src="js/photoswipe-test.js"></script>
   <script src="js/worldmap.js"></script>
 </body>
 </html>

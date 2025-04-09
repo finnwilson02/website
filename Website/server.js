@@ -52,7 +52,7 @@ app.use(express.static(path.join(__dirname))); // Serves files from the root pro
 // Optional: Serve specific directories if needed (usually app.use(express.static(__dirname)) is enough)
 // app.use('/css', express.static(path.join(__dirname, 'css')));
 // app.use('/js', express.static(path.join(__dirname, 'js')));
-// app.use('/img', express.static(path.join(__dirname, 'img')));
+app.use('/img', express.static(path.join(__dirname, 'img'))); // Explicitly serve the image directory
 // app.use('/data', express.static(path.join(__dirname, 'data')));
 // app.use('/icons', express.static(path.join(__dirname, 'icons')));
 
