@@ -3,6 +3,10 @@
 // EasyMDE instance
 let easyMDEInstance = null;
 
+// Coordinate map variables
+let coordMap = null;
+let coordMarker = null;
+
 // Selectors for login and content
 const loginSection = document.getElementById('loginSection');
 const adminContent = document.getElementById('adminContent');
@@ -41,6 +45,9 @@ const photoDescriptionInput = document.getElementById('photoDescription');
 const photoLatInput = document.getElementById('photoLat');
 const photoLngInput = document.getElementById('photoLng');
 const photoRankingInput = document.getElementById('photoRanking');
+const photoTagsInput = document.getElementById('photoTags');
+const photoTripIdSelect = document.getElementById('photoTripIdSelect');
+const photoCountryInput = document.getElementById('photoCountry');
 const photoSubmitButton = document.getElementById('photoSubmitButton');
 const photoCancelButton = document.getElementById('photoCancelButton');
 
@@ -125,6 +132,7 @@ if (addProjectLinkButton && projectLinksContainer) {
 let books = [];
 let photos = [];
 let projects = [];
+let trips = [];
 let pageContent = {}; // Global variable to hold loaded page content
 let pageContentEditors = {}; // To hold EasyMDE instances for page content
 
@@ -409,19 +417,35 @@ function initializeMarkdownEditor() {
     }
 }
 
-function initializeAdminPanel() {
+async function initializeAdminPanel() {
     if (isInitialized) return; // Don't run multiple times
     console.log("Initializing admin panel data...");
-    loadBooks();
-    loadPhotos();
-    loadProjects();
-    loadPageContent(); // Load page content for legacy content
-    loadCvData(); // Load all CV data from structured files
-    loadResearchData(); // Load all research data from structured files
-    initializeMarkdownEditor(); // Initialize the editor
-    setupTabNavigation(); // Initialize tab navigation
-    setupCvTabNavigation(); // Initialize CV sub-tab navigation
-    isInitialized = true;
+    
+    try {
+        // Load trips first as photo grouping depends on it
+        await loadTrips(); // Ensure trips are loaded first
+        
+        // Then load photos which depends on trips
+        await loadPhotos();
+        
+        // Load other data in parallel since they're independent
+        await Promise.allSettled([
+            loadBooks(),
+            loadProjects(),
+            loadPageContent(), // Load page content for legacy content
+            loadCvData(), // Load all CV data from structured files
+            loadResearchData() // Load all research data from structured files
+        ]);
+        
+        initializeMarkdownEditor(); // Initialize the editor
+        setupTabNavigation(); // Initialize tab navigation
+        setupCvTabNavigation(); // Initialize CV sub-tab navigation
+    } catch (error) {
+        console.error("Error during admin panel initialization:", error);
+        showNotification("Failed to initialize all admin data.", "error");
+    } finally {
+        isInitialized = true;
+    }
 }
 
 // Tab navigation functionality
@@ -792,59 +816,158 @@ async function loadPhotos() {
         }
         const data = await response.json();
         photos = Array.isArray(data) ? data : [];
-        renderPhotoTable();
+        renderGroupedPhotoLists();
+        return photos; // Return the photos data for promise chaining
     } catch (error) {
         console.error("Could not load photos:", error);
         showNotification("Error loading photos: " + error.message, 'error');
-        if (photoTableBody) {
-            photoTableBody.innerHTML = '<tr><td colspan="4">Error loading photos. Check console or data/images.json.</td></tr>';
+        const container = document.getElementById('photosGroupContainer');
+        if (container) {
+            container.innerHTML = '<p>Error loading photos. Check console or data/images.json.</p>';
         }
+        throw error; // Rethrow to allow proper promise handling
     } finally {
         toggleLoading(false);
     }
 }
 
-function renderPhotoTable() {
-    console.log("DEBUG renderPhotoTable: Starting to render photo table");
-    if (!photoTableBody) {
-        console.log("DEBUG renderPhotoTable: photoTableBody not found, exiting");
+function renderGroupedPhotoLists() {
+    console.log("DEBUG renderGroupedPhotoLists: Starting to render grouped photo lists");
+    const container = document.getElementById('photosGroupContainer');
+    if (!container) {
+        console.log("DEBUG renderGroupedPhotoLists: container not found, exiting");
         return;
     }
-    photoTableBody.innerHTML = '';
-    console.log(`DEBUG renderPhotoTable: Rendering ${photos.length} photos`);
-    
+    container.innerHTML = ''; // Clear loading/previous content
+
+    // --- Group photos by trip ID ---
+    const photosByTrip = {};
+    const unassignedPhotos = [];
+
     photos.forEach((photo, index) => {
-        console.log(`DEBUG renderPhotoTable: Rendering photo at index ${index}:`, photo);
-        const row = photoTableBody.insertRow();
-        // Example: Show thumbnail, title, coords
-        const thumbCell = row.insertCell();
+        photo.originalIndex = index; // Store original index for editing/deleting later
+        const tripId = photo.tripId;
+        if (tripId && tripId !== "") {
+            if (!photosByTrip[tripId]) {
+                photosByTrip[tripId] = [];
+            }
+            photosByTrip[tripId].push(photo);
+        } else {
+            unassignedPhotos.push(photo);
+        }
+    });
+
+    // --- Render Function for a Single Table ---
+    function createPhotoTable(photoList) {
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.innerHTML = `<thead><tr><th>Thumbnail</th><th>Title</th><th>Coords</th><th>Date</th><th>Ranking</th><th>Actions</th></tr></thead>`;
+        const tbody = table.createTBody();
         
-        console.log(`DEBUG renderPhotoTable: Photo thumbnail filename: "${photo.thumbnail}"`);
-        // The thumbnail in the data is just the filename, so we need to prepend the img/ path
-        const imgSrc = photo.thumbnail || '';
-        const imgPath = imgSrc ? `img/${imgSrc}` : '';
+        photoList.forEach(photo => {
+            const row = tbody.insertRow();
+            
+            // Thumbnail cell
+            const imgSrc = photo.thumbnail || '';
+            const imgPath = imgSrc ? `img/${imgSrc}` : '';
+            const thumbCell = row.insertCell();
+            thumbCell.innerHTML = imgSrc ? 
+                `<img src="${imgPath}" alt="thumbnail" width="50" height="50" style="object-fit: cover;">` : 
+                'No thumb';
+            
+            // Other data cells
+            row.insertCell().textContent = photo.title || 'N/A';
+            
+            const lat = photo.lat !== undefined ? parseFloat(photo.lat) : NaN;
+            const lng = photo.lng !== undefined ? parseFloat(photo.lng) : NaN;
+            row.insertCell().textContent = (!isNaN(lat) && !isNaN(lng)) ? 
+                `${lat.toFixed(4)}, ${lng.toFixed(4)}` : 'N/A';
+            
+            row.insertCell().textContent = photo.date || 'N/A';
+            row.insertCell().textContent = photo.ranking !== undefined ? photo.ranking : 'N/A';
+            
+            // Actions cell with original index
+            const actionsCell = row.insertCell();
+            actionsCell.innerHTML = `
+                <button data-index="${photo.originalIndex}" class="edit-photo-btn">Edit</button>
+                <button data-index="${photo.originalIndex}" class="delete-photo-btn">Delete</button>
+            `;
+        });
         
-        const imgHtml = imgSrc ? `<img src="${imgPath}" alt="thumbnail" width="50" height="50" style="object-fit: cover;">` : 'No thumb';
-        console.log(`DEBUG renderPhotoTable: Image HTML: ${imgHtml}`);
-        thumbCell.innerHTML = imgHtml;
-        
-        row.insertCell().textContent = photo.title || 'N/A';
-        row.insertCell().textContent = (photo.lat && photo.lng) ? `${photo.lat.toFixed(4)}, ${photo.lng.toFixed(4)}` : 'N/A';
-        const actionsCell = row.insertCell();
-        actionsCell.innerHTML = `
-            <button data-index="${index}" class="edit-photo-btn">Edit</button>
-            <button data-index="${index}" class="delete-photo-btn">Delete</button>
-        `;
+        return table;
+    }
+
+    // --- Render Trip Sections ---
+    let hasContent = false;
+    trips.forEach(trip => {
+        const tripPhotos = photosByTrip[trip.id];
+        if (tripPhotos && tripPhotos.length > 0) {
+            hasContent = true;
+            const details = document.createElement('details');
+            details.className = 'trip-group';
+            const summary = document.createElement('summary');
+            summary.innerHTML = `<strong>${trip.name || 'Unnamed Trip'}</strong> (${trip.dateRange || 'No Date'}) - ${tripPhotos.length} photo(s)`;
+            summary.style.cursor = 'pointer';
+            summary.style.padding = '5px 0';
+            summary.style.fontWeight = 'bold';
+
+            const table = createPhotoTable(tripPhotos);
+            details.appendChild(summary);
+            details.appendChild(table);
+            container.appendChild(details);
+        }
+    });
+
+    // --- Render Unassigned Section ---
+    if (unassignedPhotos.length > 0) {
+        hasContent = true;
+        const details = document.createElement('details');
+        details.className = 'trip-group';
+        details.open = true; // Open unassigned by default
+        const summary = document.createElement('summary');
+        summary.innerHTML = `<strong>Unassigned Photos</strong> - ${unassignedPhotos.length} photo(s)`;
+        summary.style.cursor = 'pointer';
+        summary.style.padding = '5px 0';
+        summary.style.fontWeight = 'bold';
+
+        const table = createPhotoTable(unassignedPhotos);
+        details.appendChild(summary);
+        details.appendChild(table);
+        container.appendChild(details);
+    }
+
+    if (!hasContent) {
+        container.innerHTML = '<p>No photos found.</p>';
+    }
+
+    // --- Set up event listeners using delegation ---
+    setupGroupedPhotoActionListeners();
+}
+
+// New function to set up delegated event listeners
+function setupGroupedPhotoActionListeners() {
+    const container = document.getElementById('photosGroupContainer');
+    if (!container) return;
+
+    // Remove old listener if exists (to prevent duplicates)
+    if (container.dataset.listenerAttached === 'true') return; // Already attached
+
+    container.addEventListener('click', function(event) {
+        const target = event.target;
+        if (target.classList.contains('edit-photo-btn')) {
+            handleEditPhoto({target: target}); // Pass event-like object with target
+        } else if (target.classList.contains('delete-photo-btn')) {
+            handleDeletePhoto({target: target}); // Pass event-like object with target
+        }
     });
     
-    // Add event listeners to the buttons
-    document.querySelectorAll('.edit-photo-btn').forEach(button => {
-        button.addEventListener('click', handleEditPhoto);
-    });
-    
-    document.querySelectorAll('.delete-photo-btn').forEach(button => {
-        button.addEventListener('click', handleDeletePhoto);
-    });
+    container.dataset.listenerAttached = 'true'; // Mark as attached
+}
+
+// Keep the old function for compatibility, but make it call the new one
+function renderPhotoTable() {
+    console.log("DEBUG renderPhotoTable: Redirecting to renderGroupedPhotoLists");
+    renderGroupedPhotoLists();
 }
 
 function handleEditPhoto(event) {
@@ -863,6 +986,13 @@ function handleEditPhoto(event) {
     photoLatInput.value = photo.lat || '';
     photoLngInput.value = photo.lng || '';
     photoRankingInput.value = photo.ranking || '5';
+    photoTagsInput.value = Array.isArray(photo.tags) ? photo.tags.join(', ') : '';
+    
+    // Set country field
+    document.getElementById('photoCountry').value = photo.country || '';
+    
+    // Set trip dropdown selection
+    populateTripDropdown('photoTripIdSelect', photo.tripId);
     
     photoSubmitButton.textContent = 'Update Photo';
     photoCancelButton.style.display = 'inline-block';
@@ -893,7 +1023,7 @@ async function handleDeletePhoto(event) {
         // Handle result
         if (isSuccess) {
             photos = updatedPhotos; // SUCCESS: Update the main array
-            renderPhotoTable();     // Re-render table
+            renderGroupedPhotoLists();     // Re-render table
             // Reset form if the deleted item was being edited
             if (parseInt(photoEditIndex.value, 10) === index) {
                 resetPhotoForm();
@@ -915,8 +1045,223 @@ function resetPhotoForm() {
     document.getElementById('photoFile').value = null;
     document.getElementById('currentPhotoThumbnail').value = '';
     
+    // Reset the trip dropdown to "No Trip"
+    photoTripIdSelect.value = '';
+    
+    // Clear the country field
+    document.getElementById('photoCountry').value = '';
+    
     photoSubmitButton.textContent = 'Add Photo';
     photoCancelButton.style.display = 'none';
+}
+
+// === Trip Management Functions ===
+
+// Selectors for trip management
+const tripTableBody = document.getElementById('tripTableBody');
+const tripForm = document.getElementById('tripForm');
+const tripFormTitle = document.getElementById('tripFormTitle');
+const tripEditIndex = document.getElementById('tripEditIndex');
+const tripNameInput = document.getElementById('tripName');
+const tripDateRangeInput = document.getElementById('tripDateRange');
+const tripIdInput = document.getElementById('tripId');
+const tripSubmitButton = document.getElementById('tripSubmitButton');
+const tripCancelButton = document.getElementById('tripCancelButton');
+
+// Load trips data from server
+async function loadTrips() {
+    toggleLoading(true);
+    try {
+        const response = await fetch('/api/data/trips');
+        if (!response.ok) {
+            let errorMsg = `HTTP error! Status: ${response.status}`;
+            try { 
+                const errData = await response.json(); 
+                errorMsg += ` - ${errData.error || 'Unknown'}`; 
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
+        const data = await response.json();
+        trips = Array.isArray(data) ? data : [];
+        renderTripTable();
+        populateTripDropdown('photoTripIdSelect');
+        return trips; // Return the trips data for promise chaining
+    } catch (error) {
+        console.error("Could not load trips:", error);
+        showNotification("Error loading trips: " + error.message, 'error');
+        if (tripTableBody) {
+            tripTableBody.innerHTML = '<tr><td colspan="4">Error loading trips. Check console or data/trips.json.</td></tr>';
+        }
+        throw error; // Rethrow to allow proper promise handling
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+// Render the trips table
+function renderTripTable() {
+    if (!tripTableBody) return;
+    
+    tripTableBody.innerHTML = '';
+    
+    trips.forEach((trip, index) => {
+        const row = tripTableBody.insertRow();
+        row.insertCell().textContent = trip.name || 'N/A';
+        row.insertCell().textContent = trip.dateRange || '';
+        row.insertCell().textContent = trip.id || '';
+        
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button data-index="${index}" class="edit-trip-btn">Edit</button>
+            <button data-index="${index}" class="delete-trip-btn">Delete</button>
+        `;
+    });
+    
+    // Add event listeners to the buttons
+    document.querySelectorAll('.edit-trip-btn').forEach(button => {
+        button.addEventListener('click', handleEditTrip);
+    });
+    
+    document.querySelectorAll('.delete-trip-btn').forEach(button => {
+        button.addEventListener('click', handleDeleteTrip);
+    });
+}
+
+// Handle edit trip button
+function handleEditTrip(event) {
+    const index = event.target.dataset.index;
+    const trip = trips[index];
+    
+    tripEditIndex.value = index;
+    tripNameInput.value = trip.name || '';
+    tripDateRangeInput.value = trip.dateRange || '';
+    tripIdInput.value = trip.id || '';
+    
+    tripFormTitle.textContent = 'Edit Trip';
+    tripSubmitButton.textContent = 'Update Trip';
+    tripCancelButton.style.display = 'inline-block';
+    
+    tripForm.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Handle delete trip button
+async function handleDeleteTrip(event) {
+    const index = parseInt(event.target.dataset.index, 10);
+    const trip = trips[index];
+    
+    if (confirm(`Are you sure you want to delete the trip "${trip.name || 'Untitled'}"?`)) {
+        // Create a copy and modify it
+        const updatedTrips = [...trips]; // Create a shallow copy
+        if (index >= 0 && index < updatedTrips.length) {
+            updatedTrips.splice(index, 1); // Modify the copy
+        } else {
+            console.error("Invalid index for deleting trip:", index);
+            showNotification("Error: Could not delete trip due to invalid index.", 'error');
+            return; // Stop processing
+        }
+        
+        // Attempt to save the ENTIRE updated COPY array
+        const isSuccess = await saveData('trips', updatedTrips);
+        
+        // Handle result
+        if (isSuccess) {
+            trips = updatedTrips; // SUCCESS: Update the main array
+            renderTripTable();     // Re-render table
+            populateTripDropdown('photoTripIdSelect'); // Update trip dropdown
+            // Reset form if the deleted item was being edited
+            if (parseInt(tripEditIndex.value, 10) === index) {
+                resetTripForm();
+            }
+        } else {
+            // FAILURE: Alert already shown by saveData
+            console.log("Delete failed. Local data array remains unchanged.");
+        }
+    }
+}
+
+// Reset trip form to default state
+function resetTripForm() {
+    tripEditIndex.value = '-1';
+    tripForm.reset();
+    
+    tripFormTitle.textContent = 'Add New Trip';
+    tripSubmitButton.textContent = 'Add Trip';
+    tripCancelButton.style.display = 'none';
+}
+
+// Trip form submission handler
+if (tripForm) {
+    tripForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const tripData = {
+            id: tripIdInput.value,
+            name: tripNameInput.value,
+            dateRange: tripDateRangeInput.value
+        };
+        
+        const editIndex = tripEditIndex.value === '-1' ? -1 : parseInt(tripEditIndex.value, 10);
+        let isSuccess = false;
+        
+        // Create a copy and modify it
+        const updatedTrips = [...trips]; // Create a shallow copy
+        if (editIndex === -1) {
+            updatedTrips.push(tripData); // Add to end of the copy
+        } else {
+            if (editIndex >= 0 && editIndex < updatedTrips.length) {
+                updatedTrips[editIndex] = tripData; // Modify the copy
+            } else {
+                console.error("Invalid index for editing trip:", editIndex);
+                showNotification("Error: Could not update trip due to invalid index.", 'error');
+                return; // Stop processing
+            }
+        }
+        
+        // Attempt to save the ENTIRE updated COPY array
+        isSuccess = await saveData('trips', updatedTrips, tripSubmitButton);
+        
+        // Handle result
+        if (isSuccess) {
+            trips = updatedTrips; // SUCCESS: Update the main array
+            renderTripTable();     // Re-render table
+            populateTripDropdown('photoTripIdSelect'); // Update trip dropdown
+            resetTripForm();       // Reset form
+        } else {
+            // FAILURE: Alert already shown by saveData
+            // Do nothing here, original 'trips' array is unchanged
+            console.log("Save failed. Local data array remains unchanged.");
+        }
+    });
+}
+
+// Trip dropdown population
+function populateTripDropdown(selectElementId, selectedTripId = null) {
+    const selectElement = document.getElementById(selectElementId);
+    if (!selectElement) return;
+    
+    // Clear existing options except the first "No Trip" option
+    while (selectElement.options.length > 1) {
+        selectElement.remove(1);
+    }
+    
+    // Add options for each trip
+    trips.forEach(trip => {
+        const option = document.createElement('option');
+        option.value = trip.id;
+        option.textContent = `${trip.name} (${trip.id})`;
+        
+        // Set as selected if it matches the selectedTripId
+        if (trip.id === selectedTripId) {
+            option.selected = true;
+        }
+        
+        selectElement.appendChild(option);
+    });
+}
+
+// Add cancel button handler for trip form
+if (tripCancelButton) {
+    tripCancelButton.addEventListener('click', resetTripForm);
 }
 
 // Photo form submission handler
@@ -960,7 +1305,10 @@ if (photoForm) {
             description: photoDescriptionInput.value,
             lat: parseFloat(photoLatInput.value) || 0,
             lng: parseFloat(photoLngInput.value) || 0,
-            ranking: parseInt(photoRankingInput.value) || 5
+            ranking: parseInt(photoRankingInput.value) || 5,
+            tags: photoTagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag),
+            tripId: photoTripIdSelect.value === '' ? null : photoTripIdSelect.value,
+            country: document.getElementById('photoCountry').value || null
         };
         console.log("DEBUG photoForm: Photo Data Object:", photoData);
         
@@ -994,7 +1342,7 @@ if (photoForm) {
         if (isSuccess) {
             console.log("DEBUG photoForm: Save successful, updating local array and UI");
             photos = updatedPhotos; // SUCCESS: Update the main array
-            renderPhotoTable();     // Re-render table
+            renderGroupedPhotoLists();     // Re-render table
             resetPhotoForm();       // Reset form
         } else {
             // FAILURE: Notification already shown by saveData
@@ -3131,3 +3479,141 @@ async function handleResearchFormSubmit(type) {
         if (form) form.style.display = 'none';
     }
 }
+
+// Map and EXIF functionality for photo coordinates
+
+// Initialize the coordinate selection map
+function initializeCoordMap() {
+    if (!coordMap && document.getElementById('coordMap')) { // Initialize only once
+        coordMap = L.map('coordMap').setView([20, 0], 2); // Initial view
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18, attribution: '© OSM'
+        }).addTo(coordMap);
+
+        coordMap.on('click', function(e) {
+            const lat = e.latlng.lat.toFixed(6);
+            const lng = e.latlng.lng.toFixed(6);
+            document.getElementById('photoLat').value = lat;
+            document.getElementById('photoLng').value = lng;
+
+            if (!coordMarker) {
+                coordMarker = L.marker(e.latlng).addTo(coordMap);
+            } else {
+                coordMarker.setLatLng(e.latlng);
+            }
+             coordMap.panTo(e.latlng); // Center map on click
+        });
+        console.log("Coordinate map initialized.");
+    } else if (coordMap) {
+        // If map exists but was hidden, invalidate its size
+        setTimeout(() => coordMap.invalidateSize(), 0);
+    }
+}
+
+// Function to update map marker when lat/lng inputs change manually
+function updateMapMarkerFromInputs() {
+    if (!coordMap) return; // Don't do anything if map isn't visible/init
+
+    const lat = parseFloat(document.getElementById('photoLat').value);
+    const lng = parseFloat(document.getElementById('photoLng').value);
+
+    if (!isNaN(lat) && !isNaN(lng)) {
+        const latLng = L.latLng(lat, lng);
+        if (!coordMarker) {
+            coordMarker = L.marker(latLng).addTo(coordMap);
+        } else {
+            coordMarker.setLatLng(latLng);
+        }
+        // Only pan/zoom if the map is actually visible
+        if (document.getElementById('coordMap').style.display !== 'none') {
+            coordMap.setView(latLng, coordMap.getZoom() < 10 ? 10 : coordMap.getZoom()); // Zoom in if needed
+        }
+    } else {
+        // If inputs invalid, remove marker
+        if (coordMarker) {
+            coordMap.removeLayer(coordMarker);
+            coordMarker = null;
+        }
+    }
+}
+
+// Helper to convert DMS array to decimal degrees
+function dmsToDecimal(dms, ref) {
+    if (!dms || dms.length !== 3) return NaN;
+    var degrees = dms[0].numerator ? dms[0].numerator / dms[0].denominator : dms[0];
+    var minutes = dms[1].numerator ? dms[1].numerator / dms[1].denominator : dms[1];
+    var seconds = dms[2].numerator ? dms[2].numerator / dms[2].denominator : dms[2];
+    var dd = degrees + minutes / 60 + seconds / 3600;
+    // Reference: N/S/E/W
+    if (ref === 'S' || ref === 'W') {
+        dd *= -1;
+    }
+    return dd;
+}
+
+// Add DOM Ready function for map and EXIF functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Show/Hide Map Button
+    const showMapButton = document.getElementById('showCoordMapButton');
+    const coordMapDiv = document.getElementById('coordMap');
+    if (showMapButton && coordMapDiv) {
+        showMapButton.addEventListener('click', () => {
+            const isHidden = coordMapDiv.style.display === 'none';
+            coordMapDiv.style.display = isHidden ? 'block' : 'none';
+            if (isHidden) {
+                initializeCoordMap(); // Initialize or invalidate size
+            }
+        });
+    }
+
+    // Listen to manual input changes to update map marker
+    const latInput = document.getElementById('photoLat');
+    const lngInput = document.getElementById('photoLng');
+    if(latInput) latInput.addEventListener('change', updateMapMarkerFromInputs);
+    if(lngInput) lngInput.addEventListener('change', updateMapMarkerFromInputs);
+
+    // Listener for file input change to read EXIF
+    const photoFileInput = document.getElementById('photoFile');
+    if (photoFileInput) {
+        photoFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            EXIF.getData(file, function() {
+                const lat = EXIF.getTag(this, 'GPSLatitude');
+                const latRef = EXIF.getTag(this, 'GPSLatitudeRef');
+                const lng = EXIF.getTag(this, 'GPSLongitude');
+                const lngRef = EXIF.getTag(this, 'GPSLongitudeRef');
+
+                console.log("EXIF Data:", { lat, latRef, lng, lngRef }); // Debug
+
+                if (lat && latRef && lng && lngRef) {
+                    const decLat = dmsToDecimal(lat, latRef);
+                    const decLng = dmsToDecimal(lng, lngRef);
+
+                    console.log("EXIF Coords found:", decLat, decLng);
+
+                    if (!isNaN(decLat) && !isNaN(decLng)) {
+                        document.getElementById('photoLat').value = decLat.toFixed(6);
+                        document.getElementById('photoLng').value = decLng.toFixed(6);
+                        showNotification('GPS Coordinates automatically extracted from photo EXIF data.', 'info');
+                        updateMapMarkerFromInputs(); // Update map with EXIF coords
+                        // Ensure map is visible if we found coords
+                        if (coordMapDiv && coordMapDiv.style.display === 'none') {
+                            showMapButton.click(); // Simulate click to show map
+                        } else if (coordMap) {
+                            // Map already visible, just pan/zoom
+                            coordMap.setView([decLat, decLng], coordMap.getZoom() < 10 ? 10 : coordMap.getZoom());
+                        }
+
+                    } else {
+                        console.warn("Could not convert EXIF GPS data to decimal.");
+                    }
+                } else {
+                    console.log("No GPS data found in EXIF.");
+                    // Maybe show a message? Or do nothing.
+                }
+            });
+        });
+    }
+});

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
   <div id="loginSection">
@@ -44,6 +45,7 @@
         <li><a href="#books" data-tab-target="#bookManagementSection" class="tab-link active">Books</a></li>
         <li><a href="#photos" data-tab-target="#photoManagementSection" class="tab-link">Photos</a></li>
         <li><a href="#projects" data-tab-target="#projectManagementSection" class="tab-link">Projects</a></li>
+        <li><a href="#trips" data-tab-target="#tripManagementSection" class="tab-link">Manage Trips</a></li>
         <li><a href="#cv-content" data-tab-target="#cvContentSection" class="tab-link">CV Content</a></li>
         <li><a href="#research-content" data-tab-target="#researchContentSection" class="tab-link">Edit Research</a></li>
         <!-- Add future tabs here -->
@@ -121,19 +123,12 @@
       <section id="photoManagementSection" class="tab-pane">
         <h2>Manage Photos (World Map)</h2>
         <div id="photoListSection">
-          <!-- Placeholder for photo list/table -->
-           <table>
-             <thead>
-               <tr>
-                 <th>Thumbnail</th>
-                 <th>Title</th>
-                 <th>Coords</th>
-                 <th>Actions</th>
-               </tr>
-             </thead>
-             <tbody id="photoTableBody"></tbody>
-           </table>
+          <!-- Trip groups will be added here by JS -->
+          <div id="photosGroupContainer">
+              <p>Loading photo groups...</p>
+          </div>
         </div>
+        <hr> <!-- Separator -->
         <div id="photoFormSection">
           <!-- Photo add/edit form -->
           <form id="photoForm" enctype="multipart/form-data" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
@@ -142,14 +137,34 @@
               <label for="photoFile">Upload New Image (Optional):</label>
               <input type="file" id="photoFile" name="uploadedImage" accept="image/*">
               <input type="hidden" id="currentPhotoThumbnail">
+              <input type="hidden" id="currentPhotoImageFull">
               <p style="font-size: 0.8em; margin-top: -5px;">Leave empty if not changing the image.</p>
               <label for="photoTitle">Title:</label> <input type="text" id="photoTitle"><br>
               <label for="photoDate">Date:</label> <input type="text" id="photoDate" placeholder="YYYY-MM-DD"><br>
               <label for="photoDescription">Description:</label> <textarea id="photoDescription"></textarea><br>
-              <label for="photoLat">Latitude:</label> <input type="text" id="photoLat">
-              <label for="photoLng">Longitude:</label> <input type="text" id="photoLng"><br>
+              <label for="photoLat">Latitude:</label> <input type="number" step="any" id="photoLat" required>
+              <label for="photoLng">Longitude:</label> <input type="number" step="any" id="photoLng" required>
+              
+              <div style="margin-top: 5px; margin-bottom: 10px;">
+                <button type="button" id="showCoordMapButton">Select on Map</button>
+                <span style="font-size:0.9em; color: #555;"> (Attempts auto-fill from EXIF on file select)</span>
+              </div>
+              <div id="coordMap" style="height: 400px; width: 100%; margin-bottom: 15px; display: none; border: 1px solid #ccc;"></div><br>
               <label for="photoRanking">Ranking (1-10):</label>
               <input type="number" id="photoRanking" min="1" max="10" value="5"><br>
+              <label for="photoFullWidth">Full Image Width:</label>
+              <input type="number" id="photoFullWidth" value="1200"><br>
+              <label for="photoFullHeight">Full Image Height:</label>
+              <input type="number" id="photoFullHeight" value="900"><br>
+              <label for="photoTags">Tags (comma-separated):</label>
+              <input type="text" id="photoTags" placeholder="landscape, city, landmark"><br>
+              <label for="photoTripIdSelect">Assign to Trip (Optional):</label>
+              <select id="photoTripIdSelect">
+                <option value="">-- No Trip --</option>
+                <!-- Trip options will be added by JS -->
+              </select><br>
+              <label for="photoCountry">Country:</label>
+              <input type="text" id="photoCountry"><br>
               <button type="submit" id="photoSubmitButton">Add Photo</button>
               <button type="button" id="photoCancelButton" style="display: none;">Cancel Edit</button>
           </form>
@@ -495,6 +510,32 @@
         </div>
       </section>
 
+      <!-- Trip Management Section -->
+      <section id="tripManagementSection" class="tab-pane">
+        <h2>Manage Trips</h2>
+        <table style="width:100%; margin-bottom:10px;">
+          <thead><tr><th>Trip Name</th><th>Date Range</th><th>Trip ID</th><th>Actions</th></tr></thead>
+          <tbody id="tripTableBody"></tbody>
+        </table>
+        <hr>
+        <form id="tripForm">
+          <h4 id="tripFormTitle">Add New Trip</h4>
+          <input type="hidden" id="tripEditIndex" value="-1">
+
+          <label for="tripName">Trip Name:</label>
+          <input type="text" id="tripName" required>
+
+          <label for="tripDateRange">Date Range (e.g., Jul 2023):</label>
+          <input type="text" id="tripDateRange">
+
+          <label for="tripId">Trip ID (Unique, no spaces/special chars):</label>
+          <input type="text" id="tripId" required pattern="^[a-zA-Z0-9_-]+$" title="Use only letters, numbers, hyphens, underscores">
+
+          <button type="submit" id="tripSubmitButton">Add Trip</button>
+          <button type="button" id="tripCancelButton" style="display: none;">Cancel Edit</button>
+        </form>
+      </section>
+
       <!-- Research Content Section -->
       <section id="researchContentSection" class="tab-pane">
         <h2>Edit Research Page Content</h2>
@@ -696,6 +737,8 @@
   </div>
 
   <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

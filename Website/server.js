@@ -1172,6 +1172,56 @@ app.post('/api/upload/image', requireAuth, (req, res) => {
     });
 });
 
+// GET Trips Data
+app.get('/api/data/trips', async (req, res) => {
+    const filePath = path.join(__dirname, 'data', 'trips.json');
+    console.log(`GET ${filePath}`);
+    try {
+        const d = await fs.readFile(filePath, 'utf8');
+        const j = JSON.parse(d);
+        if (!Array.isArray(j)) throw new Error('Invalid format: Expected array.');
+        // Optional: Sort trips by date or name before sending
+        // j.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        res.json(j);
+    } catch (error) { /* Standard error handling -> 404 / 500 */
+         console.error(`Error reading or parsing ${filePath}:`, error);
+         // Simplified error sending
+         if (error.code === 'ENOENT') { res.status(404).json({ success: false, error: 'Trips data not found.'}); }
+         else { res.status(500).json({ success: false, error: 'Failed to retrieve trips data.' }); }
+    }
+});
+
+// SAVE Trips Data (Authenticated)
+app.post('/api/save/trips', requireAuth, async (req, res) => {
+    const filePath = path.join(__dirname, 'data', 'trips.json');
+    const trips = req.body;
+    console.log(`POST ${filePath}`);
+    if (!Array.isArray(trips)) {
+        return res.status(400).json({ success: false, error: 'Invalid data format. Expected an array.' });
+    }
+    // Basic validation of trip objects
+    for (let i = 0; i < trips.length; i++) {
+         const trip = trips[i];
+         if (!trip || typeof trip !== 'object') return res.status(400).json({ success: false, error: `Invalid item format at index ${i}. Expected an object.` });
+         if (!trip.id || typeof trip.id !== 'string' || trip.id.trim() === '') return res.status(400).json({ success: false, error: `Missing or invalid 'id' at index ${i}.` });
+         if (!trip.name || typeof trip.name !== 'string' || trip.name.trim() === '') return res.status(400).json({ success: false, error: `Missing or invalid 'name' at index ${i}.` });
+         // dateRange is optional maybe? Or check it's a string.
+    }
+
+    try {
+        // Backup logic here... try/catch around copyFile
+        const backupFilePath = filePath + '.bak';
+        try { await fs.copyFile(filePath, backupFilePath); console.log(`Backup created: ${backupFilePath}`); }
+        catch (backupError) { if (backupError.code !== 'ENOENT') console.warn(`Warning: Could not create backup for ${filePath}:`, backupError); }
+
+        await fs.writeFile(filePath, JSON.stringify(trips, null, 2), 'utf8');
+        res.status(200).json({ success: true, message: 'Trips data saved successfully.' });
+    } catch (error) { /* Standard error handling -> 500 */
+         console.error(`Error writing ${filePath}:`, error);
+         res.status(500).json({ success: false, error: 'Failed to save trips data.' });
+    }
+});
+
 // 6. Start the Server
 app.listen(PORT, () => {
   console.log(`Server is running!`);
