@@ -172,6 +172,8 @@ async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
     // Position slightly above ground - adjust height as needed
     const position = Cesium.Cartesian3.fromDegrees(lng, lat, 50.0);
 
+    // --- Commenting out PinBuilder ---
+    /*
     // Generate the pin graphic (returns a Promise)
     let pinUrl;
     try {
@@ -182,6 +184,7 @@ async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
         // Fallback to a simple color pin if icon fails
         pinUrl = await pinBuilder.fromColor(Cesium.Color.ROYALBLUE, 48);
     }
+    */
 
     // Prepare InfoBox description (HTML)
     const thumbUrl = image.thumbnail ? `img/${image.thumbnail}` : '';
@@ -200,15 +203,14 @@ async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
     // Add button placeholder for lightbox (Phase G.4)
     descriptionHtml += `<p><button type="button" class="cesium-infobox-lightbox-button" data-photo-index="${image.originalIndex}">View Full Size</button></p>`;
 
-    // Add the entity
+    // Use local pin model
     viewer.entities.add({
         name: image.title || 'Photo Location', // Text on hover
         position: position,
-        billboard: {
-            image: pinUrl, // Use the generated pin URL/canvas
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM, // Anchor pin at the bottom center
-            // Optional: Make pin smaller when far away
-            scaleByDistance: new Cesium.NearFarScalar(1.5e2, 1.0, 8.0e6, 0.2)
+        model: {
+            uri: 'models/pin.glb',
+            minimumPixelSize: 32, // Adjust as needed for visibility
+            maximumScale: 2000  // Adjust as needed to prevent getting too large
         },
         description: descriptionHtml, // Content for InfoBox on click
         properties: { // Store custom data for later access
