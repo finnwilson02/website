@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finn Wilson - Photo Globe</title>
+    <!-- Include base styles if needed for header/footer -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Include CesiumJS CSS -->
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        /* Basic styling to make viewer fill page */
+        html, body, #cesiumContainer {
+            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+        }
+        /* Ensure header doesn't overlap or viewer adjusts */
+        body { display: flex; flex-direction: column; }
+        #header-placeholder { flex-shrink: 0; /* Prevent header from shrinking */ }
+        #cesiumContainer { flex-grow: 1; /* Allow viewer to take remaining space */ }
+        /* Footer might be hidden or overlaid depending on layout */
+        footer { display: none; /* Hide footer on globe view initially */ }
+    </style>
+</head>
+<body>
+    <!-- Include header -->
+    <div id="header-placeholder"></div>
+    <script>
+        fetch('includes/header.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('header-placeholder').innerHTML = html;
+                // Highlight the current page in navigation
+                document.getElementById('nav-globe').classList.add('active');
+            });
+    </script>
+
+    <!-- Container for the Cesium Viewer -->
+    <div id="cesiumContainer"></div>
+
+    <!-- Footer (hidden by CSS) -->
+    <footer id="footer"></footer>
+
+    <!-- Include CesiumJS library -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Cesium.js"></script>
+    <!-- Include your common script AFTER Cesium -->
+    <script src="js/script.js"></script>
+    <!-- Include specific script for this page -->
+    <script src="js/globe.js"></script>
+</body>
+</html>

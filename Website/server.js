@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+require('dotenv').config();
+
 // 1. Import Express and required packages
 const express = require('express');
 const path = require('path'); // Import the 'path' module to handle file paths
@@ -53,8 +56,8 @@ app.use(express.static(path.join(__dirname))); // Serves files from the root pro
 // app.use('/css', express.static(path.join(__dirname, 'css')));
 // app.use('/js', express.static(path.join(__dirname, 'js')));
 app.use('/img', express.static(path.join(__dirname, 'img'))); // Explicitly serve the image directory
+app.use('/icons', express.static(path.join(__dirname, 'icons'))); // Explicitly serve the icons directory
 // app.use('/data', express.static(path.join(__dirname, 'data')));
-// app.use('/icons', express.static(path.join(__dirname, 'icons')));
 
 // 5. Optional: Default Route (Good Practice)
 // If someone requests the root '/' and express.static didn't find an index.html automatically,
@@ -1220,6 +1223,18 @@ app.post('/api/save/trips', requireAuth, async (req, res) => {
          console.error(`Error writing ${filePath}:`, error);
          res.status(500).json({ success: false, error: 'Failed to save trips data.' });
     }
+});
+
+// API Endpoint to provide the Cesium Ion Token to the frontend securely
+app.get('/api/config/cesium-token', (req, res) => {
+  const token = process.env.CESIUM_ION_TOKEN;
+  if (!token) {
+    console.error("FATAL ERROR: CESIUM_ION_TOKEN environment variable is not set!");
+    // Don't send detailed error to client
+    return res.status(500).json({ error: 'Server configuration error.' });
+  }
+  // Only send the token, nothing else
+  res.json({ token: token });
 });
 
 // 6. Start the Server
