@@ -1346,6 +1346,7 @@ function handleEditTrip(event) {
     tripNameInput.value = trip.name || '';
     tripDateRangeInput.value = trip.dateRange || '';
     tripIdInput.value = trip.id || '';
+    tripIdInput.readOnly = true; // Make ID read-only when editing
     
     tripFormTitle.textContent = 'Edit Trip';
     tripSubmitButton.textContent = 'Update Trip';
@@ -1391,6 +1392,7 @@ async function handleDeleteTrip(event) {
 function resetTripForm() {
     tripEditIndex.value = '-1';
     tripForm.reset();
+    tripIdInput.readOnly = false; // Make ID editable again for new trips
     
     tripFormTitle.textContent = 'Add New Trip';
     tripSubmitButton.textContent = 'Add Trip';

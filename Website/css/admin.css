@@ -194,6 +194,12 @@ section {
   border-radius: 3px;
 }
 
+/* Readonly input styling */
+input[readonly], textarea[readonly] {
+  background-color: #eee;
+  cursor: not-allowed;
+}
+
 /* Save blocks */
 .save-block {
   margin-bottom: 20px;
