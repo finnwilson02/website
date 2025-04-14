@@ -1148,28 +1148,6 @@ function setupGroupedPhotoActionListeners() {
     
     container.dataset.listenerAttached = "true"; // Mark as attached
 }
-// Keep the old function for compatibility, but make it call the new one
-function renderPhotoTable() {
-    console.log("DEBUG renderPhotoTable: Redirecting to renderGroupedPhotoLists");
-    renderGroupedPhotoLists();
-}
-
-function handleEditPhoto(event) {
-    const index = event.target.dataset.index;
-    const photo = photos[index];
-    
-    photoEditIndex.value = index;
-    // Store the existing path in the hidden input
-    document.getElementById("currentPhotoThumbnail").value = photo.thumbnail || "";
-    // Clear the file input field
-    document.getElementById("photoFile").value = null;
-    
-    photoTitleInput.value = photo.title || "";
-    photoDateInput.value = photo.date || "";
-    photoDescriptionInput.value = photo.description || "";
-    photoLatInput.value = photo.lat || "";
-    photoLngInput.value = photo.lng || "";
-    photoRankingInput.value = photo.ranking || "5";
     photoTagsInput.value = Array.isArray(photo.tags) ? photo.tags.join(', ') : '';
     
     // Set country field

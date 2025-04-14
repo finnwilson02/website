@@ -52,7 +52,7 @@ async function initializeGlobeViewer() {
             vrButton: false,
             geocoder: true,
             homeButton: true,
-            infoBox: true,
+            infoBox: false, // Disable default InfoBox panel
             selectionIndicator: true,
             timeline: false,
             navigationHelpButton: false,
@@ -86,6 +86,157 @@ async function initializeGlobeViewer() {
 
         console.log("Cesium Viewer initialized successfully using fetched token.");
 
+        // Set up click handler for entities
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        handler.setInputAction(function(movement) {
+            const pickedObject = viewer.scene.pick(movement.position);
+            if (Cesium.defined(pickedObject) && Cesium.defined(pickedObject.id) && 
+                pickedObject.id instanceof Cesium.Entity && pickedObject.id.properties?.photoData) {
+                // We clicked one of our photo pin entities
+                const clickedEntity = pickedObject.id;
+                const clickedPhotoData = clickedEntity.properties.photoData.getValue(viewer.clock.currentTime); // Get data
+                const clickedPhotoIndex = clickedEntity.properties.photoIndex.getValue(viewer.clock.currentTime); // Get index
+
+                console.log(`Cesium Entity clicked: ${clickedEntity.name}, Index: ${clickedPhotoIndex}`);
+
+                // --- Fly To Entity ---
+                viewer.flyTo(clickedEntity, {
+                    duration: 2.0, // Animation duration in seconds
+                    offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90), 1.5e4) // Look down from 1km away
+                }).then(function(didFlightComplete) {
+                    if (didFlightComplete) {
+                        console.log("FlyTo complete, opening GLightbox...");
+                        // --- Open GLightbox (Contextual Logic) ---
+                        buildAndOpenLightbox(clickedPhotoData, 'trip'); // Use the helper function
+                    } else {
+                        console.warn("FlyTo was cancelled.");
+                    }
+                }).catch(function(error) {
+                    console.error("Error during flyTo or GLightbox:", error);
+                    // Attempt to open lightbox even if flyTo fails
+                    buildAndOpenLightbox(clickedPhotoData, 'trip');
+                });
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        // Helper function to build and open GLightbox
+        function buildAndOpenLightbox(clickedPhoto, initialContext = 'trip') {
+            // Get all images
+            fetch('/api/data/images')
+                .then(response => response.json())
+                .then(allPhotos => {
+                    // Determine context (trip or country)
+                    const contextId = initialContext === 'trip' && clickedPhoto.tripId ? 
+                        clickedPhoto.tripId : clickedPhoto.country;
+                    const contextKey = initialContext === 'trip' && clickedPhoto.tripId ? 
+                        'tripId' : 'country';
+                    
+                    // Helper function to get context photos with proper filtering and sorting
+                    function getContextPhotos(contextType) {
+                        // Filter photos by context
+                        const photosInContext = allPhotos.filter(photo => photo[contextKey] === contextId);
+                        
+                        // Sort by date
+                        photosInContext.sort((a, b) => {
+                            if (a.date && b.date) {
+                                return new Date(a.date) - new Date(b.date);
+                            } else if (a.date) {
+                                return -1; // a has date, b doesn't - a comes first
+                            } else if (b.date) {
+                                return 1;  // b has date, a doesn't - b comes first
+                            }
+                            return 0;      // neither has date - keep order
+                        });
+                        
+                        return photosInContext;
+                    }
+                    
+                    // Verify clicked photo has the originalIndex property
+                    console.log("Clicked photo data being used:", clickedPhoto); // Log the object itself
+                    console.log("Clicked photo originalIndex property:", clickedPhoto?.originalIndex); // Check property exists
+                    
+                    // Get sorted gallery photos for the initial context
+                    const sortedGalleryPhotos = getContextPhotos(initialContext);
+                    
+                    // Log the sorted array to help with debugging
+                    console.log("Context photos after sorting:", sortedGalleryPhotos.map(p => p.title)); // Log titles in sorted order
+                    
+                    // Find the index of the originally clicked photo IN THE SORTED gallery array
+                    let startIndex = sortedGalleryPhotos.findIndex(p => p === clickedPhoto); // Try object reference first
+                    
+                    // Fallback to using originalIndex if reference comparison fails
+                    if (startIndex === -1) {
+                        startIndex = sortedGalleryPhotos.findIndex(p => p.originalIndex === clickedPhoto.originalIndex);
+                    }
+                    
+                    if (startIndex === -1) {
+                        console.error(`CRITICAL: Clicked photo (title ${clickedPhoto?.title}) NOT FOUND in its own context gallery after sorting! Defaulting to 0.`, clickedPhoto, sortedGalleryPhotos);
+                        startIndex = 0; // Fallback to 0 if both methods fail
+                    }
+                    
+                    console.log(`Starting gallery at SORTED index ${startIndex} for clicked photo "${clickedPhoto?.title}" (original index ${clickedPhoto?.originalIndex}).`);
+                    
+                    // Map sortedGalleryPhotos to galleryElements for GLightbox
+                    const galleryElements = sortedGalleryPhotos.map((p, idx) => {
+                        // Determine filename, preferring imageFull, falling back to thumbnail
+                        const filenameToUse = p?.imageFull || p?.thumbnail;
+                        
+                        // Construct URL safely
+                        const fullImageUrl = filenameToUse ? `img/${filenameToUse}` : 'img/placeholder-cover.png'; // Use placeholder if no filename found
+                        
+                        // Log the details for the item corresponding to the initial click
+                        if (idx === startIndex) {
+                            console.log(`Element for starting index ${startIndex}:`);
+                            console.log(`  >> Href requesting: ${fullImageUrl}`);
+                            console.log(`  >> Based on photo data:`, p); // Log the source photo object
+                        }
+                        
+                        return {
+                            href: fullImageUrl, // This is the URL GLightbox will request
+                            type: 'image',
+                            title: p.title || '',
+                            description: p.description || '',
+                            alt: p.title || 'Photo'
+                        };
+                    });
+                    
+                    console.log(`--- Finished preparing ${galleryElements.length} elements ---`);
+                    
+                    if (galleryElements.length === 0) {
+                        console.error("No gallery elements created! Check filtering logic and data.");
+                        showNotification("Error: No photos found for this context", "error");
+                        return;
+                    }
+                    
+                    // Initialize GLightbox with the filtered gallery
+                    const lightbox = GLightbox({
+                        elements: galleryElements,
+                        startAt: Math.max(0, startIndex),
+                        loop: true
+                    });
+                    
+                    // Only keep the close listener
+                    lightbox.on('close', () => {
+                        console.log("GLightbox closed.");
+                    });
+                    
+                    // Open the lightbox
+                    lightbox.open();
+                    
+                    // Use the global tripsData variable instead of trips
+                    const contextDescription = contextKey === 'tripId' && clickedPhoto.tripId ? 
+                        `Trip "${tripsData.find(t => t.id === clickedPhoto.tripId)?.name || clickedPhoto.tripId}"` : 
+                        `Country "${clickedPhoto.country}"`;
+                    
+                    console.log(`Showing photos from ${contextDescription}`);
+                    showNotification(`Showing photos from ${contextDescription}`, 'info');
+                })
+                .catch(error => {
+                    console.error("Error loading gallery data:", error);
+                    showNotification("Failed to load gallery. Please try again.", "error");
+                });
+        }
+
         // Now that the viewer is ready, load the photo data
         loadAndPlaceGlobeMarkers(viewer); // Call function to add photo markers
 
@@ -96,6 +247,9 @@ async function initializeGlobeViewer() {
         if(container) container.innerHTML = `<p style="color:red; padding: 20px;">Viewer Error: ${error.message}</p>`;
     }
 }
+
+// Global trips variable to be accessible from all functions
+let tripsData = [];
 
 // Function to load photo data and add entities to the globe
 async function loadAndPlaceGlobeMarkers(viewer) {
@@ -125,12 +279,11 @@ async function loadAndPlaceGlobeMarkers(viewer) {
         const pinBuilder = new Cesium.PinBuilder();
 
         // Fetch trips data for descriptions if available
-        let trips = [];
         try {
             const tripsResponse = await fetch('/api/data/trips');
             if (tripsResponse.ok) {
-                trips = await tripsResponse.json();
-                console.log(`Loaded ${trips.length} trips for reference.`);
+                tripsData = await tripsResponse.json(); // Store in global variable
+                console.log(`Loaded ${tripsData.length} trips for reference.`);
             }
         } catch (tripError) {
             console.warn("Could not load trips data:", tripError);
@@ -146,7 +299,8 @@ async function loadAndPlaceGlobeMarkers(viewer) {
                 // Add original index for linking back later
                 image.originalIndex = index;
                 try {
-                    await createPhotoPinEntity(viewer, pinBuilder, image, trips);
+                    console.log(`Processing photo index ${index}, Title: ${image?.title}`);
+                    await createPhotoPinEntity(viewer, pinBuilder, image, tripsData);
                     placedCount++;
                 } catch (entityError) {
                     console.error(`Failed to create entity for ${image.title || 'Untitled'}:`, entityError);
@@ -169,8 +323,8 @@ async function loadAndPlaceGlobeMarkers(viewer) {
 async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
     const lat = parseFloat(image.lat);
     const lng = parseFloat(image.lng);
-    // Position slightly above ground - adjust height as needed
-    const position = Cesium.Cartesian3.fromDegrees(lng, lat, 50.0);
+    // Position with height 0 initially, let heightReference handle terrain
+    const position = Cesium.Cartesian3.fromDegrees(lng, lat, 0.0);
 
     // --- Commenting out PinBuilder ---
     /*
@@ -192,7 +346,7 @@ async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
     if (image.date) descriptionHtml += `<p><em>Date: ${image.date}</em></p>`;
     if (image.country) descriptionHtml += `<p><em>Country: ${image.country}</em></p>`;
     if (image.tripId) {
-        const tripInfo = trips.find(t => t.id === image.tripId);
+        const tripInfo = tripsData.find(t => t.id === image.tripId);
         if (tripInfo) descriptionHtml += `<p><em>Trip: ${tripInfo.name}</em></p>`;
     }
     // Add thumbnail to description if available
@@ -200,24 +354,44 @@ async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
         descriptionHtml += `<p><img src="${thumbUrl}" alt="thumbnail" style="max-width: 200px; height: auto;"></p>`;
     }
     if (image.description) descriptionHtml += `<p>${image.description}</p>`;
-    // Add button placeholder for lightbox (Phase G.4)
-    descriptionHtml += `<p><button type="button" class="cesium-infobox-lightbox-button" data-photo-index="${image.originalIndex}">View Full Size</button></p>`;
+    // No button needed since we open lightbox directly from entity click handler
+    
+    console.log(`Creating entity for: ${image.title || 'Untitled'}`);
 
     // Use local pin model
-    viewer.entities.add({
-        name: image.title || 'Photo Location', // Text on hover
-        position: position,
-        model: {
-            uri: 'models/pin.glb',
-            minimumPixelSize: 32, // Adjust as needed for visibility
-            maximumScale: 2000  // Adjust as needed to prevent getting too large
-        },
-        description: descriptionHtml, // Content for InfoBox on click
-        properties: { // Store custom data for later access
-            photoIndex: image.originalIndex, // Link back to allPhotos array index
-            photoData: image // Store the original image data object
-        }
-    });
+    try {
+        console.log(` --> Attempting viewer.entities.add for ${image.title || 'Untitled'}`);
+        viewer.entities.add({
+            name: image.title || 'Photo Location', // Text on hover
+            position: position,
+            model: {
+                uri: 'models/pin.glb',
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // Keep height reference
+                
+                // Overall base size multiplier
+                scale: 500, // Base scale for close-up view
+                
+                // Dynamic scaling with distance - adjusted for better mid-range visibility
+                scaleByDistance: new Cesium.NearFarScalar(
+                    5.0e2,  // nearDistance: 500m
+                    1.0,    // nearScale: Full base scale when closer
+                    2.5e6,  // farDistance: 2500km - better for mid-range zoom
+                    0.45    // farScale: Moderate shrinking to 45% when far
+                ),
+                
+                // Absolute minimum screen size safety net
+                minimumPixelSize: 32 // Smallest acceptable size in pixels
+            },
+            description: descriptionHtml, // Content for InfoBox on click
+            properties: { // Store custom data for later access
+                photoIndex: image.originalIndex, // Link back to allPhotos array index
+                photoData: image // Store the original image data object
+            }
+        });
+        console.log(` --> Successfully called viewer.entities.add for ${image.title || 'Untitled'}`);
+    } catch (addError) {
+        console.error(` --> ERROR during viewer.entities.add for ${image.title || 'Untitled'}:`, addError);
+    }
 }
 
 // Helper function to hide specific Cesium UI widgets via CSS class

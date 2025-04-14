@@ -135,7 +135,7 @@
               <h3>Add/Edit Photo</h3>
               <input type="hidden" id="photoEditIndex" value="-1">
               <label for="photoFile">Upload New Image (Optional):</label>
-              <input type="file" id="photoFile" name="uploadedImage" accept="image/*">
+              <input type="file" id="photoFile" name="uploadedImage" accept="image/jpeg, image/png, image/gif, image/webp, image/heic, image/heif, .heic, .heif, image/*">
               <input type="hidden" id="currentPhotoThumbnail">
               <input type="hidden" id="currentPhotoImageFull">
               <p style="font-size: 0.8em; margin-top: -5px;">Leave empty if not changing the image.</p>
@@ -152,10 +152,8 @@
               <div id="coordMap" style="height: 400px; width: 100%; margin-bottom: 15px; display: none; border: 1px solid #ccc;"></div><br>
               <label for="photoRanking">Ranking (1-10):</label>
               <input type="number" id="photoRanking" min="1" max="10" value="5"><br>
-              <label for="photoFullWidth">Full Image Width:</label>
-              <input type="number" id="photoFullWidth" value="1200"><br>
-              <label for="photoFullHeight">Full Image Height:</label>
-              <input type="number" id="photoFullHeight" value="900"><br>
+                            <input type="hidden" id="photoFullWidth">
+              <input type="hidden" id="photoFullHeight">
               <label for="photoTags">Tags (comma-separated):</label>
               <input type="text" id="photoTags" placeholder="landscape, city, landmark"><br>
               <label for="photoTripIdSelect">Assign to Trip (Optional):</label>
@@ -163,8 +161,6 @@
                 <option value="">-- No Trip --</option>
                 <!-- Trip options will be added by JS -->
               </select><br>
-              <label for="photoCountry">Country:</label>
-              <input type="text" id="photoCountry"><br>
               <button type="submit" id="photoSubmitButton">Add Photo</button>
               <button type="button" id="photoCancelButton" style="display: none;">Cancel Edit</button>
           </form>
@@ -199,8 +195,10 @@
                <input type="text" id="projectTitle" required>
                
                <label for="projectFile">Upload New Project Image (Optional):</label>
-               <input type="file" id="projectFile" name="uploadedImage" accept="image/*">
+               <input type="file" id="projectFile" name="uploadedImage" accept="image/jpeg, image/png, image/gif, image/webp, image/heic, image/heif, .heic, .heif, image/*">
                <input type="hidden" id="currentProjectImage">
+               <input type="hidden" id="projectFullWidth">
+               <input type="hidden" id="projectFullHeight">
                <p style="font-size: 0.8em; margin-top: -5px;">Leave empty if not changing the image.</p>
                
                <label for="projectSummary">Summary (Short, for card):</label>
@@ -529,7 +527,7 @@
           <input type="text" id="tripDateRange">
 
           <label for="tripId">Trip ID (Unique, no spaces/special chars):</label>
-          <input type="text" id="tripId" required pattern="^[a-zA-Z0-9_-]+$" title="Use only letters, numbers, hyphens, underscores">
+          <input type="text" id="tripId" required title="Use only letters, numbers, hyphens, underscores">
 
           <button type="submit" id="tripSubmitButton">Add Trip</button>
           <button type="button" id="tripCancelButton" style="display: none;">Cancel Edit</button>

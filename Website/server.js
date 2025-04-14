@@ -10,6 +10,77 @@ const session = require('express-session');
 const FileStore = require('session-file-store')(session); // Store sessions in files
 const bcrypt = require('bcrypt');
 const multer = require('multer'); // For handling multipart/form-data (file uploads)
+const pointInPolygon = require('point-in-polygon'); // For determining country from coordinates
+const heicConvert = require('heic-convert'); // For converting HEIC images to JPEG
+const sharp = require('sharp'); // For image processing
+
+// --- Load Country GeoJSON Data at Startup ---
+let countryFeatures = []; // Store loaded country features
+const geojsonPath = path.join(__dirname, 'data', 'countries.geojson');
+
+async function loadGeoJsonData() {
+    console.log(`Loading country boundaries from: ${geojsonPath}`);
+    try {
+        const fileContent = await fs.readFile(geojsonPath, 'utf8');
+        const geojsonData = JSON.parse(fileContent);
+        if (geojsonData && geojsonData.features && Array.isArray(geojsonData.features)) {
+            // Pre-process features slightly for easier lookup
+            countryFeatures = geojsonData.features.map(feature => {
+                // The country name property is 'name' in our GeoJSON file
+                const countryName = feature.properties.name;
+                return {
+                    name: countryName || 'Unknown', // Store the name
+                    geometry: feature.geometry // Store the geometry
+                };
+            }).filter(f => f.geometry); // Keep only features with geometry
+
+            console.log(`Successfully loaded ${countryFeatures.length} country features.`);
+        } else {
+            console.error("Invalid GeoJSON format: 'features' array not found.");
+            countryFeatures = [];
+        }
+    } catch (error) {
+        console.error("Error loading or parsing country GeoJSON:", error);
+        countryFeatures = []; // Ensure it's empty on error
+    }
+}
+
+// Helper function to find country for coordinates
+function findCountryForCoordinates(lng, lat) {
+    if (countryFeatures.length === 0) return null; // No boundary data loaded
+    const point = [lng, lat];
+
+    for (const feature of countryFeatures) {
+        if (!feature.geometry) continue; // Skip features without geometry
+
+        try { // Add try/catch for potential bad geometry data
+            if (feature.geometry.type === 'Polygon') {
+                // Check point against the outer ring (and potentially holes later if needed)
+                if (pointInPolygon(point, feature.geometry.coordinates[0])) {
+                    console.log(`Point [${lng}, ${lat}] found in ${feature.name} (Polygon)`);
+                    return feature.name;
+                }
+            } else if (feature.geometry.type === 'MultiPolygon') {
+                // Check point against each polygon in the MultiPolygon
+                const found = feature.geometry.coordinates.some(polygonCoords =>
+                    pointInPolygon(point, polygonCoords[0]) // Check outer ring of each polygon
+                );
+                if (found) {
+                    console.log(`Point [${lng}, ${lat}] found in ${feature.name} (MultiPolygon)`);
+                    return feature.name;
+                }
+            }
+        } catch (geomError) {
+            console.warn(`Error processing geometry for feature ${feature.name || 'Unknown'}:`, geomError);
+            // Continue checking other features
+        }
+    }
+    console.log(`Point [${lng}, ${lat}] not found in any country polygon.`);
+    return null; // Not found in any polygon
+}
+
+// Call loadGeoJsonData once during server startup
+loadGeoJsonData();
 
 // 2. Create an Express application instance
 const app = express();
@@ -97,11 +168,18 @@ const imageStorage = multer.diskStorage({
 
 // File Filter to accept only images
 const imageFileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    // Accept standard image types AND HEIC/HEIF
+    if (file.mimetype.startsWith('image/jpeg') ||
+        file.mimetype.startsWith('image/png') ||
+        file.mimetype.startsWith('image/gif') ||
+        file.mimetype.startsWith('image/webp') ||
+        file.mimetype.startsWith('image/heic') || // HEIC support
+        file.mimetype.startsWith('image/heif') || // HEIF support
+        file.mimetype.startsWith('image/')) {
         cb(null, true); // Accept file
     } else {
         console.warn(`Upload rejected: Invalid mimetype ${file.mimetype}`);
-        cb(new Error('Invalid file type. Only images are allowed.'), false); // Reject file
+        cb(new Error('Invalid file type. Only images (JPG, PNG, GIF, WebP, HEIC, HEIF) are allowed.'), false); // Reject file
     }
 };
 
@@ -109,7 +187,7 @@ const imageFileFilter = (req, file, cb) => {
 const upload = multer({
      storage: imageStorage,
      fileFilter: imageFileFilter,
-     limits: { fileSize: 1024 * 1024 * 5 } // Limit file size to 5MB
+     limits: { fileSize: 1024 * 1024 * 30 } // Limit file size to 30MB
 });
 // --- End Multer Configuration ---
 
@@ -368,13 +446,46 @@ app.post('/api/save/images', requireAuth, async (req, res) => {
    if (!Array.isArray(req.body)) {
      return res.status(400).json({ error: 'Invalid data format. Expected an array.' });
    }
+   
+   // --- Add Reverse Geocoding Step ---
+   const images = req.body; // Assume validation passed
+   console.log(`POST ${filePath} - Received ${images.length} images.`);
+   
+   let updatedCount = 0;
+   for (const image of images) {
+       const lat = parseFloat(image.lat);
+       const lng = parseFloat(image.lng);
+       // Check if country is missing/empty AND coords are valid
+       if ((!image.country || image.country.trim() === '') && !isNaN(lat) && !isNaN(lng)) {
+           const foundCountry = findCountryForCoordinates(lng, lat);
+           if (foundCountry && foundCountry !== 'Unknown') {
+               console.log(`Assigning country "${foundCountry}" to image "${image.title || 'Untitled'}".`);
+               image.country = foundCountry; // Update the image object directly
+               updatedCount++;
+           }
+       }
+   }
+   if (updatedCount > 0) console.log(`Automatically assigned country to ${updatedCount} images.`);
+   // --- End Reverse Geocoding Step ---
+   
    try {
-     try { await fs.copyFile(filePath, backupFilePath); console.log(`Backup created: ${backupFilePath}`); }
-     catch (backupError) { if (backupError.code !== 'ENOENT') console.warn(`Warning: Could not create backup for ${filePath}:`, backupError); }
+     // Backup logic
+     try { 
+       await fs.copyFile(filePath, backupFilePath); 
+       console.log(`Backup created: ${backupFilePath}`); 
+     } catch (backupError) { 
+       if (backupError.code !== 'ENOENT') 
+         console.warn(`Warning: Could not create backup for ${filePath}:`, backupError); 
+     }
 
-     const jsonString = JSON.stringify(req.body, null, 2);
+     const jsonString = JSON.stringify(images, null, 2);
      await fs.writeFile(filePath, jsonString, 'utf8');
-     res.status(200).json({ message: 'Images data saved successfully.' });
+     
+     // Include info about country detection in the response
+     res.status(200).json({ 
+       message: 'Images data saved successfully.',
+       countriesAssigned: updatedCount > 0 ? `Automatically detected countries for ${updatedCount} images.` : null
+     });
    } catch (error) {
      console.error(`Error writing ${filePath}:`, error);
      res.status(500).json({ error: 'Failed to save images data.' });
@@ -1132,7 +1243,7 @@ app.post('/api/save/research/patent', requireAuth, async (req, res) => {
 app.post('/api/upload/image', requireAuth, (req, res) => {
     // Use upload.single middleware. It adds req.file and req.body.
     // We need to handle potential multer errors specifically.
-    upload.single('uploadedImage')(req, res, function (err) {
+    upload.single('uploadedImage')(req, res, async function (err) {
         if (err instanceof multer.MulterError) {
             // A Multer error occurred (e.g., file size limit)
             console.error('Multer error during upload:', err);
@@ -1165,13 +1276,68 @@ app.post('/api/upload/image', requireAuth, (req, res) => {
             });
         }
 
-        console.log('File uploaded successfully:', req.file);
+        const originalPath = req.file.path;
+        const outputFilename = req.file.filename.replace(/\.[^.]+$/, '.webp');
+        const outputPath = path.join(__dirname, 'img', outputFilename);
+        let processedImageBufferOrPath = originalPath; // Start with original path
 
-        // Send back just the filename (not the full path)
-        res.status(200).json({ 
-            success: true, 
-            filename: req.file.filename 
-        });
+        console.log(`Processing uploaded file: ${originalPath}, mimetype: ${req.file.mimetype}`);
+
+        try {
+            // --- Check if HEIC/HEIF and convert first ---
+            if (req.file.mimetype === 'image/heic' || req.file.mimetype === 'image/heif' || 
+                req.file.originalname.toLowerCase().endsWith('.heic') || req.file.originalname.toLowerCase().endsWith('.heif')) {
+                console.log("HEIC/HEIF detected, converting...");
+                try {
+                    const inputBuffer = await fs.readFile(originalPath);
+                    processedImageBufferOrPath = await heicConvert({
+                        buffer: inputBuffer,
+                        format: 'JPEG', // Convert to JPEG first
+                        quality: 0.9
+                    });
+                    console.log("HEIC converted to JPEG buffer successfully.");
+                } catch (heicError) {
+                    console.error("Error converting HEIC:", heicError);
+                    throw new Error("Failed to convert HEIC file.");
+                }
+            }
+            // --- End HEIC Conversion ---
+
+            // --- Process with Sharp (using buffer or path) ---
+            console.log("Processing with Sharp...");
+            await sharp(processedImageBufferOrPath)
+                .resize({ width: 1920, height: 1080, fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: 80 })
+                .toFile(outputPath);
+            console.log('Image processed and saved successfully:', outputPath);
+            // --- End Sharp Processing ---
+
+            // --- Delete the original temporary file ---
+            try {
+                await fs.unlink(originalPath);
+                console.log('Original temporary upload deleted:', originalPath);
+            } catch (unlinkErr) {
+                console.warn('Failed to delete original upload file:', unlinkErr);
+            }
+
+            // --- Send Response ---
+            res.status(200).json({ 
+                success: true, 
+                filename: outputFilename 
+            });
+        } catch (processingError) {
+            console.error('Error processing image (HEIC or Sharp):', processingError);
+            // Clean up original file if processing fails
+            try { 
+                await fs.unlink(originalPath); 
+            } catch (unlinkErr) { 
+                console.warn('Failed to delete original file after processing error:', unlinkErr);
+            }
+            return res.status(500).json({ 
+                success: false, 
+                error: `Failed to process image: ${processingError.message}` 
+            });
+        }
     });
 });
 

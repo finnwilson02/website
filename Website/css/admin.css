@@ -1,5 +1,31 @@
 /* admin.css */
 
+/* Drag and drop styling for photo reordering */
+.photo-list-row {
+    cursor: grab; /* Indicate draggable */
+}
+
+.photo-list-row:active {
+    cursor: grabbing; /* Indicate dragging */
+}
+
+.photo-list-row.dragging {
+    opacity: 0.6; /* Make the dragged element semi-transparent */
+}
+
+.photo-list-row.dragging-over {
+    background-color: #e0f0ff; /* Highlight drop target */
+    border-top: 2px solid #99caff;
+}
+
+/* Small button styling for admin interface */
+.admin-small-button {
+    margin-left: 15px;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
 /* General styles */
 body {
   padding: 20px;
