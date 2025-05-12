@@ -808,6 +808,107 @@ if (cancelBtn) {
 }
 
 // --- Photo Management Functions ---
+
+// Helper function to remember the open/closed state of trip groups
+function getOpenTripGroupStates() {
+    const states = {};
+    const tripGroups = document.querySelectorAll('#photosGroupContainer details.trip-group');
+    tripGroups.forEach(group => {
+        if (group.dataset.tripId) {
+            states[group.dataset.tripId] = group.open;
+        }
+    });
+    console.log("Remembered trip group states:", states);
+    return states;
+}
+
+// Helper function to apply remembered open/closed states to trip groups
+function applyOpenTripGroupStates(states) {
+    if (!states) return;
+    const tripGroups = document.querySelectorAll('#photosGroupContainer details.trip-group');
+    tripGroups.forEach(group => {
+        if (group.dataset.tripId && states.hasOwnProperty(group.dataset.tripId)) {
+            group.open = states[group.dataset.tripId];
+        }
+    });
+    console.log("Applied trip group states.");
+}
+
+// Function to restore default photo order for a specific trip
+async function restoreDefaultPhotoOrder(tripIdToRestore) {
+    console.log(`Restoring default order for tripId: ${tripIdToRestore}`);
+
+    // Create a new array with copies of photo objects to avoid modifying the original `photos` array directly
+    // until after a successful save.
+    const updatedPhotos = photos.map(p => ({ ...p }));
+
+    // Identify photos belonging to the target trip and those not in the trip
+    const photosInTrip = [];
+    const photosNotInTrip = [];
+
+    updatedPhotos.forEach(photo => {
+        if ((photo.tripId || "unassigned") === tripIdToRestore) {
+            photosInTrip.push(photo);
+        } else {
+            photosNotInTrip.push(photo);
+        }
+    });
+
+    if (photosInTrip.length === 0) {
+        showNotification(`No photos found for trip ID: ${tripIdToRestore}`, 'info');
+        return;
+    }
+
+    // Sort photos within the target trip by date (ascending), then by title (ascending)
+    photosInTrip.sort((a, b) => {
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        const titleA = (a.title || '').toLowerCase();
+        const titleB = (b.title || '').toLowerCase();
+
+        if (dateA < dateB) return -1;
+        if (dateA > dateB) return 1;
+        // Dates are equal (or both empty), sort by title
+        if (titleA < titleB) return -1;
+        if (titleA > titleB) return 1;
+        return 0;
+    });
+
+    // Re-assign orderIndex sequentially for this trip's photos
+    photosInTrip.forEach((photo, newOrder) => {
+        photo.orderIndex = newOrder;
+    });
+
+    // Reconstruct the full photos array with updated photosInTrip and original photosNotInTrip
+    // This ensures photos in other trips retain their original orderIndex.
+    const finalPhotosArray = [...photosInTrip, ...photosNotInTrip];
+    // Sort the final array by tripId first (consistent grouping), then by new orderIndex
+    finalPhotosArray.sort((a, b) => {
+        const tripIdA = a.tripId || "unassigned";
+        const tripIdB = b.tripId || "unassigned";
+        if (tripIdA.localeCompare(tripIdB) !== 0) {
+            return tripIdA.localeCompare(tripIdB);
+        }
+        return (a.orderIndex || 0) - (b.orderIndex || 0);
+    });
+
+    // Save the entire updated photos array
+    // Attempt to find the button element for visual feedback during save.
+    const buttonElement = document.querySelector(`.restore-order-btn[data-trip-id="${tripIdToRestore}"]`);
+    const isSuccess = await saveData("images", finalPhotosArray, buttonElement);
+
+    if (isSuccess) {
+        photos = finalPhotosArray; // Update local data with the re-ordered and reconstructed array
+        
+        const openStates = getOpenTripGroupStates(); // Remember current UI state
+        renderGroupedPhotoLists();                  // Refresh the display
+        applyOpenTripGroupStates(openStates);       // Restore UI state
+        showNotification(`Order restored and saved for trip: ${tripIdToRestore}`, 'success');
+    } else {
+        showNotification(`Failed to save restored order for trip: ${tripIdToRestore}`, 'error');
+    }
+}
+
 async function loadPhotos() {
     toggleLoading(true);
     try {
