@@ -1,5 +1,5 @@
 # WEBSITE CODEBASE SUMMARY
-
+-e 
 ## File Structure
 
 - ./
@@ -14,10 +14,10 @@
     - vendor/
   - models/
   - node_modules/
-
+-e 
 ## File Contents
 
-
+-e 
 ### ./addbook.py
 
 ```py
@@ -184,9 +184,9 @@ if __name__ == '__main__':
     url = f"http://127.0.0.1:{port}/"
     threading.Timer(1.0, lambda: webbrowser.open(url)).start()
     app.run(debug=True, use_reloader=False, port=port)
-
+-e 
 ```
-
+-e 
 ### ./admin.html
 
 ```html
@@ -931,9 +931,9 @@ if __name__ == '__main__':
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
   <script src="js/admin.js"></script>
 </body>
-</html>
+</html>-e 
 ```
-
+-e 
 ### ./bookshelf.html
 
 ```html
@@ -991,9 +991,9 @@ if __name__ == '__main__':
   <script src="js/bookshelf.js"></script>
 </body>
 </html>
-
+-e 
 ```
-
+-e 
 ### ./css/admin.css
 
 ```css
@@ -1401,9 +1401,9 @@ a.cv-tab-link.active {
     background-color: #fff3cd;
     color: #856404;
     border: 1px solid #ffeeba;
-}
+}-e 
 ```
-
+-e 
 ### ./css/bookshelf.css
 
 ```css
@@ -1499,9 +1499,9 @@ a.cv-tab-link.active {
   #overlayReviewText {
     white-space: pre-line;
   }
-  
+  -e 
 ```
-
+-e 
 ### ./css/project-detail.css
 
 ```css
@@ -1631,9 +1631,9 @@ a.cv-tab-link.active {
   .project-banner-image {
     max-height: 300px;
   }
-}
+}-e 
 ```
-
+-e 
 ### ./css/projects.css
 
 ```css
@@ -1810,9 +1810,9 @@ a.cv-tab-link.active {
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
-}
+}-e 
 ```
-
+-e 
 ### ./css/research.css
 
 ```css
@@ -1941,9 +1941,9 @@ section h2 {
   .entry-links a {
     margin-bottom: 0.7em;
   }
-}
+}-e 
 ```
-
+-e 
 ### ./css/style.css
 
 ```css
@@ -2113,9 +2113,9 @@ body {
   background-color: #e1e8f2;
   transform: translateY(-1px);
 }
-  
+  -e 
 ```
-
+-e 
 ### ./css/vendor/photoswipe.css
 
 ```css
@@ -2356,9 +2356,9 @@ body {
   color: #fff;
   pointer-events: none
 }
-
+-e 
 ```
-
+-e 
 ### ./css/worldmap.css
 
 ```css
@@ -2595,9 +2595,9 @@ body {
     /* Style for the 'None' text */
     font-style: italic;
     color: #888;
-}
+}-e 
 ```
-
+-e 
 ### ./cv.html
 
 ```html
@@ -2665,9 +2665,9 @@ body {
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/cv.js" defer></script>
 </body>
-</html>
+</html>-e 
 ```
-
+-e 
 ### ./footer.html
 
 ```html
@@ -2701,9 +2701,9 @@ body {
       </a>
     </div>
   </div>
-  
+  -e 
 ```
-
+-e 
 ### ./globe.html
 
 ```html
@@ -2760,9 +2760,9 @@ body {
     <!-- Include specific script for this page -->
     <script src="js/globe.js"></script>
 </body>
-</html>
+</html>-e 
 ```
-
+-e 
 ### ./hash-password.js
 
 ```js
@@ -2778,9 +2778,9 @@ bcrypt.hash(plainPassword, saltRounds, function(err, hash) {
     console.log("Plain Password:", plainPassword);
     console.log("Hashed Password:", hash);
     console.log("\nCopy the 'Hashed Password' value and store it securely.");
-});
+});-e 
 ```
-
+-e 
 ### ./includes/header.html
 
 ```html
@@ -2799,9 +2799,9 @@ bcrypt.hash(plainPassword, saltRounds, function(err, hash) {
     </nav>
     <button id="nav-toggle">☰</button>
   </div>
-</header>
+</header>-e 
 ```
-
+-e 
 ### ./index.html
 
 ```html
@@ -2850,9 +2850,9 @@ bcrypt.hash(plainPassword, saltRounds, function(err, hash) {
   
 </body>
 </html>
-
+-e 
 ```
-
+-e 
 ### ./js/admin.js
 
 ```js
@@ -3666,6 +3666,107 @@ if (cancelBtn) {
 }
 
 // --- Photo Management Functions ---
+
+// Helper function to remember the open/closed state of trip groups
+function getOpenTripGroupStates() {
+    const states = {};
+    const tripGroups = document.querySelectorAll('#photosGroupContainer details.trip-group');
+    tripGroups.forEach(group => {
+        if (group.dataset.tripId) {
+            states[group.dataset.tripId] = group.open;
+        }
+    });
+    console.log("Remembered trip group states:", states);
+    return states;
+}
+
+// Helper function to apply remembered open/closed states to trip groups
+function applyOpenTripGroupStates(states) {
+    if (!states) return;
+    const tripGroups = document.querySelectorAll('#photosGroupContainer details.trip-group');
+    tripGroups.forEach(group => {
+        if (group.dataset.tripId && states.hasOwnProperty(group.dataset.tripId)) {
+            group.open = states[group.dataset.tripId];
+        }
+    });
+    console.log("Applied trip group states.");
+}
+
+// Function to restore default photo order for a specific trip
+async function restoreDefaultPhotoOrder(tripIdToRestore) {
+    console.log(`Restoring default order for tripId: ${tripIdToRestore}`);
+
+    // Create a new array with copies of photo objects to avoid modifying the original `photos` array directly
+    // until after a successful save.
+    const updatedPhotos = photos.map(p => ({ ...p }));
+
+    // Identify photos belonging to the target trip and those not in the trip
+    const photosInTrip = [];
+    const photosNotInTrip = [];
+
+    updatedPhotos.forEach(photo => {
+        if ((photo.tripId || "unassigned") === tripIdToRestore) {
+            photosInTrip.push(photo);
+        } else {
+            photosNotInTrip.push(photo);
+        }
+    });
+
+    if (photosInTrip.length === 0) {
+        showNotification(`No photos found for trip ID: ${tripIdToRestore}`, 'info');
+        return;
+    }
+
+    // Sort photos within the target trip by date (ascending), then by title (ascending)
+    photosInTrip.sort((a, b) => {
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        const titleA = (a.title || '').toLowerCase();
+        const titleB = (b.title || '').toLowerCase();
+
+        if (dateA < dateB) return -1;
+        if (dateA > dateB) return 1;
+        // Dates are equal (or both empty), sort by title
+        if (titleA < titleB) return -1;
+        if (titleA > titleB) return 1;
+        return 0;
+    });
+
+    // Re-assign orderIndex sequentially for this trip's photos
+    photosInTrip.forEach((photo, newOrder) => {
+        photo.orderIndex = newOrder;
+    });
+
+    // Reconstruct the full photos array with updated photosInTrip and original photosNotInTrip
+    // This ensures photos in other trips retain their original orderIndex.
+    const finalPhotosArray = [...photosInTrip, ...photosNotInTrip];
+    // Sort the final array by tripId first (consistent grouping), then by new orderIndex
+    finalPhotosArray.sort((a, b) => {
+        const tripIdA = a.tripId || "unassigned";
+        const tripIdB = b.tripId || "unassigned";
+        if (tripIdA.localeCompare(tripIdB) !== 0) {
+            return tripIdA.localeCompare(tripIdB);
+        }
+        return (a.orderIndex || 0) - (b.orderIndex || 0);
+    });
+
+    // Save the entire updated photos array
+    // Attempt to find the button element for visual feedback during save.
+    const buttonElement = document.querySelector(`.restore-order-btn[data-trip-id="${tripIdToRestore}"]`);
+    const isSuccess = await saveData("images", finalPhotosArray, buttonElement);
+
+    if (isSuccess) {
+        photos = finalPhotosArray; // Update local data with the re-ordered and reconstructed array
+        
+        const openStates = getOpenTripGroupStates(); // Remember current UI state
+        renderGroupedPhotoLists();                  // Refresh the display
+        applyOpenTripGroupStates(openStates);       // Restore UI state
+        showNotification(`Order restored and saved for trip: ${tripIdToRestore}`, 'success');
+    } else {
+        showNotification(`Failed to save restored order for trip: ${tripIdToRestore}`, 'error');
+    }
+}
+
 async function loadPhotos() {
     toggleLoading(true);
     try {
@@ -6830,9 +6931,9 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.readAsDataURL(file); // Read file as Data URL
         });
     }
-});
+});-e 
 ```
-
+-e 
 ### ./js/bookshelf.js
 
 ```js
@@ -6999,9 +7100,9 @@ document.getElementById('closeOverlay').addEventListener('click', () => {
 });
 
 window.addEventListener('resize', renderBooks);
-
+-e 
 ```
-
+-e 
 ### ./js/cv.js
 
 ```js
@@ -7323,9 +7424,9 @@ function renderPositions(data) {
         `;
         container.appendChild(li);
     });
-}
+}-e 
 ```
-
+-e 
 ### ./js/globe.js
 
 ```js
@@ -7802,9 +7903,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('cesiumContainer');
         if(container) container.innerHTML = `<p style="color:red; padding: 20px;">Error: Cesium library not loaded properly.</p>`;
     }
-});
+});-e 
 ```
-
+-e 
 ### ./js/photoswipe-test.js
 
 ```js
@@ -7831,9 +7932,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
-
+-e 
 ```
-
+-e 
 ### ./js/project-detail.js
 
 ```js
@@ -7939,9 +8040,9 @@ function displayError(message) {
     if (bodyElement) bodyElement.innerHTML = `<p style="color: red;">${message}</p>`;
     
     console.error(message);
-}
+}-e 
 ```
-
+-e 
 ### ./js/research.js
 
 ```js
@@ -8294,9 +8395,9 @@ function renderPatentEntries(data) {
         // Add the complete entry to the container
         container.appendChild(entryDiv);
     });
-}
+}-e 
 ```
-
+-e 
 ### ./js/script.js
 
 ```js
@@ -8354,9 +8455,9 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(error => console.error("Error loading footer:", error));
 });
-
+-e 
 ```
-
+-e 
 ### ./js/vendor/photoswipe.umd.min.js
 
 ```js
@@ -8397,9 +8498,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         </div>`}createTopbar(){this.thumbs}onThumbnailClick(t){const e=t.target.closest(this.options.parentSelector);if(\!e&&t.target.closest("a"))return;if(e){e.dispatchEvent(new CustomEvent("pswpItemClick",{detail:{pswp:this}}));const t=this._itemData.find((t=>t.element===e));if(t){const i=this._itemData.indexOf(t);this._openPhotoSwipe({index:i}),t.element.classList.contains("pswp-gallery-item--active")||e.dispatchEvent(new CustomEvent("pswpItemClicked",{detail:{pswp:this}}))}}t.preventDefault()}_openPhotoSwipe(t){const{index:e=0}=t;let{pswpModule:i}=this.options;if(\!i)throw new Error("PhotoSwipe module was not provided");this.pswp=new i(this.createPswpOptions(e)),this.pswp.options.mainClass+="pswp--custom-icon-colors",this.pswp.containerClass="pswp-gallery",this.pswp.init?this.pswp.init():this.pswp.open(e)}createPswpOptions(t){const{gallery:e,...i}=this.options;return{dataSource:this._itemData,index:t,getItemData:t=>this._itemData[t],showAnimationType:e.showAnimationType,...i}}}}));
-
+-e 
 ```
-
+-e 
 ### ./js/worldmap.js
 
 ```js
@@ -9707,9 +9808,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 500);
 });
-
+-e 
 ```
-
+-e 
 ### ./project-detail.html
 
 ```html
@@ -9753,9 +9854,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Base script for header/footer loading etc. -->
   <script src="js/script.js"></script>
 </body>
-</html>
+</html>-e 
 ```
-
+-e 
 ### ./projects.html
 
 ```html
@@ -9988,9 +10089,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <footer id="footer"></footer>
   <script src="js/script.js"></script>
 </body>
-</html>
+</html>-e 
 ```
-
+-e 
 ### ./research.html
 
 ```html
@@ -10033,9 +10134,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/research.js" defer></script>
 </body>
-</html>
+</html>-e 
 ```
-
+-e 
 ### ./server.js
 
 ```js
@@ -11450,9 +11551,9 @@ app.listen(PORT, () => {
   console.log(`Static files served from: ${path.join(__dirname)}`);
   console.log(`Access your site at: http://localhost:${PORT}`);
 });
-
+-e 
 ```
-
+-e 
 ### ./worldmap-admin.html
 
 ```html
@@ -11570,9 +11671,9 @@ app.listen(PORT, () => {
     </script>
   </body>
 </html>
-
+-e 
 ```
-
+-e 
 ### ./worldmap.html
 
 ```html
@@ -11662,5 +11763,5 @@ app.listen(PORT, () => {
   <script src="js/script.js"></script>
   <script src="js/worldmap.js"></script>
 </body>
-</html>
+</html>-e 
 ```
