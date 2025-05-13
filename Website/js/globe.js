@@ -1,5 +1,8 @@
 // globe.js - CesiumJS Globe Viewer Initialization
 
+let gAllPhotos = [];  // global cache: populated once, reused forever
+const photoKey = p => (p.imageFull || p.thumbnail).split('/').pop();
+
 // This is the main initialization function that fetches the Cesium token and initializes the viewer
 async function initializeGlobeViewer() {
     console.log("Attempting to initialize globe viewer...");
@@ -74,9 +77,7 @@ async function initializeGlobeViewer() {
 
         // --- Add event listeners for loading progress and errors ---
         viewer.scene.globe.tileLoadProgressEvent.addEventListener(function(numberOfPendingTiles) {
-            if (numberOfPendingTiles === 0) {
-                console.log("All base tiles loaded.");
-            }
+            // Silently track tile loading progress
         });
         
         viewer.scene.renderError.addEventListener(function(scene, error) {
@@ -121,120 +122,111 @@ async function initializeGlobeViewer() {
 
         // Helper function to build and open GLightbox
         function buildAndOpenLightbox(clickedPhoto, initialContext = 'trip') {
-            // Get all images
-            fetch('/api/data/images')
-                .then(response => response.json())
-                .then(allPhotos => {
-                    // Determine context (trip or country)
-                    const contextId = initialContext === 'trip' && clickedPhoto.tripId ? 
-                        clickedPhoto.tripId : clickedPhoto.country;
-                    const contextKey = initialContext === 'trip' && clickedPhoto.tripId ? 
-                        'tripId' : 'country';
+            const photos = gAllPhotos;           // single source of truth
+            if (!photos.length)
+              throw new Error('gAllPhotos empty; ensure globe initialised first.');
+              
+            // Determine context (trip or country)
+            const contextId = initialContext === 'trip' && clickedPhoto.tripId ? 
+                clickedPhoto.tripId : clickedPhoto.country;
+            const contextKey = initialContext === 'trip' && clickedPhoto.tripId ? 
+                'tripId' : 'country';
                     
-                    // Helper function to get context photos with proper filtering and sorting
-                    function getContextPhotos(contextType) {
-                        // Filter photos by context
-                        const photosInContext = allPhotos.filter(photo => photo[contextKey] === contextId);
-                        
-                        // Sort by date
-                        photosInContext.sort((a, b) => {
-                            if (a.date && b.date) {
-                                return new Date(a.date) - new Date(b.date);
-                            } else if (a.date) {
-                                return -1; // a has date, b doesn't - a comes first
-                            } else if (b.date) {
-                                return 1;  // b has date, a doesn't - b comes first
-                            }
-                            return 0;      // neither has date - keep order
-                        });
-                        
-                        return photosInContext;
+            // Helper function to get context photos with proper filtering and sorting
+            function getContextPhotos(contextType) {
+                // Filter photos by context
+                const photosInContext = photos.filter(photo => photo[contextKey] === contextId);
+                
+                // Sort by date
+                photosInContext.sort((a, b) => {
+                    if (a.date && b.date) {
+                        return new Date(a.date) - new Date(b.date);
+                    } else if (a.date) {
+                        return -1; // a has date, b doesn't - a comes first
+                    } else if (b.date) {
+                        return 1;  // b has date, a doesn't - b comes first
                     }
-                    
-                    // Verify clicked photo has the originalIndex property
-                    console.log("Clicked photo data being used:", clickedPhoto); // Log the object itself
-                    console.log("Clicked photo originalIndex property:", clickedPhoto?.originalIndex); // Check property exists
-                    
-                    // Get sorted gallery photos for the initial context
-                    const sortedGalleryPhotos = getContextPhotos(initialContext);
-                    
-                    // Log the sorted array to help with debugging
-                    console.log("Context photos after sorting:", sortedGalleryPhotos.map(p => p.title)); // Log titles in sorted order
-                    
-                    // Find the index of the originally clicked photo IN THE SORTED gallery array
-                    let startIndex = sortedGalleryPhotos.findIndex(p => p === clickedPhoto); // Try object reference first
-                    
-                    // Fallback to using originalIndex if reference comparison fails
-                    if (startIndex === -1) {
-                        startIndex = sortedGalleryPhotos.findIndex(p => p.originalIndex === clickedPhoto.originalIndex);
-                    }
-                    
-                    if (startIndex === -1) {
-                        console.error(`CRITICAL: Clicked photo (title ${clickedPhoto?.title}) NOT FOUND in its own context gallery after sorting! Defaulting to 0.`, clickedPhoto, sortedGalleryPhotos);
-                        startIndex = 0; // Fallback to 0 if both methods fail
-                    }
-                    
-                    console.log(`Starting gallery at SORTED index ${startIndex} for clicked photo "${clickedPhoto?.title}" (original index ${clickedPhoto?.originalIndex}).`);
-                    
-                    // Map sortedGalleryPhotos to galleryElements for GLightbox
-                    const galleryElements = sortedGalleryPhotos.map((p, idx) => {
-                        // Determine filename, preferring imageFull, falling back to thumbnail
-                        const filenameToUse = p?.imageFull || p?.thumbnail;
-                        
-                        // Construct URL safely
-                        const fullImageUrl = filenameToUse ? `img/${filenameToUse}` : 'img/placeholder-cover.png'; // Use placeholder if no filename found
-                        
-                        // Log the details for the item corresponding to the initial click
-                        if (idx === startIndex) {
-                            console.log(`Element for starting index ${startIndex}:`);
-                            console.log(`  >> Href requesting: ${fullImageUrl}`);
-                            console.log(`  >> Based on photo data:`, p); // Log the source photo object
-                        }
-                        
-                        return {
-                            href: fullImageUrl, // This is the URL GLightbox will request
-                            type: 'image',
-                            title: p.title || '',
-                            description: p.description || '',
-                            alt: p.title || 'Photo'
-                        };
-                    });
-                    
-                    console.log(`--- Finished preparing ${galleryElements.length} elements ---`);
-                    
-                    if (galleryElements.length === 0) {
-                        console.error("No gallery elements created! Check filtering logic and data.");
-                        showNotification("Error: No photos found for this context", "error");
-                        return;
-                    }
-                    
-                    // Initialize GLightbox with the filtered gallery
-                    const lightbox = GLightbox({
-                        elements: galleryElements,
-                        startAt: Math.max(0, startIndex),
-                        loop: true
-                    });
-                    
-                    // Only keep the close listener
-                    lightbox.on('close', () => {
-                        console.log("GLightbox closed.");
-                    });
-                    
-                    // Open the lightbox
-                    lightbox.open();
-                    
-                    // Use the global tripsData variable instead of trips
-                    const contextDescription = contextKey === 'tripId' && clickedPhoto.tripId ? 
-                        `Trip "${tripsData.find(t => t.id === clickedPhoto.tripId)?.name || clickedPhoto.tripId}"` : 
-                        `Country "${clickedPhoto.country}"`;
-                    
-                    console.log(`Showing photos from ${contextDescription}`);
-                    showNotification(`Showing photos from ${contextDescription}`, 'info');
-                })
-                .catch(error => {
-                    console.error("Error loading gallery data:", error);
-                    showNotification("Failed to load gallery. Please try again.", "error");
+                    return 0;      // neither has date - keep order
                 });
+                
+                return photosInContext;
+            }
+            
+            // Debug: verify clicked photo has required properties
+            console.log("Clicked photo data:", clickedPhoto?.title);
+            
+            // Get sorted gallery photos for the initial context
+            const sortedGalleryPhotos = getContextPhotos(initialContext);
+            
+            // Log the sorted array to help with debugging
+            console.log("Context photos after sorting:", sortedGalleryPhotos.map(p => p.title)); // Log titles in sorted order
+            
+            // Find the index of the clicked photo in the sorted array using stable key
+            const startIndex = sortedGalleryPhotos.findIndex(
+                p => photoKey(p) === photoKey(clickedPhoto)
+            );
+            
+            if (startIndex === -1) {
+                console.error(`CRITICAL: Clicked photo (title ${clickedPhoto?.title}) NOT FOUND in its own context gallery after sorting! Defaulting to 0.`, clickedPhoto, sortedGalleryPhotos);
+                throw new Error('Clicked photo not found in sorted subset');
+            }
+            
+            console.log(`Starting gallery at SORTED index ${startIndex} for clicked photo "${clickedPhoto?.title}" using key "${photoKey(clickedPhoto)}".`);
+            
+            // Map sortedGalleryPhotos to galleryElements for GLightbox
+            const galleryElements = sortedGalleryPhotos.map((p, idx) => {
+                // Determine filename, preferring imageFull, falling back to thumbnail
+                const filenameToUse = p?.imageFull || p?.thumbnail;
+                
+                // Construct URL safely
+                const fullImageUrl = filenameToUse ? `img/${filenameToUse}` : 'img/placeholder-cover.png'; // Use placeholder if no filename found
+                
+                // Log the details for the item corresponding to the initial click
+                if (idx === startIndex) {
+                    console.log(`Element for starting index ${startIndex}:`);
+                    console.log(`  >> Href requesting: ${fullImageUrl}`);
+                    console.log(`  >> Based on photo data:`, p); // Log the source photo object
+                }
+                
+                return {
+                    href: fullImageUrl, // This is the URL GLightbox will request
+                    type: 'image',
+                    title: p.title || '',
+                    description: p.description || '',
+                    alt: p.title || 'Photo'
+                };
+            });
+            
+            console.log(`--- Finished preparing ${galleryElements.length} elements ---`);
+            
+            if (galleryElements.length === 0) {
+                console.error("No gallery elements created! Check filtering logic and data.");
+                showNotification("Error: No photos found for this context", "error");
+                return;
+            }
+            
+            // Initialize GLightbox with the filtered gallery
+            const lightbox = GLightbox({
+                elements: galleryElements,
+                startAt: Math.max(0, startIndex),
+                loop: true
+            });
+            
+            // Only keep the close listener
+            lightbox.on('close', () => {
+                console.log("GLightbox closed.");
+            });
+            
+            // Open the lightbox
+            lightbox.open();
+            
+            // Use the global tripsData variable instead of trips
+            const contextDescription = contextKey === 'tripId' && clickedPhoto.tripId ? 
+                `Trip "${tripsData.find(t => t.id === clickedPhoto.tripId)?.name || clickedPhoto.tripId}"` : 
+                `Country "${clickedPhoto.country}"`;
+            
+            console.log(`Showing photos from ${contextDescription}`);
+            showNotification(`Showing photos from ${contextDescription}`, 'info');
         }
 
         // Now that the viewer is ready, load the photo data
@@ -269,10 +261,12 @@ async function loadAndPlaceGlobeMarkers(viewer) {
             } catch(e) {}
             throw new Error(errorMsg);
         }
-        const images = await response.json();
-        if (!Array.isArray(images)) throw new Error("Invalid image data format.");
-
-        console.log(`Processing ${images.length} images for globe placement...`);
+        const photos = await response.json();
+        if (!Array.isArray(photos)) throw new Error("Invalid image data format.");
+        
+        gAllPhotos = photos;  // cache photos globally
+        
+        console.log(`Processing ${photos.length} images for globe placement...`);
         let placedCount = 0;
 
         // Use PinBuilder for creating pin graphics
@@ -290,23 +284,21 @@ async function loadAndPlaceGlobeMarkers(viewer) {
         }
 
         // Use Promise.all to handle async pin creation efficiently
-        const entityPromises = images.map(async (image, index) => {
+        const entityPromises = photos.map(async (photo, index) => {
             // Ensure lat/lng are numbers
-            const lat = parseFloat(image.lat);
-            const lng = parseFloat(image.lng);
+            const lat = parseFloat(photo.lat);
+            const lng = parseFloat(photo.lng);
 
             if (!isNaN(lat) && !isNaN(lng)) {
-                // Add original index for linking back later
-                image.originalIndex = index;
                 try {
-                    console.log(`Processing photo index ${index}, Title: ${image?.title}`);
-                    await createPhotoPinEntity(viewer, pinBuilder, image, tripsData);
+                    console.log(`Processing photo index ${index}, Title: ${photo?.title}`);
+                    await createPhotoPinEntity(viewer, pinBuilder, photo, tripsData, index);
                     placedCount++;
                 } catch (entityError) {
-                    console.error(`Failed to create entity for ${image.title || 'Untitled'}:`, entityError);
+                    console.error(`Failed to create entity for ${photo.title || 'Untitled'}:`, entityError);
                 }
             } else {
-                console.warn(`Skipping photo "${image.title || 'Untitled'}" due to invalid coordinates.`);
+                console.warn(`Skipping photo "${photo.title || 'Untitled'}" due to invalid coordinates.`);
             }
         });
         
@@ -320,7 +312,7 @@ async function loadAndPlaceGlobeMarkers(viewer) {
 }
 
 // Create photo pin entities and add them to the globe
-async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
+async function createPhotoPinEntity(viewer, pinBuilder, image, trips, idx) {
     const lat = parseFloat(image.lat);
     const lng = parseFloat(image.lng);
     // Position with height 0 initially, let heightReference handle terrain
@@ -384,7 +376,7 @@ async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
             },
             description: descriptionHtml, // Content for InfoBox on click
             properties: { // Store custom data for later access
-                photoIndex: image.originalIndex, // Link back to allPhotos array index
+                photoIndex: idx, // Link back to index in array
                 photoData: image // Store the original image data object
             }
         });
