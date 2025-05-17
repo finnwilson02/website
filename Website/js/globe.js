@@ -142,20 +142,12 @@ async function initializeGlobeViewer() {
                 
                 // Sort by sortIndex (if available), fallback to date
                 sorted.sort((a, b) => {
-                    // Primary sort by sortIndex if both have it
-                    if (a.sortIndex != null && b.sortIndex != null) {
-                        return a.sortIndex - b.sortIndex;
-                    }
-                    
-                    // Fallback to date sort when sortIndex not available
-                    if (a.date && b.date) {
-                        return new Date(a.date) - new Date(b.date);
-                    } else if (a.date) {
-                        return -1; // a has date, b doesn't - a comes first
-                    } else if (b.date) {
-                        return 1;  // b has date, a doesn't - b comes first
-                    }
-                    return 0;      // neither has date - keep order
+                    const ai = a.sortIndex;
+                    const bi = b.sortIndex;
+                    if (ai != null && bi != null) return ai - bi;      // both indexed
+                    if (ai == null && bi != null) return 1;           // a without index
+                    if (bi == null && ai != null) return -1;           // b without index
+                    return new Date(a.date) - new Date(b.date);        // both missing
                 });
                 
                 return sorted;
@@ -294,15 +286,12 @@ async function loadAndPlaceGlobeMarkers(viewer) {
 
         // Sort photos by sortIndex before creating pins
         const sortedPhotos = [...photos].sort((a, b) => {
-            // Primary sort by sortIndex if both have it
-            if (a.sortIndex != null && b.sortIndex != null) {
-                return a.sortIndex - b.sortIndex;
-            }
-            // Fallback to date
-            if (a.date && b.date) {
-                return new Date(a.date) - new Date(b.date);
-            }
-            return 0;
+            const ai = a.sortIndex;
+            const bi = b.sortIndex;
+            if (ai != null && bi != null) return ai - bi;      // both indexed
+            if (ai == null && bi != null) return 1;           // a without index
+            if (bi == null && ai != null) return -1;           // b without index
+            return new Date(a.date) - new Date(b.date);        // both missing
         });
         
         // Use Promise.all to handle async pin creation efficiently

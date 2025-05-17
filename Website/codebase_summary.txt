@@ -1,9 +1,11 @@
 # WEBSITE CODEBASE SUMMARY
--e 
+
 ## File Structure
 
 - ./
   - .sessions/
+  - build/
+    - tools/
   - css/
     - vendor/
   - data/
@@ -14,10 +16,11 @@
     - vendor/
   - models/
   - node_modules/
--e 
+  - thumbs/
+
 ## File Contents
 
--e 
+
 ### ./addbook.py
 
 ```py
@@ -184,9 +187,9 @@ if __name__ == '__main__':
     url = f"http://127.0.0.1:{port}/"
     threading.Timer(1.0, lambda: webbrowser.open(url)).start()
     app.run(debug=True, use_reloader=False, port=port)
--e 
+
 ```
--e 
+
 ### ./admin.html
 
 ```html
@@ -931,9 +934,9 @@ if __name__ == '__main__':
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
   <script src="js/admin.js"></script>
 </body>
-</html>-e 
+</html>
 ```
--e 
+
 ### ./bookshelf.html
 
 ```html
@@ -991,13 +994,79 @@ if __name__ == '__main__':
   <script src="js/bookshelf.js"></script>
 </body>
 </html>
--e 
+
 ```
--e 
+
+### ./build/tools/gen_thumbs.js
+
+```js
+// build/tools/gen_thumbs.js
+const fs    = require('fs').promises;
+const path  = require('path');
+const sharp = require('sharp');
+
+const IMG_DIR   = path.resolve(__dirname, '../../img');
+const THUMB_DIR = path.resolve(__dirname, '../../thumbs');
+const SIZE      = 96;            // px
+
+(async () => {
+  await fs.mkdir(THUMB_DIR, {recursive: true});
+  const files = await fs.readdir(IMG_DIR);
+
+  let created = 0;
+  for (const f of files) {
+    // Skip non-image files and Zone.Identifier files
+    if (f.includes('Zone.Identifier') || f.includes('.attrs')) {
+      continue;
+    }
+
+    const src = path.join(IMG_DIR, f);
+    const dst = path.join(THUMB_DIR, f);
+    try {
+      await fs.access(dst);          // exists → skip
+      process.stdout.write('s');     // skipped (thumbnail exists)
+    } catch (_) {
+      try {
+        // Get file stats to ensure it's a regular file
+        const stats = await fs.stat(src);
+        if (!stats.isFile()) {
+          continue; // Skip directories or special files
+        }
+
+        await sharp(src).resize(SIZE, SIZE, {fit:'inside'}).toFile(dst);
+        created++;
+        process.stdout.write('.');   // progress dot
+      } catch (err) {
+        // Skip files that cause errors (e.g., non-image files)
+        process.stdout.write('e');   // error indicator
+        console.error(`\nError processing ${f}: ${err.message}`);
+      }
+    }
+  }
+  console.log(`\n${created} thumbnails created (out of ${files.length} files).`);
+})().catch(e => { console.error(e); process.exit(1); });
+```
+
 ### ./css/admin.css
 
 ```css
 /* admin.css */
+
+/* Rotate buttons */
+.rotL,.rotR{
+    border: none;
+    background: #3a7bd5;
+    color: white;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 3px 8px;
+    margin-right: 5px;
+    border-radius: 3px;
+}
+
+.rotL:hover,.rotR:hover{
+    background: #2a6bc5;
+}
 
 /* Drag and drop styling for photo reordering */
 .photo-list-row {
@@ -1401,9 +1470,9 @@ a.cv-tab-link.active {
     background-color: #fff3cd;
     color: #856404;
     border: 1px solid #ffeeba;
-}-e 
+}
 ```
--e 
+
 ### ./css/bookshelf.css
 
 ```css
@@ -1499,9 +1568,9 @@ a.cv-tab-link.active {
   #overlayReviewText {
     white-space: pre-line;
   }
-  -e 
+  
 ```
--e 
+
 ### ./css/project-detail.css
 
 ```css
@@ -1631,9 +1700,9 @@ a.cv-tab-link.active {
   .project-banner-image {
     max-height: 300px;
   }
-}-e 
+}
 ```
--e 
+
 ### ./css/projects.css
 
 ```css
@@ -1810,9 +1879,9 @@ a.cv-tab-link.active {
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
-}-e 
+}
 ```
--e 
+
 ### ./css/research.css
 
 ```css
@@ -1941,9 +2010,9 @@ section h2 {
   .entry-links a {
     margin-bottom: 0.7em;
   }
-}-e 
+}
 ```
--e 
+
 ### ./css/style.css
 
 ```css
@@ -2113,9 +2182,9 @@ body {
   background-color: #e1e8f2;
   transform: translateY(-1px);
 }
-  -e 
+  
 ```
--e 
+
 ### ./css/vendor/photoswipe.css
 
 ```css
@@ -2356,9 +2425,9 @@ body {
   color: #fff;
   pointer-events: none
 }
--e 
+
 ```
--e 
+
 ### ./css/worldmap.css
 
 ```css
@@ -2595,9 +2664,9 @@ body {
     /* Style for the 'None' text */
     font-style: italic;
     color: #888;
-}-e 
+}
 ```
--e 
+
 ### ./cv.html
 
 ```html
@@ -2665,9 +2734,9 @@ body {
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/cv.js" defer></script>
 </body>
-</html>-e 
+</html>
 ```
--e 
+
 ### ./footer.html
 
 ```html
@@ -2701,9 +2770,9 @@ body {
       </a>
     </div>
   </div>
-  -e 
+  
 ```
--e 
+
 ### ./globe.html
 
 ```html
@@ -2760,9 +2829,9 @@ body {
     <!-- Include specific script for this page -->
     <script src="js/globe.js"></script>
 </body>
-</html>-e 
+</html>
 ```
--e 
+
 ### ./hash-password.js
 
 ```js
@@ -2778,9 +2847,9 @@ bcrypt.hash(plainPassword, saltRounds, function(err, hash) {
     console.log("Plain Password:", plainPassword);
     console.log("Hashed Password:", hash);
     console.log("\nCopy the 'Hashed Password' value and store it securely.");
-});-e 
+});
 ```
--e 
+
 ### ./includes/header.html
 
 ```html
@@ -2799,9 +2868,9 @@ bcrypt.hash(plainPassword, saltRounds, function(err, hash) {
     </nav>
     <button id="nav-toggle">☰</button>
   </div>
-</header>-e 
+</header>
 ```
--e 
+
 ### ./index.html
 
 ```html
@@ -2850,9 +2919,9 @@ bcrypt.hash(plainPassword, saltRounds, function(err, hash) {
   
 </body>
 </html>
--e 
+
 ```
--e 
+
 ### ./js/admin.js
 
 ```js
@@ -3866,7 +3935,7 @@ function renderGroupedPhotoLists() {
             const imgPath = imgSrc ? `img/${imgSrc}` : '';
             const thumbCell = row.insertCell();
             thumbCell.innerHTML = imgSrc ? 
-                `<img src="${imgPath}" alt="thumbnail" width="50" height="50" style="object-fit: cover;">` : 
+                `<img src="${imgPath}" alt="thumbnail" width="50" height="50" style="object-fit: cover;" data-slug="${imgSrc}">` : 
                 'No thumb';
             
             // Other data cells
@@ -3883,6 +3952,10 @@ function renderGroupedPhotoLists() {
             // Actions cell with original index
             const actionsCell = row.insertCell();
             actionsCell.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                  <button class="rotL" data-slug="${imgSrc}" title="Rotate Left">⟲ Left</button>
+                  <button class="rotR" data-slug="${imgSrc}" title="Rotate Right">Right ⟳</button>
+                </div>
                 <button data-index="${photo.originalIndex}" class="edit-photo-btn">Edit</button>
                 <button data-index="${photo.originalIndex}" class="delete-photo-btn">Delete</button>
             `;
@@ -3956,6 +4029,58 @@ function renderGroupedPhotoLists() {
 
     setupGroupedPhotoActionListeners(); // Set up event listeners via delegation
 }
+// Handler for image rotation
+document.addEventListener('click', async e => {
+    if (e.target.classList.contains('rotL') || e.target.classList.contains('rotR')) {
+        const slug = e.target.dataset.slug;
+        if (!slug) {
+            console.error('No slug found on rotation button');
+            showNotification('Error: Cannot identify image to rotate', 'error');
+            return;
+        }
+        const dir = e.target.classList.contains('rotL') ? 'left' : 'right';
+        
+        // Show loading indicator
+        const button = e.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '⟳'; // Show loading indicator
+        button.disabled = true;
+        
+        try {
+            const response = await fetch(`/api/images/${slug}/rotate`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({dir})
+            });
+            
+            if (response.ok) {
+                // Bust cache on all instances of this image
+                const cacheBuster = Date.now();
+                const imgElements = document.querySelectorAll(`img[src*="${slug}"]`);
+                if (imgElements.length > 0) {
+                    imgElements.forEach(img => {
+                        img.src = img.src.split('?')[0] + '?v=' + cacheBuster;
+                    });
+                    showNotification(`Image rotated ${dir === 'left' ? 'counterclockwise' : 'clockwise'}`, 'success');
+                } else {
+                    console.warn('No image elements found to refresh after rotation');
+                    showNotification('Image rotated, but thumbnail not refreshed', 'warning');
+                }
+            } else {
+                const errorMsg = response.status === 401 ? 'Authentication required' : 'Server error';
+                showNotification(`Failed to rotate image: ${errorMsg}`, 'error');
+            }
+        } catch (err) {
+            console.error('Error rotating image:', err);
+            showNotification('Error rotating image: ' + err.message, 'error');
+        } finally {
+            // Restore button
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    }
+});
+
 function setupGroupedPhotoActionListeners() {
     const container = document.getElementById("photosGroupContainer");
     if (!container) return;
@@ -4076,13 +4201,40 @@ function setupGroupedPhotoActionListeners() {
         // Update orderIndex values sequentially
         tripPhotos.forEach((photo, idx) => {
             photo.orderIndex = idx;
+            photo.sortIndex = idx; // Set new sortIndex also (matches orderIndex for compatibility)
         });
         
         // Create updated photos array for saving
         const updatedPhotos = [...photos]; // Create a copy
         
-        // Save the updated photos
+        // Save the updated photos to the main images endpoint
         const isSuccess = await saveData("images", updatedPhotos);
+        
+        // Also send data to the dedicated reorder endpoint
+        const items = tripPhotos.map(photo => {
+            const slug = photo.imageFull || photo.thumbnail;
+            return {
+                slug: slug,
+                idx: photo.sortIndex
+            };
+        });
+        
+        // Send new sort order to the dedicated reorder endpoint
+        try {
+            const response = await fetch('/api/images/reorder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(items)
+            });
+            
+            if (!response.ok) {
+                console.error(`Failed to update sort order via /api/images/reorder: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error sending sort order update:', error);
+        }
         
         if (isSuccess) {
             photos = updatedPhotos; // Update local data
@@ -4495,8 +4647,9 @@ if (photoForm) {
             tags: photoTagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag),
             tripId: photoTripIdSelect.value === '' ? null : photoTripIdSelect.value,
             country: null, // Will be auto-determined by server based on coordinates
-            // Assign orderIndex: use existing if editing, else use timestamp for new
-            orderIndex: existingPhoto?.orderIndex ?? Date.now() // Use existing or timestamp for new
+            // Assign orderIndex and sortIndex: use existing if editing, else use appropriate defaults
+            orderIndex: existingPhoto?.orderIndex ?? Date.now(), // Use existing or timestamp for new
+            sortIndex: existingPhoto?.sortIndex ?? (photos.length) // Use existing or append to end
         };
         console.log("DEBUG photoForm: Photo Data Object:", photoData);
         
@@ -6931,9 +7084,9 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.readAsDataURL(file); // Read file as Data URL
         });
     }
-});-e 
+});
 ```
--e 
+
 ### ./js/bookshelf.js
 
 ```js
@@ -7100,9 +7253,9 @@ document.getElementById('closeOverlay').addEventListener('click', () => {
 });
 
 window.addEventListener('resize', renderBooks);
--e 
+
 ```
--e 
+
 ### ./js/cv.js
 
 ```js
@@ -7424,13 +7577,16 @@ function renderPositions(data) {
         `;
         container.appendChild(li);
     });
-}-e 
+}
 ```
--e 
+
 ### ./js/globe.js
 
 ```js
 // globe.js - CesiumJS Globe Viewer Initialization
+
+let gAllPhotos = [];  // global cache: populated once, reused forever
+const photoKey = p => (p.imageFull || p.thumbnail).split('/').pop();
 
 // This is the main initialization function that fetches the Cesium token and initializes the viewer
 async function initializeGlobeViewer() {
@@ -7506,9 +7662,7 @@ async function initializeGlobeViewer() {
 
         // --- Add event listeners for loading progress and errors ---
         viewer.scene.globe.tileLoadProgressEvent.addEventListener(function(numberOfPendingTiles) {
-            if (numberOfPendingTiles === 0) {
-                console.log("All base tiles loaded.");
-            }
+            // Silently track tile loading progress
         });
         
         viewer.scene.renderError.addEventListener(function(scene, error) {
@@ -7553,120 +7707,120 @@ async function initializeGlobeViewer() {
 
         // Helper function to build and open GLightbox
         function buildAndOpenLightbox(clickedPhoto, initialContext = 'trip') {
-            // Get all images
-            fetch('/api/data/images')
-                .then(response => response.json())
-                .then(allPhotos => {
-                    // Determine context (trip or country)
-                    const contextId = initialContext === 'trip' && clickedPhoto.tripId ? 
-                        clickedPhoto.tripId : clickedPhoto.country;
-                    const contextKey = initialContext === 'trip' && clickedPhoto.tripId ? 
-                        'tripId' : 'country';
+            const photos = gAllPhotos;           // single source of truth
+            if (!photos.length)
+              throw new Error('gAllPhotos empty; ensure globe initialised first.');
+              
+            // Determine context (trip or country)
+            const contextId = initialContext === 'trip' && clickedPhoto.tripId ? 
+                clickedPhoto.tripId : clickedPhoto.country;
+            const contextKey = initialContext === 'trip' && clickedPhoto.tripId ? 
+                'tripId' : 'country';
                     
-                    // Helper function to get context photos with proper filtering and sorting
-                    function getContextPhotos(contextType) {
-                        // Filter photos by context
-                        const photosInContext = allPhotos.filter(photo => photo[contextKey] === contextId);
-                        
-                        // Sort by date
-                        photosInContext.sort((a, b) => {
-                            if (a.date && b.date) {
-                                return new Date(a.date) - new Date(b.date);
-                            } else if (a.date) {
-                                return -1; // a has date, b doesn't - a comes first
-                            } else if (b.date) {
-                                return 1;  // b has date, a doesn't - b comes first
-                            }
-                            return 0;      // neither has date - keep order
-                        });
-                        
-                        return photosInContext;
+            // Helper function to get context photos with proper filtering and sorting
+            function getContextPhotos(contextType) {
+                // Filter photos by context
+                const photosInContext = photos.filter(photo => photo[contextKey] === contextId);
+                
+                // Create a copy for sorting
+                const sorted = [...photosInContext];
+                
+                // Sort by sortIndex (if available), fallback to date
+                sorted.sort((a, b) => {
+                    // Primary sort by sortIndex if both have it
+                    if (a.sortIndex != null && b.sortIndex != null) {
+                        return a.sortIndex - b.sortIndex;
                     }
                     
-                    // Verify clicked photo has the originalIndex property
-                    console.log("Clicked photo data being used:", clickedPhoto); // Log the object itself
-                    console.log("Clicked photo originalIndex property:", clickedPhoto?.originalIndex); // Check property exists
-                    
-                    // Get sorted gallery photos for the initial context
-                    const sortedGalleryPhotos = getContextPhotos(initialContext);
-                    
-                    // Log the sorted array to help with debugging
-                    console.log("Context photos after sorting:", sortedGalleryPhotos.map(p => p.title)); // Log titles in sorted order
-                    
-                    // Find the index of the originally clicked photo IN THE SORTED gallery array
-                    let startIndex = sortedGalleryPhotos.findIndex(p => p === clickedPhoto); // Try object reference first
-                    
-                    // Fallback to using originalIndex if reference comparison fails
-                    if (startIndex === -1) {
-                        startIndex = sortedGalleryPhotos.findIndex(p => p.originalIndex === clickedPhoto.originalIndex);
+                    // Fallback to date sort when sortIndex not available
+                    if (a.date && b.date) {
+                        return new Date(a.date) - new Date(b.date);
+                    } else if (a.date) {
+                        return -1; // a has date, b doesn't - a comes first
+                    } else if (b.date) {
+                        return 1;  // b has date, a doesn't - b comes first
                     }
-                    
-                    if (startIndex === -1) {
-                        console.error(`CRITICAL: Clicked photo (title ${clickedPhoto?.title}) NOT FOUND in its own context gallery after sorting! Defaulting to 0.`, clickedPhoto, sortedGalleryPhotos);
-                        startIndex = 0; // Fallback to 0 if both methods fail
-                    }
-                    
-                    console.log(`Starting gallery at SORTED index ${startIndex} for clicked photo "${clickedPhoto?.title}" (original index ${clickedPhoto?.originalIndex}).`);
-                    
-                    // Map sortedGalleryPhotos to galleryElements for GLightbox
-                    const galleryElements = sortedGalleryPhotos.map((p, idx) => {
-                        // Determine filename, preferring imageFull, falling back to thumbnail
-                        const filenameToUse = p?.imageFull || p?.thumbnail;
-                        
-                        // Construct URL safely
-                        const fullImageUrl = filenameToUse ? `img/${filenameToUse}` : 'img/placeholder-cover.png'; // Use placeholder if no filename found
-                        
-                        // Log the details for the item corresponding to the initial click
-                        if (idx === startIndex) {
-                            console.log(`Element for starting index ${startIndex}:`);
-                            console.log(`  >> Href requesting: ${fullImageUrl}`);
-                            console.log(`  >> Based on photo data:`, p); // Log the source photo object
-                        }
-                        
-                        return {
-                            href: fullImageUrl, // This is the URL GLightbox will request
-                            type: 'image',
-                            title: p.title || '',
-                            description: p.description || '',
-                            alt: p.title || 'Photo'
-                        };
-                    });
-                    
-                    console.log(`--- Finished preparing ${galleryElements.length} elements ---`);
-                    
-                    if (galleryElements.length === 0) {
-                        console.error("No gallery elements created! Check filtering logic and data.");
-                        showNotification("Error: No photos found for this context", "error");
-                        return;
-                    }
-                    
-                    // Initialize GLightbox with the filtered gallery
-                    const lightbox = GLightbox({
-                        elements: galleryElements,
-                        startAt: Math.max(0, startIndex),
-                        loop: true
-                    });
-                    
-                    // Only keep the close listener
-                    lightbox.on('close', () => {
-                        console.log("GLightbox closed.");
-                    });
-                    
-                    // Open the lightbox
-                    lightbox.open();
-                    
-                    // Use the global tripsData variable instead of trips
-                    const contextDescription = contextKey === 'tripId' && clickedPhoto.tripId ? 
-                        `Trip "${tripsData.find(t => t.id === clickedPhoto.tripId)?.name || clickedPhoto.tripId}"` : 
-                        `Country "${clickedPhoto.country}"`;
-                    
-                    console.log(`Showing photos from ${contextDescription}`);
-                    showNotification(`Showing photos from ${contextDescription}`, 'info');
-                })
-                .catch(error => {
-                    console.error("Error loading gallery data:", error);
-                    showNotification("Failed to load gallery. Please try again.", "error");
+                    return 0;      // neither has date - keep order
                 });
+                
+                return sorted;
+            }
+            
+            // Debug: verify clicked photo has required properties
+            console.log("Clicked photo data:", clickedPhoto?.title);
+            
+            // Get sorted gallery photos for the initial context
+            const sortedGalleryPhotos = getContextPhotos(initialContext);
+            
+            // Log the sorted array to help with debugging
+            console.log("Context photos after sorting:", sortedGalleryPhotos.map(p => p.title)); // Log titles in sorted order
+            
+            // Find the index of the clicked photo in the sorted array using stable key
+            const startIndex = sortedGalleryPhotos.findIndex(
+                p => photoKey(p) === photoKey(clickedPhoto)
+            );
+            
+            if (startIndex === -1) {
+                console.error(`CRITICAL: Clicked photo (title ${clickedPhoto?.title}) NOT FOUND in its own context gallery after sorting! Defaulting to 0.`, clickedPhoto, sortedGalleryPhotos);
+                throw new Error('Clicked photo not found in sorted subset');
+            }
+            
+            console.log(`Starting gallery at SORTED index ${startIndex} for clicked photo "${clickedPhoto?.title}" using key "${photoKey(clickedPhoto)}".`);
+            
+            // Map sortedGalleryPhotos to galleryElements for GLightbox
+            const galleryElements = sortedGalleryPhotos.map((p, idx) => {
+                // Determine filename, preferring imageFull, falling back to thumbnail
+                const filenameToUse = p?.imageFull || p?.thumbnail;
+                
+                // Construct URL safely
+                const fullImageUrl = filenameToUse ? `img/${filenameToUse}` : 'img/placeholder-cover.png'; // Use placeholder if no filename found
+                
+                // Log the details for the item corresponding to the initial click
+                if (idx === startIndex) {
+                    console.log(`Element for starting index ${startIndex}:`);
+                    console.log(`  >> Href requesting: ${fullImageUrl}`);
+                    console.log(`  >> Based on photo data:`, p); // Log the source photo object
+                }
+                
+                return {
+                    href: fullImageUrl, // This is the URL GLightbox will request
+                    type: 'image',
+                    title: p.title || '',
+                    description: p.description || '',
+                    alt: p.title || 'Photo'
+                };
+            });
+            
+            console.log(`--- Finished preparing ${galleryElements.length} elements ---`);
+            
+            if (galleryElements.length === 0) {
+                console.error("No gallery elements created! Check filtering logic and data.");
+                showNotification("Error: No photos found for this context", "error");
+                return;
+            }
+            
+            // Initialize GLightbox with the filtered gallery
+            const lightbox = GLightbox({
+                elements: galleryElements,
+                startAt: Math.max(0, startIndex),
+                loop: true
+            });
+            
+            // Only keep the close listener
+            lightbox.on('close', () => {
+                console.log("GLightbox closed.");
+            });
+            
+            // Open the lightbox
+            lightbox.open();
+            
+            // Use the global tripsData variable instead of trips
+            const contextDescription = contextKey === 'tripId' && clickedPhoto.tripId ? 
+                `Trip "${tripsData.find(t => t.id === clickedPhoto.tripId)?.name || clickedPhoto.tripId}"` : 
+                `Country "${clickedPhoto.country}"`;
+            
+            console.log(`Showing photos from ${contextDescription}`);
+            showNotification(`Showing photos from ${contextDescription}`, 'info');
         }
 
         // Now that the viewer is ready, load the photo data
@@ -7701,10 +7855,12 @@ async function loadAndPlaceGlobeMarkers(viewer) {
             } catch(e) {}
             throw new Error(errorMsg);
         }
-        const images = await response.json();
-        if (!Array.isArray(images)) throw new Error("Invalid image data format.");
-
-        console.log(`Processing ${images.length} images for globe placement...`);
+        const photos = await response.json();
+        if (!Array.isArray(photos)) throw new Error("Invalid image data format.");
+        
+        gAllPhotos = photos;  // cache photos globally
+        
+        console.log(`Processing ${photos.length} images for globe placement...`);
         let placedCount = 0;
 
         // Use PinBuilder for creating pin graphics
@@ -7721,24 +7877,37 @@ async function loadAndPlaceGlobeMarkers(viewer) {
             console.warn("Could not load trips data:", tripError);
         }
 
+        // Sort photos by sortIndex before creating pins
+        const sortedPhotos = [...photos].sort((a, b) => {
+            // Primary sort by sortIndex if both have it
+            if (a.sortIndex != null && b.sortIndex != null) {
+                return a.sortIndex - b.sortIndex;
+            }
+            // Fallback to date
+            if (a.date && b.date) {
+                return new Date(a.date) - new Date(b.date);
+            }
+            return 0;
+        });
+        
         // Use Promise.all to handle async pin creation efficiently
-        const entityPromises = images.map(async (image, index) => {
+        const entityPromises = sortedPhotos.map(async (photo, index) => {
             // Ensure lat/lng are numbers
-            const lat = parseFloat(image.lat);
-            const lng = parseFloat(image.lng);
+            const lat = parseFloat(photo.lat);
+            const lng = parseFloat(photo.lng);
 
             if (!isNaN(lat) && !isNaN(lng)) {
-                // Add original index for linking back later
-                image.originalIndex = index;
                 try {
-                    console.log(`Processing photo index ${index}, Title: ${image?.title}`);
-                    await createPhotoPinEntity(viewer, pinBuilder, image, tripsData);
+                    console.log(`Processing photo index ${index}, Title: ${photo?.title}`);
+                    // Pass the photo's sortIndex (or index if not available) as the display order
+                    const displayIndex = typeof photo.sortIndex === 'number' ? photo.sortIndex : index;
+                    await createPhotoPinEntity(viewer, pinBuilder, photo, tripsData, displayIndex);
                     placedCount++;
                 } catch (entityError) {
-                    console.error(`Failed to create entity for ${image.title || 'Untitled'}:`, entityError);
+                    console.error(`Failed to create entity for ${photo.title || 'Untitled'}:`, entityError);
                 }
             } else {
-                console.warn(`Skipping photo "${image.title || 'Untitled'}" due to invalid coordinates.`);
+                console.warn(`Skipping photo "${photo.title || 'Untitled'}" due to invalid coordinates.`);
             }
         });
         
@@ -7752,7 +7921,7 @@ async function loadAndPlaceGlobeMarkers(viewer) {
 }
 
 // Create photo pin entities and add them to the globe
-async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
+async function createPhotoPinEntity(viewer, pinBuilder, image, trips, idx) {
     const lat = parseFloat(image.lat);
     const lng = parseFloat(image.lng);
     // Position with height 0 initially, let heightReference handle terrain
@@ -7816,7 +7985,7 @@ async function createPhotoPinEntity(viewer, pinBuilder, image, trips) {
             },
             description: descriptionHtml, // Content for InfoBox on click
             properties: { // Store custom data for later access
-                photoIndex: image.originalIndex, // Link back to allPhotos array index
+                photoIndex: idx, // Link back to index in array
                 photoData: image // Store the original image data object
             }
         });
@@ -7903,9 +8072,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('cesiumContainer');
         if(container) container.innerHTML = `<p style="color:red; padding: 20px;">Error: Cesium library not loaded properly.</p>`;
     }
-});-e 
+});
 ```
--e 
+
 ### ./js/photoswipe-test.js
 
 ```js
@@ -7932,9 +8101,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
--e 
+
 ```
--e 
+
 ### ./js/project-detail.js
 
 ```js
@@ -8040,9 +8209,9 @@ function displayError(message) {
     if (bodyElement) bodyElement.innerHTML = `<p style="color: red;">${message}</p>`;
     
     console.error(message);
-}-e 
+}
 ```
--e 
+
 ### ./js/research.js
 
 ```js
@@ -8395,9 +8564,9 @@ function renderPatentEntries(data) {
         // Add the complete entry to the container
         container.appendChild(entryDiv);
     });
-}-e 
+}
 ```
--e 
+
 ### ./js/script.js
 
 ```js
@@ -8455,9 +8624,9 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(error => console.error("Error loading footer:", error));
 });
--e 
+
 ```
--e 
+
 ### ./js/vendor/photoswipe.umd.min.js
 
 ```js
@@ -8498,9 +8667,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         </div>`}createTopbar(){this.thumbs}onThumbnailClick(t){const e=t.target.closest(this.options.parentSelector);if(\!e&&t.target.closest("a"))return;if(e){e.dispatchEvent(new CustomEvent("pswpItemClick",{detail:{pswp:this}}));const t=this._itemData.find((t=>t.element===e));if(t){const i=this._itemData.indexOf(t);this._openPhotoSwipe({index:i}),t.element.classList.contains("pswp-gallery-item--active")||e.dispatchEvent(new CustomEvent("pswpItemClicked",{detail:{pswp:this}}))}}t.preventDefault()}_openPhotoSwipe(t){const{index:e=0}=t;let{pswpModule:i}=this.options;if(\!i)throw new Error("PhotoSwipe module was not provided");this.pswp=new i(this.createPswpOptions(e)),this.pswp.options.mainClass+="pswp--custom-icon-colors",this.pswp.containerClass="pswp-gallery",this.pswp.init?this.pswp.init():this.pswp.open(e)}createPswpOptions(t){const{gallery:e,...i}=this.options;return{dataSource:this._itemData,index:t,getItemData:t=>this._itemData[t],showAnimationType:e.showAnimationType,...i}}}}));
--e 
+
 ```
--e 
+
 ### ./js/worldmap.js
 
 ```js
@@ -9808,9 +9977,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 500);
 });
--e 
+
 ```
--e 
+
 ### ./project-detail.html
 
 ```html
@@ -9854,9 +10023,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Base script for header/footer loading etc. -->
   <script src="js/script.js"></script>
 </body>
-</html>-e 
+</html>
 ```
--e 
+
 ### ./projects.html
 
 ```html
@@ -10089,9 +10258,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <footer id="footer"></footer>
   <script src="js/script.js"></script>
 </body>
-</html>-e 
+</html>
 ```
--e 
+
 ### ./research.html
 
 ```html
@@ -10134,9 +10303,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/research.js" defer></script>
 </body>
-</html>-e 
+</html>
 ```
--e 
+
 ### ./server.js
 
 ```js
@@ -10462,7 +10631,14 @@ app.get('/api/data/images', async (req, res) => {
   try {
     const fileContent = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(fileContent);
-    res.json(jsonData);
+    
+    // Ensure every photo has a sortIndex
+    const photos = jsonData;
+    photos.forEach((p, i) => {
+      if (typeof p.sortIndex !== 'number') p.sortIndex = i;
+    });
+    
+    res.json(photos);
   } catch (error) {
     console.error(`Error reading or parsing ${filePath}:`, error);
     if (error.code === 'ENOENT') {
@@ -11533,6 +11709,88 @@ app.post('/api/save/trips', requireAuth, async (req, res) => {
     }
 });
 
+// API Endpoint to reorder images by setting sortIndex
+// POST /api/images/reorder
+// Accepts array of {slug, idx} pairs and updates sortIndex in the images.json file
+// Authentication required
+app.post('/api/images/reorder', requireAuth, async (req, res, next) => {
+  try {
+    const updates = req.body;  // [{slug:'foo.jpg', idx:3}, …]
+    const filePath = path.join(__dirname, 'data', 'images.json');
+    
+    if (!Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Invalid data format. Expected an array of updates.' });
+    }
+    
+    // Load current photos data
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const photos = JSON.parse(fileContent);
+    
+    // Create a mapping from slug to new index
+    const map = new Map(updates.map(u => [u.slug, u.idx]));
+    
+    // Update sortIndex for each photo
+    photos.forEach(p => { 
+      const slug = (p.imageFull || p.thumbnail);
+      if (map.has(slug)) p.sortIndex = map.get(slug); 
+    });
+    
+    // Save changes to disk
+    await fs.writeFile(filePath, JSON.stringify(photos, null, 2));
+    
+    // Return success with no content
+    res.sendStatus(204);
+  } catch(e) { 
+    console.error('Error during image reordering:', e);
+    next(e); 
+  }
+});
+
+// API Endpoint for image rotation (±90°)
+// POST /api/images/:slug/rotate { "dir": "left" | "right" }
+// Rotates both the full image and thumbnail in place
+// Authentication required
+app.post('/api/images/:slug/rotate', requireAuth, async (req, res, next) => {
+  try {
+    const { dir } = req.body;      // 'left' | 'right'
+    const deg = dir === 'left' ? -90 : 90;
+    if (!['left','right'].includes(dir)) {
+      console.warn(`Invalid rotation direction: ${dir}`);
+      return res.status(400).json({ error: 'Invalid rotation direction' });
+    }
+
+    const slug = req.params.slug;
+    if (!slug || slug.includes('..') || slug.includes('/')) {
+      console.warn(`Invalid image slug: ${slug}`);
+      return res.status(400).json({ error: 'Invalid image filename' });
+    }
+
+    const imgPath = path.join(__dirname, 'img', slug);
+    
+    console.log(`Rotating image ${imgPath} by ${deg} degrees`);
+    
+    // Check if file exists
+    try {
+      await fs.access(imgPath);
+    } catch (err) {
+      console.error(`File not found: ${imgPath}`);
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    // Rotate the image
+    try {
+      const buffer = await sharp(imgPath).rotate(deg).toBuffer();
+      await fs.writeFile(imgPath, buffer);
+      console.log(`Successfully rotated ${imgPath}`);
+    } catch (err) {
+      console.error(`Error rotating image: ${err.message}`);
+      return res.status(500).json({ error: 'Failed to process image' });
+    }
+
+    res.sendStatus(204);
+  } catch (e) { next(e); }
+});
+
 // API Endpoint to provide the Cesium Ion Token to the frontend securely
 app.get('/api/config/cesium-token', (req, res) => {
   const token = process.env.CESIUM_ION_TOKEN;
@@ -11551,9 +11809,9 @@ app.listen(PORT, () => {
   console.log(`Static files served from: ${path.join(__dirname)}`);
   console.log(`Access your site at: http://localhost:${PORT}`);
 });
--e 
+
 ```
--e 
+
 ### ./worldmap-admin.html
 
 ```html
@@ -11671,9 +11929,9 @@ app.listen(PORT, () => {
     </script>
   </body>
 </html>
--e 
+
 ```
--e 
+
 ### ./worldmap.html
 
 ```html
@@ -11763,5 +12021,5 @@ app.listen(PORT, () => {
   <script src="js/script.js"></script>
   <script src="js/worldmap.js"></script>
 </body>
-</html>-e 
+</html>
 ```

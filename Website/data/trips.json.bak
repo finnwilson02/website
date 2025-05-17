@@ -33,5 +33,10 @@
     "id": "fiji-17",
     "name": "Fiji",
     "dateRange": "Dec 2017"
+  },
+  {
+    "id": "usa-17",
+    "name": "United States",
+    "dateRange": "Jul 2017"
   }
 ]
