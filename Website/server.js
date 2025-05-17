@@ -320,7 +320,14 @@ app.get('/api/data/images', async (req, res) => {
   try {
     const fileContent = await fs.readFile(filePath, 'utf8');
     const jsonData = JSON.parse(fileContent);
-    res.json(jsonData);
+    
+    // Ensure every photo has a sortIndex
+    const photos = jsonData;
+    photos.forEach((p, i) => {
+      if (typeof p.sortIndex !== 'number') p.sortIndex = i;
+    });
+    
+    res.json(photos);
   } catch (error) {
     console.error(`Error reading or parsing ${filePath}:`, error);
     if (error.code === 'ENOENT') {
@@ -1389,6 +1396,88 @@ app.post('/api/save/trips', requireAuth, async (req, res) => {
          console.error(`Error writing ${filePath}:`, error);
          res.status(500).json({ success: false, error: 'Failed to save trips data.' });
     }
+});
+
+// API Endpoint to reorder images by setting sortIndex
+// POST /api/images/reorder
+// Accepts array of {slug, idx} pairs and updates sortIndex in the images.json file
+// Authentication required
+app.post('/api/images/reorder', requireAuth, async (req, res, next) => {
+  try {
+    const updates = req.body;  // [{slug:'foo.jpg', idx:3}, …]
+    const filePath = path.join(__dirname, 'data', 'images.json');
+    
+    if (!Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Invalid data format. Expected an array of updates.' });
+    }
+    
+    // Load current photos data
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const photos = JSON.parse(fileContent);
+    
+    // Create a mapping from slug to new index
+    const map = new Map(updates.map(u => [u.slug, u.idx]));
+    
+    // Update sortIndex for each photo
+    photos.forEach(p => { 
+      const slug = (p.imageFull || p.thumbnail);
+      if (map.has(slug)) p.sortIndex = map.get(slug); 
+    });
+    
+    // Save changes to disk
+    await fs.writeFile(filePath, JSON.stringify(photos, null, 2));
+    
+    // Return success with no content
+    res.sendStatus(204);
+  } catch(e) { 
+    console.error('Error during image reordering:', e);
+    next(e); 
+  }
+});
+
+// API Endpoint for image rotation (±90°)
+// POST /api/images/:slug/rotate { "dir": "left" | "right" }
+// Rotates both the full image and thumbnail in place
+// Authentication required
+app.post('/api/images/:slug/rotate', requireAuth, async (req, res, next) => {
+  try {
+    const { dir } = req.body;      // 'left' | 'right'
+    const deg = dir === 'left' ? -90 : 90;
+    if (!['left','right'].includes(dir)) {
+      console.warn(`Invalid rotation direction: ${dir}`);
+      return res.status(400).json({ error: 'Invalid rotation direction' });
+    }
+
+    const slug = req.params.slug;
+    if (!slug || slug.includes('..') || slug.includes('/')) {
+      console.warn(`Invalid image slug: ${slug}`);
+      return res.status(400).json({ error: 'Invalid image filename' });
+    }
+
+    const imgPath = path.join(__dirname, 'img', slug);
+    
+    console.log(`Rotating image ${imgPath} by ${deg} degrees`);
+    
+    // Check if file exists
+    try {
+      await fs.access(imgPath);
+    } catch (err) {
+      console.error(`File not found: ${imgPath}`);
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    // Rotate the image
+    try {
+      const buffer = await sharp(imgPath).rotate(deg).toBuffer();
+      await fs.writeFile(imgPath, buffer);
+      console.log(`Successfully rotated ${imgPath}`);
+    } catch (err) {
+      console.error(`Error rotating image: ${err.message}`);
+      return res.status(500).json({ error: 'Failed to process image' });
+    }
+
+    res.sendStatus(204);
+  } catch (e) { next(e); }
 });
 
 // API Endpoint to provide the Cesium Ion Token to the frontend securely

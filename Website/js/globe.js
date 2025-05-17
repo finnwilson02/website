@@ -137,8 +137,17 @@ async function initializeGlobeViewer() {
                 // Filter photos by context
                 const photosInContext = photos.filter(photo => photo[contextKey] === contextId);
                 
-                // Sort by date
-                photosInContext.sort((a, b) => {
+                // Create a copy for sorting
+                const sorted = [...photosInContext];
+                
+                // Sort by sortIndex (if available), fallback to date
+                sorted.sort((a, b) => {
+                    // Primary sort by sortIndex if both have it
+                    if (a.sortIndex != null && b.sortIndex != null) {
+                        return a.sortIndex - b.sortIndex;
+                    }
+                    
+                    // Fallback to date sort when sortIndex not available
                     if (a.date && b.date) {
                         return new Date(a.date) - new Date(b.date);
                     } else if (a.date) {
@@ -149,7 +158,7 @@ async function initializeGlobeViewer() {
                     return 0;      // neither has date - keep order
                 });
                 
-                return photosInContext;
+                return sorted;
             }
             
             // Debug: verify clicked photo has required properties
@@ -283,8 +292,21 @@ async function loadAndPlaceGlobeMarkers(viewer) {
             console.warn("Could not load trips data:", tripError);
         }
 
+        // Sort photos by sortIndex before creating pins
+        const sortedPhotos = [...photos].sort((a, b) => {
+            // Primary sort by sortIndex if both have it
+            if (a.sortIndex != null && b.sortIndex != null) {
+                return a.sortIndex - b.sortIndex;
+            }
+            // Fallback to date
+            if (a.date && b.date) {
+                return new Date(a.date) - new Date(b.date);
+            }
+            return 0;
+        });
+        
         // Use Promise.all to handle async pin creation efficiently
-        const entityPromises = photos.map(async (photo, index) => {
+        const entityPromises = sortedPhotos.map(async (photo, index) => {
             // Ensure lat/lng are numbers
             const lat = parseFloat(photo.lat);
             const lng = parseFloat(photo.lng);
@@ -292,7 +314,9 @@ async function loadAndPlaceGlobeMarkers(viewer) {
             if (!isNaN(lat) && !isNaN(lng)) {
                 try {
                     console.log(`Processing photo index ${index}, Title: ${photo?.title}`);
-                    await createPhotoPinEntity(viewer, pinBuilder, photo, tripsData, index);
+                    // Pass the photo's sortIndex (or index if not available) as the display order
+                    const displayIndex = typeof photo.sortIndex === 'number' ? photo.sortIndex : index;
+                    await createPhotoPinEntity(viewer, pinBuilder, photo, tripsData, displayIndex);
                     placedCount++;
                 } catch (entityError) {
                     console.error(`Failed to create entity for ${photo.title || 'Untitled'}:`, entityError);

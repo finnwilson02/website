@@ -1008,7 +1008,7 @@ function renderGroupedPhotoLists() {
             const imgPath = imgSrc ? `img/${imgSrc}` : '';
             const thumbCell = row.insertCell();
             thumbCell.innerHTML = imgSrc ? 
-                `<img src="${imgPath}" alt="thumbnail" width="50" height="50" style="object-fit: cover;">` : 
+                `<img src="${imgPath}" alt="thumbnail" width="50" height="50" style="object-fit: cover;" data-slug="${imgSrc}">` : 
                 'No thumb';
             
             // Other data cells
@@ -1025,6 +1025,10 @@ function renderGroupedPhotoLists() {
             // Actions cell with original index
             const actionsCell = row.insertCell();
             actionsCell.innerHTML = `
+                <div style="margin-bottom: 8px;">
+                  <button class="rotL" data-slug="${imgSrc}" title="Rotate Left">⟲ Left</button>
+                  <button class="rotR" data-slug="${imgSrc}" title="Rotate Right">Right ⟳</button>
+                </div>
                 <button data-index="${photo.originalIndex}" class="edit-photo-btn">Edit</button>
                 <button data-index="${photo.originalIndex}" class="delete-photo-btn">Delete</button>
             `;
@@ -1098,6 +1102,58 @@ function renderGroupedPhotoLists() {
 
     setupGroupedPhotoActionListeners(); // Set up event listeners via delegation
 }
+// Handler for image rotation
+document.addEventListener('click', async e => {
+    if (e.target.classList.contains('rotL') || e.target.classList.contains('rotR')) {
+        const slug = e.target.dataset.slug;
+        if (!slug) {
+            console.error('No slug found on rotation button');
+            showNotification('Error: Cannot identify image to rotate', 'error');
+            return;
+        }
+        const dir = e.target.classList.contains('rotL') ? 'left' : 'right';
+        
+        // Show loading indicator
+        const button = e.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '⟳'; // Show loading indicator
+        button.disabled = true;
+        
+        try {
+            const response = await fetch(`/api/images/${slug}/rotate`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({dir})
+            });
+            
+            if (response.ok) {
+                // Bust cache on all instances of this image
+                const cacheBuster = Date.now();
+                const imgElements = document.querySelectorAll(`img[src*="${slug}"]`);
+                if (imgElements.length > 0) {
+                    imgElements.forEach(img => {
+                        img.src = img.src.split('?')[0] + '?v=' + cacheBuster;
+                    });
+                    showNotification(`Image rotated ${dir === 'left' ? 'counterclockwise' : 'clockwise'}`, 'success');
+                } else {
+                    console.warn('No image elements found to refresh after rotation');
+                    showNotification('Image rotated, but thumbnail not refreshed', 'warning');
+                }
+            } else {
+                const errorMsg = response.status === 401 ? 'Authentication required' : 'Server error';
+                showNotification(`Failed to rotate image: ${errorMsg}`, 'error');
+            }
+        } catch (err) {
+            console.error('Error rotating image:', err);
+            showNotification('Error rotating image: ' + err.message, 'error');
+        } finally {
+            // Restore button
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    }
+});
+
 function setupGroupedPhotoActionListeners() {
     const container = document.getElementById("photosGroupContainer");
     if (!container) return;
@@ -1218,13 +1274,40 @@ function setupGroupedPhotoActionListeners() {
         // Update orderIndex values sequentially
         tripPhotos.forEach((photo, idx) => {
             photo.orderIndex = idx;
+            photo.sortIndex = idx; // Set new sortIndex also (matches orderIndex for compatibility)
         });
         
         // Create updated photos array for saving
         const updatedPhotos = [...photos]; // Create a copy
         
-        // Save the updated photos
+        // Save the updated photos to the main images endpoint
         const isSuccess = await saveData("images", updatedPhotos);
+        
+        // Also send data to the dedicated reorder endpoint
+        const items = tripPhotos.map(photo => {
+            const slug = photo.imageFull || photo.thumbnail;
+            return {
+                slug: slug,
+                idx: photo.sortIndex
+            };
+        });
+        
+        // Send new sort order to the dedicated reorder endpoint
+        try {
+            const response = await fetch('/api/images/reorder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(items)
+            });
+            
+            if (!response.ok) {
+                console.error(`Failed to update sort order via /api/images/reorder: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error sending sort order update:', error);
+        }
         
         if (isSuccess) {
             photos = updatedPhotos; // Update local data
@@ -1637,8 +1720,9 @@ if (photoForm) {
             tags: photoTagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag),
             tripId: photoTripIdSelect.value === '' ? null : photoTripIdSelect.value,
             country: null, // Will be auto-determined by server based on coordinates
-            // Assign orderIndex: use existing if editing, else use timestamp for new
-            orderIndex: existingPhoto?.orderIndex ?? Date.now() // Use existing or timestamp for new
+            // Assign orderIndex and sortIndex: use existing if editing, else use appropriate defaults
+            orderIndex: existingPhoto?.orderIndex ?? Date.now(), // Use existing or timestamp for new
+            sortIndex: existingPhoto?.sortIndex ?? (photos.length) // Use existing or append to end
         };
         console.log("DEBUG photoForm: Photo Data Object:", photoData);
         
