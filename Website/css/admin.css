@@ -1,5 +1,21 @@
 /* admin.css */
 
+/* Rotate buttons */
+.rotL,.rotR{
+    border: none;
+    background: #3a7bd5;
+    color: white;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 3px 8px;
+    margin-right: 5px;
+    border-radius: 3px;
+}
+
+.rotL:hover,.rotR:hover{
+    background: #2a6bc5;
+}
+
 /* Drag and drop styling for photo reordering */
 .photo-list-row {
     cursor: grab; /* Indicate draggable */
