@@ -1404,10 +1404,10 @@ app.post('/api/save/trips', requireAuth, async (req, res) => {
 // Authentication required
 app.post('/api/images/reorder', requireAuth, async (req, res, next) => {
   try {
-    const updates = req.body;  // [{slug:'foo.jpg', idx:3}, …]
+    const payload = req.body;  // [{slug:'foo.jpg', idx:3}, …]
     const filePath = path.join(__dirname, 'data', 'images.json');
     
-    if (!Array.isArray(updates)) {
+    if (!Array.isArray(payload)) {
       return res.status(400).json({ error: 'Invalid data format. Expected an array of updates.' });
     }
     
@@ -1416,15 +1416,27 @@ app.post('/api/images/reorder', requireAuth, async (req, res, next) => {
     const photos = JSON.parse(fileContent);
     
     // Create a mapping from slug to new index
-    const map = new Map(updates.map(u => [u.slug, u.idx]));
+    const posMap = new Map(payload.map(u => [u.slug, u.idx]));
     
-    // Update sortIndex for each photo
-    photos.forEach(p => { 
-      const slug = (p.imageFull || p.thumbnail);
-      if (map.has(slug)) p.sortIndex = map.get(slug); 
+    // Step A – sort the full photos array:
+    //   • photos mentioned in posMap first, ordered by idx
+    //   • all others keep current sortIndex order
+    photos.sort((a, b) => {
+      const slugA = (a.imageFull || a.thumbnail);
+      const slugB = (b.imageFull || b.thumbnail);
+      const inA = posMap.has(slugA);
+      const inB = posMap.has(slugB);
+      
+      if (inA && inB) return posMap.get(slugA) - posMap.get(slugB);
+      if (inA) return -1;
+      if (inB) return 1;
+      return (a.sortIndex || 0) - (b.sortIndex || 0);  // old order for untouched photos
     });
     
-    // Save changes to disk
+    // Step B – global re-index
+    photos.forEach((p, i) => { p.sortIndex = i; });
+    
+    // Step C – write JSON file and send 204
     await fs.writeFile(filePath, JSON.stringify(photos, null, 2));
     
     // Return success with no content
