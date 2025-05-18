@@ -114,7 +114,9 @@
 
 .project-links {
   margin-top: 1rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0;
+  display: block;
+  width: 100%;
 }
 
 .project-links a {
@@ -140,10 +142,40 @@
 
 .project-status {
   font-size: 0.85em;
-  margin-top: 0.5rem;
+  margin-top: 1rem;
   margin-bottom: 0;
   color: #666;
   font-style: italic;
+  display: block;
+  clear: both;
+}
+
+/* Loading indicator */
+.loading-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  grid-column: 1 / -1;
+  padding: 2rem;
+  color: #555;
+  font-style: italic;
+  position: relative;
+}
+
+.loading-indicator::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  border: 3px solid rgba(58, 123, 213, 0.3);
+  border-radius: 50%;
+  border-top-color: #3a7bd5;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Responsive adjustments */

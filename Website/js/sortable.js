@@ -2,13 +2,35 @@
 
 /**
  * Makes a table body sortable with drag-and-drop functionality
- * @param {string} section - The section identifier ('projects', 'articles', 'theses')
- * @param {HTMLElement} tableBody - The table body element to make sortable
+ * @param {string|HTMLElement} sectionOrElement - Either a section identifier ('projects', 'articles', 'theses') or the table body element itself
+ * @param {HTMLElement|Function} tableBodyOrCallback - Either the table body element or a callback function
  * @param {Function} saveCallback - Optional callback function to call after saving the new order
  */
-function makeSortable(section, tableBody, saveCallback) {
+function makeSortable(sectionOrElement, tableBodyOrCallback, saveCallback) {
+    let section, tableBody;
+    
+    // Handle flexible parameter passing
+    if (typeof sectionOrElement === 'string' && tableBodyOrCallback instanceof HTMLElement) {
+        // Called as makeSortable(section, tableBody, [saveCallback])
+        section = sectionOrElement;
+        tableBody = tableBodyOrCallback;
+    } else if (sectionOrElement instanceof HTMLElement && typeof tableBodyOrCallback === 'function') {
+        // Called as makeSortable(tableBody, saveCallback)
+        section = null;
+        tableBody = sectionOrElement;
+        saveCallback = tableBodyOrCallback;
+    } else if (sectionOrElement instanceof HTMLElement) {
+        // Called as makeSortable(tableBody)
+        section = null;
+        tableBody = sectionOrElement;
+        saveCallback = null;
+    } else {
+        console.error('Invalid parameters for makeSortable');
+        return;
+    }
+    
     if (!tableBody) {
-        console.error(`Table body for ${section} not found`);
+        console.error('Table body not found');
         return;
     }
     
@@ -72,7 +94,6 @@ function makeSortable(section, tableBody, saveCallback) {
         const handleCell = document.createElement('td');
         handleCell.innerHTML = '&#8942;&#8942;'; // Unicode for vertical ellipsis (⋮⋮)
         handleCell.classList.add('drag-handle');
-        handleCell.style.cursor = 'grab';
         
         // Insert the handle at the beginning of the row
         row.insertBefore(handleCell, row.firstChild);
@@ -190,17 +211,19 @@ function makeSortable(section, tableBody, saveCallback) {
         }, 5000);
     }
     
-    // Add a save button after the table
-    const saveButton = document.createElement('button');
-    saveButton.textContent = 'Save Order';
-    saveButton.className = 'save-order-btn';
-    saveButton.addEventListener('click', () => {
-        saveOrder(section, tableBody);
-    });
-    
-    // Add the save button after the table
-    const table = tableBody.closest('table');
-    if (table && table.parentNode) {
-        table.parentNode.insertBefore(saveButton, table.nextSibling);
+    // Add a save button after the table only for sections
+    if (section) {
+        const saveButton = document.createElement('button');
+        saveButton.textContent = 'Save Order';
+        saveButton.className = 'save-order-btn';
+        saveButton.addEventListener('click', () => {
+            saveOrder(section, tableBody);
+        });
+        
+        // Add the save button after the table
+        const table = tableBody.closest('table');
+        if (table && table.parentNode) {
+            table.parentNode.insertBefore(saveButton, table.nextSibling);
+        }
     }
 }

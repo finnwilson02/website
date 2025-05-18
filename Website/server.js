@@ -513,6 +513,147 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
 
      const jsonString = JSON.stringify(req.body, null, 2);
      await fs.writeFile(filePath, jsonString, 'utf8');
+     
+     // After successfully saving projects.json, synchronize with cv_skills.json
+     try {
+       const savedProjects = req.body; // Array of project objects
+       const cvSkillsPath = path.join(__dirname, 'data', 'cv_skills.json');
+       let cvSkillsData;
+       
+       try {
+         const cvSkillsContent = await fs.readFile(cvSkillsPath, 'utf8');
+         cvSkillsData = JSON.parse(cvSkillsContent);
+       } catch (e) {
+         // Initialize if not found or invalid
+         cvSkillsData = { 
+           programming: [], 
+           software: [], 
+           technical: [], 
+           uncategorized: [], 
+           allSkillsCache: [] 
+         };
+       }
+       
+       // Ensure all categories exist
+       cvSkillsData.programming = cvSkillsData.programming || [];
+       cvSkillsData.software = cvSkillsData.software || [];
+       cvSkillsData.technical = cvSkillsData.technical || [];
+       cvSkillsData.uncategorized = cvSkillsData.uncategorized || [];
+       cvSkillsData.allSkillsCache = cvSkillsData.allSkillsCache || [];
+       
+       // Create a map of existing categorized skills for lookup
+       const categorizedSkills = new Map();
+       ['programming', 'software', 'technical', 'uncategorized'].forEach(category => {
+         if (Array.isArray(cvSkillsData[category])) {
+           cvSkillsData[category].forEach(skillObj => {
+             if (skillObj.name) {
+               categorizedSkills.set(skillObj.name.toLowerCase(), {
+                 category,
+                 obj: skillObj
+               });
+             }
+           });
+         }
+       });
+       
+       // Create a map to track project skills and their associations
+       const projectSkillsMap = new Map();
+       
+       // Extract all skills from projects
+       savedProjects.forEach(project => {
+         if (Array.isArray(project.skills)) {
+           project.skills.forEach(skillName => {
+             const normalizedName = skillName.trim();
+             if (!normalizedName) return;
+             
+             const lowerName = normalizedName.toLowerCase();
+             if (!projectSkillsMap.has(lowerName)) {
+               projectSkillsMap.set(lowerName, {
+                 name: normalizedName, // Keep original casing
+                 source: "project",
+                 projects: new Set()
+               });
+             }
+             
+             projectSkillsMap.get(lowerName).projects.add(project.id);
+           });
+         }
+       });
+       
+       // Process each existing skill to preserve manual ones
+       const newCategories = {
+         programming: [],
+         software: [],
+         technical: [],
+         uncategorized: []
+       };
+       
+       // First, handle manual skills (preserve them in their categories)
+       ['programming', 'software', 'technical', 'uncategorized'].forEach(category => {
+         cvSkillsData[category].forEach(skillObj => {
+           if (skillObj.source === 'manual') {
+             // Preserve manually added skills
+             newCategories[category].push({...skillObj});
+           }
+         });
+       });
+       
+       // Now process project-derived skills
+       projectSkillsMap.forEach((skillData, lowerName) => {
+         const existingSkillInfo = categorizedSkills.get(lowerName);
+         
+         // Create a skill object with project information
+         const skillObject = {
+           name: skillData.name,
+           source: 'project',
+           projects: Array.from(skillData.projects)
+         };
+         
+         if (existingSkillInfo && existingSkillInfo.obj.source !== 'manual') {
+           // If the skill already exists and is project-derived,
+           // keep it in its current category
+           newCategories[existingSkillInfo.category].push(skillObject);
+         } else if (existingSkillInfo && existingSkillInfo.obj.source === 'manual') {
+           // If a manually added skill exists with the same name, update its projects
+           // but keep it as manual source (manual skills take precedence)
+           const manualSkill = newCategories[existingSkillInfo.category].find(
+             s => s.name.toLowerCase() === lowerName
+           );
+           if (manualSkill) {
+             // Add projects info to the manual skill
+             manualSkill.projects = skillObject.projects;
+           }
+         } else {
+           // New project skill - add to uncategorized
+           newCategories.uncategorized.push(skillObject);
+         }
+       });
+       
+       // Update the cv_skills.json object
+       cvSkillsData.programming = newCategories.programming;
+       cvSkillsData.software = newCategories.software;
+       cvSkillsData.technical = newCategories.technical;
+       cvSkillsData.uncategorized = newCategories.uncategorized;
+       
+       // Update allSkillsCache with all unique skill names
+       const allSkillNames = new Set();
+       ['programming', 'software', 'technical', 'uncategorized'].forEach(category => {
+         cvSkillsData[category].forEach(skill => {
+           if (skill.name) {
+             allSkillNames.add(skill.name);
+           }
+         });
+       });
+       cvSkillsData.allSkillsCache = Array.from(allSkillNames).sort();
+       
+       // Write the updated cv_skills.json file
+       await fs.writeFile(cvSkillsPath, JSON.stringify(cvSkillsData, null, 2), 'utf8');
+       console.log('cv_skills.json synchronized with project skills.');
+     } catch (syncError) {
+       console.error('Error synchronizing cv_skills.json with project skills:', syncError);
+       // Don't fail the main request if synchronization fails
+     }
+     
      res.status(200).json({ message: 'Projects data saved successfully.' });
    } catch (error) {
      console.error(`Error writing ${filePath}:`, error);

@@ -10,10 +10,7 @@
     },
     {
       "name": "Python",
-      "source": "manual",
-      "projects": [
-        "mine-sampling"
-      ]
+      "source": "manual"
     },
     {
       "name": "Assembly",
@@ -25,10 +22,7 @@
     },
     {
       "name": "MATLAB",
-      "source": "manual",
-      "projects": [
-        "mine-sampling"
-      ]
+      "source": "manual"
     },
     {
       "name": "Solidity",
@@ -40,10 +34,6 @@
     },
     {
       "name": "JavaScript",
-      "source": "manual"
-    },
-    {
-      "name": "AutoHotkey",
       "source": "manual"
     }
   ],
@@ -95,6 +85,10 @@
     {
       "name": "ZeroMQ",
       "source": "manual"
+    },
+    {
+      "name": "AutoHotkey",
+      "source": "manual"
     }
   ],
   "technical": [
@@ -128,10 +122,7 @@
     },
     {
       "name": "Bayesian Statistics",
-      "source": "manual",
-      "projects": [
-        "mine-sampling"
-      ]
+      "source": "manual"
     },
     {
       "name": "Linear Algebra",
@@ -154,91 +145,42 @@
       "source": "manual"
     }
   ],
-  "uncategorized": [
-    {
-      "name": "Test",
-      "source": "project",
-      "projects": [
-        "uav-deterrence"
-      ]
-    },
-    {
-      "name": "Machine Learning (GP",
-      "source": "project",
-      "projects": [
-        "mine-sampling"
-      ]
-    },
-    {
-      "name": "RF)",
-      "source": "project",
-      "projects": [
-        "mine-sampling"
-      ]
-    },
-    {
-      "name": "Data Analysis",
-      "source": "project",
-      "projects": [
-        "mine-sampling"
-      ]
-    },
-    {
-      "name": "Optimization Algorithms",
-      "source": "project",
-      "projects": [
-        "mine-sampling"
-      ]
-    },
-    {
-      "name": "Test 2",
-      "source": "project",
-      "projects": [
-        "mine-sampling"
-      ]
-    }
-  ],
+  "uncategorized": [],
   "allSkillsCache": [
-    "3D Printing",
-    "Acoustics",
-    "Altium",
-    "Arduino",
-    "Assembly",
-    "AutoHotkey",
-    "Bayesian Statistics",
     "C",
     "C++",
-    "CAD",
-    "Data Analysis",
-    "Digital Signal Processing",
-    "Electronics/Mechanical Prototyping",
-    "FreeRTOS",
-    "Git",
-    "JavaScript",
-    "LaTeX",
-    "Linear Algebra",
-    "MATLAB",
-    "Machine Learning",
-    "Machine Learning (GP",
-    "Microcontrollers",
-    "Optimization Algorithms",
-    "Orbital Mechanics",
-    "PCB Design",
-    "PyTorch",
     "Python",
+    "Assembly",
     "R",
-    "RF)",
-    "ROS",
-    "Raspberry Pi OS",
-    "Sensors",
-    "SolidWorks",
+    "MATLAB",
     "Solidity",
-    "Systems Control/Design",
-    "TensorFlow",
-    "Test",
-    "Test 2",
-    "Ubuntu",
     "Verilog",
-    "ZeroMQ"
+    "JavaScript",
+    "AutoHotkey",
+    "Git",
+    "LaTeX",
+    "Arduino",
+    "Raspberry Pi OS",
+    "ROS",
+    "SolidWorks",
+    "Altium",
+    "Ubuntu",
+    "TensorFlow",
+    "PyTorch",
+    "FreeRTOS",
+    "ZeroMQ",
+    "3D Printing",
+    "Electronics/Mechanical Prototyping",
+    "CAD",
+    "Sensors",
+    "Digital Signal Processing",
+    "Microcontrollers",
+    "Orbital Mechanics",
+    "Bayesian Statistics",
+    "Linear Algebra",
+    "Machine Learning",
+    "PCB Design",
+    "Systems Control/Design",
+    "Acoustics"
   ]
 }

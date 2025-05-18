@@ -287,7 +287,7 @@ let cvEducation = [];
 let cvWork = [];
 let cvResearch = [];
 let cvProjects = [];
-let cvSkills = { programming: [], software: [], technical: [] };
+let cvSkills = { programming: [], software: [], technical: [], uncategorized: [] };
 let cvAchievements = [];
 let cvPositions = [];
 
@@ -445,7 +445,7 @@ async function initializeAdminPanel() {
         
         initializeMarkdownEditor(); // Initialize the editor
         setupTabNavigation(); // Initialize tab navigation
-        setupCvTabNavigation(); // Initialize CV sub-tab navigation
+        // setupCvTabNavigation has been removed as CV sections are now sequential
     } catch (error) {
         console.error("Error during admin panel initialization:", error);
         showNotification("Failed to initialize all admin data.", "error");
@@ -456,62 +456,6 @@ async function initializeAdminPanel() {
 
 // Tab navigation functionality
 function setupTabNavigation() {
-    // Setup new tab filter functionality first
-    const tabGroupFilter = document.getElementById('tabGroupFilter');
-    
-    // Handle tab filtering
-    if (tabGroupFilter) {
-        // Set initial filter value from session storage
-        const savedTabGroup = sessionStorage.getItem('activeTabGroup');
-        if (savedTabGroup) {
-            tabGroupFilter.value = savedTabGroup;
-            filterTabs(savedTabGroup);
-        }
-        
-        tabGroupFilter.addEventListener('change', function() {
-            const selectedGroup = this.value;
-            filterTabs(selectedGroup);
-            
-            // Save the filter selection to session storage
-            sessionStorage.setItem('activeTabGroup', selectedGroup !== 'all' ? selectedGroup : '');
-            
-            // If we're filtering to a specific group, and no tab in that group is active,
-            // activate the first available tab in that group
-            if (selectedGroup !== 'all') {
-                const activeTab = document.querySelector('.tab-link.active');
-                const activeTabGroup = activeTab ? activeTab.dataset.tabGroup : null;
-                
-                if (activeTabGroup !== selectedGroup) {
-                    // Find the first tab in the selected group and click it
-                    const firstTabInGroup = document.querySelector(`.tab-link[data-tab-group="${selectedGroup}"]`);
-                    if (firstTabInGroup) {
-                        firstTabInGroup.click();
-                    }
-                }
-            }
-        });
-    }
-    
-    // Function to filter tabs by group
-    function filterTabs(group) {
-        const tabLinks = document.querySelectorAll('.tab-link');
-        
-        if (group === 'all') {
-            // Show all tabs
-            tabLinks.forEach(tab => {
-                tab.parentElement.classList.remove('filtered');
-            });
-        } else {
-            // Show only tabs in the selected group
-            tabLinks.forEach(tab => {
-                if (tab.dataset.tabGroup === group) {
-                    tab.parentElement.classList.remove('filtered');
-                } else {
-                    tab.parentElement.classList.add('filtered');
-                }
-            });
-        }
-    }
     
     // Original tab navigation functionality
     const tabNav = document.querySelector('.admin-tabs ul.tab-nav');
@@ -551,12 +495,8 @@ function setupTabNavigation() {
                     }
                 }));
                 
-                // Save the tab group if available
+                // Tab group data attribute is kept for future reference
                 const tabGroup = clickedTab.dataset.tabGroup;
-                if (tabGroup && tabGroupFilter) {
-                    sessionStorage.setItem('activeTabGroup', tabGroup);
-                    tabGroupFilter.value = tabGroup;
-                }
 
                 // Special case: Re-initialize EasyMDE if the Projects tab becomes active
                 if (targetPaneSelector === '#projectManagementSection') {
@@ -574,6 +514,24 @@ function setupTabNavigation() {
                     } else {
                         // If not initialized, try initializing now
                         initializeMarkdownEditor();
+                    }
+                }
+                
+                // Special case: Handle homepage editor when its tab becomes active
+                if (targetPaneSelector === '#homepageEditorSection') {
+                    // The homepageEditor.js script handles refreshing and loading content when needed
+                    // Just trigger an event that homepageEditor.js listens for
+                    document.dispatchEvent(new CustomEvent('tabChanged', {
+                        detail: { tabId: targetPaneSelector }
+                    }));
+                    
+                    // Try to refresh any Markdown processing
+                    const homepageEditor = document.getElementById('homepageEditor');
+                    if (homepageEditor && homepageEditor.value) {
+                        const homepagePreview = document.getElementById('homepagePreview');
+                        if (homepagePreview && window.marked) {
+                            homepagePreview.innerHTML = marked.parse(homepageEditor.value);
+                        }
                     }
                 }
                 
@@ -2264,34 +2222,7 @@ async function saveCvData(section, data, buttonElement = null) {
     return await saveData(`cv/${section}`, data, buttonElement);
 }
 
-// Helper function to setup CV sub-tab navigation
-function setupCvTabNavigation() {
-    const cvTabNav = document.querySelector('.cv-tab-nav');
-    
-    if (cvTabNav) {
-        cvTabNav.addEventListener('click', (event) => {
-            // Check if the clicked element is a CV tab link
-            if (event.target.matches('a.cv-tab-link')) {
-                event.preventDefault();
-                
-                const clickedTab = event.target;
-                const targetTab = clickedTab.dataset.cvTab;
-                
-                // Remove active class from all CV tabs and panes
-                cvTabNav.querySelectorAll('.cv-tab-link').forEach(tab => {
-                    tab.classList.remove('active');
-                });
-                document.querySelectorAll('.cv-tab-pane').forEach(pane => {
-                    pane.classList.remove('active');
-                });
-                
-                // Add active class to clicked tab and corresponding pane
-                clickedTab.classList.add('active');
-                document.getElementById(`cv${targetTab.charAt(0).toUpperCase() + targetTab.slice(1)}Section`).classList.add('active');
-            }
-        });
-    }
-}
+// CV Tab Navigation has been removed - sections are now sequential
 
 // --- Education Management ---
 function renderCvEducationTable() {
@@ -2747,47 +2678,321 @@ if (cvProjectsCancelButton) {
 }
 
 // --- Skills Management ---
-function renderCvSkillsForm() {
-    const programmingSkillsInput = document.getElementById('programmingSkills');
-    const softwareSkillsInput = document.getElementById('softwareSkills');
-    const technicalSkillsInput = document.getElementById('technicalSkills');
+// Creates a skill tag element for the skills editor
+function createSkillTagElement(skillObject, category) {
+    const tagEl = document.createElement('div');
+    tagEl.className = 'skill-tag-item';
     
-    if (programmingSkillsInput) {
-        programmingSkillsInput.value = cvSkills.programming ? cvSkills.programming.join(', ') : '';
+    // Check if this is a project-derived skill
+    const isProjectDerived = skillObject.source === 'project';
+    if (isProjectDerived) {
+        tagEl.classList.add('project-derived');
     }
     
-    if (softwareSkillsInput) {
-        softwareSkillsInput.value = cvSkills.software ? cvSkills.software.join(', ') : '';
+    // Set the skill name as the main content
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = skillObject.name;
+    tagEl.appendChild(nameSpan);
+    
+    // Add project count badge for project-derived skills
+    if (isProjectDerived && Array.isArray(skillObject.projects) && skillObject.projects.length > 0) {
+        const projectCount = document.createElement('span');
+        projectCount.className = 'project-count';
+        projectCount.textContent = skillObject.projects.length;
+        projectCount.title = `Used in ${skillObject.projects.length} project(s)`;
+        tagEl.appendChild(projectCount);
     }
     
-    if (technicalSkillsInput) {
-        technicalSkillsInput.value = cvSkills.technical ? cvSkills.technical.join(', ') : '';
+    // Make the tag draggable
+    tagEl.draggable = true;
+    tagEl.dataset.skillName = skillObject.name;
+    tagEl.dataset.skillCategory = category; // Store original category
+    tagEl.dataset.skillSource = skillObject.source || 'manual'; // Store the source
+    
+    // Store projects data if available
+    if (skillObject.projects) {
+        tagEl.dataset.projects = JSON.stringify(skillObject.projects);
     }
+
+    // Add the delete button
+    const deleteBtn = document.createElement('span');
+    deleteBtn.className = 'delete-skill-btn';
+    deleteBtn.innerHTML = '×';
+    deleteBtn.onclick = (e) => {
+        e.stopPropagation(); // Prevent drag start
+        
+        const skillName = tagEl.dataset.skillName;
+        const currentCategory = tagEl.closest('.skill-category-column').dataset.category;
+        
+        if (isProjectDerived) {
+            // For project-derived skills, we handle delete differently
+            if (currentCategory !== 'uncategorized') {
+                // If not in uncategorized, we move it back there instead of deleting
+                const skillObj = cvSkills[currentCategory].find(s => s.name === skillName);
+                if (skillObj) {
+                    // Remove from current category
+                    cvSkills[currentCategory] = cvSkills[currentCategory].filter(s => s.name !== skillName);
+                    // Add to uncategorized
+                    cvSkills.uncategorized.push(skillObj);
+                    console.log(`Moved project skill "${skillName}" back to uncategorized`);
+                }
+            } else {
+                // If already in uncategorized, we allow deletion with confirmation
+                if (confirm(`This skill is used in ${skillObject.projects.length} project(s). Are you sure you want to remove it from your CV? Note: This won't remove it from projects.`)) {
+                    cvSkills[currentCategory] = cvSkills[currentCategory].filter(s => s.name !== skillName);
+                }
+            }
+        } else {
+            // Regular manually-added skills can be deleted directly
+            cvSkills[currentCategory] = cvSkills[currentCategory].filter(s => s.name !== skillName);
+        }
+        
+        renderCvSkillsTags(); // Re-render all skill tags
+    };
+    tagEl.appendChild(deleteBtn);
+    
+    // Add drag event listeners
+    tagEl.addEventListener('dragstart', handleDragStart);
+    tagEl.addEventListener('dragend', handleDragEnd);
+    
+    return tagEl;
 }
 
-// Skills form submit handler
-const skillsForm = document.getElementById('skillsForm');
-if (skillsForm) {
-    skillsForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
-        
-        const programmingSkills = document.getElementById('programmingSkills').value.split(',').map(s => s.trim()).filter(s => s);
-        const softwareSkills = document.getElementById('softwareSkills').value.split(',').map(s => s.trim()).filter(s => s);
-        const technicalSkills = document.getElementById('technicalSkills').value.split(',').map(s => s.trim()).filter(s => s);
-        
-        const updatedSkills = {
-            programming: programmingSkills,
-            software: softwareSkills,
-            technical: technicalSkills
-        };
-        
-        const submitButton = document.getElementById('saveSkillsButton');
-        const isSuccess = await saveCvData('skills', updatedSkills, submitButton);
-        
-        if (isSuccess) {
-            cvSkills = updatedSkills;
-            // Notification shown by saveData function
+// Renders all skill tags in their respective categories
+function renderCvSkillsTags() {
+    ['programming', 'software', 'technical', 'uncategorized'].forEach(category => {
+        const container = document.getElementById(`${category}SkillsTags`);
+        if (container) {
+            container.innerHTML = ''; // Clear existing
+            if (cvSkills[category] && Array.isArray(cvSkills[category])) {
+                cvSkills[category].forEach(skillObj => {
+                    container.appendChild(createSkillTagElement(skillObj, category));
+                });
+            }
         }
+    });
+    // After rendering, attach drag-and-drop listeners to containers
+    attachDropZones();
+}
+
+// Drag-and-drop handlers for skill tags
+let draggedElement = null; // Global to store the currently dragged element
+
+function handleDragStart(e) {
+    // Store the dragged element and its data
+    draggedElement = this;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', this.dataset.skillName); // Store skill name
+    
+    // Add a dragging class for styling
+    this.classList.add('dragging');
+}
+
+function handleDragEnd(e) {
+    // Remove dragging class
+    this.classList.remove('dragging');
+    
+    // Clear drop zone styling
+    document.querySelectorAll('.skill-tags-container').forEach(container => {
+        container.classList.remove('drag-over');
+    });
+}
+
+function handleDragOver(e) {
+    // Prevent default to allow drop
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    this.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    // Remove hover styling
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    // Prevent default actions
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Remove drag-over styling
+    this.classList.remove('drag-over');
+    
+    // Get the target container and its category
+    const targetContainer = this;
+    const targetCategory = targetContainer.closest('.skill-category-column').dataset.category;
+    
+    // Get the dragged skill name
+    const skillName = e.dataTransfer.getData('text/plain');
+    if (!skillName || !draggedElement) return;
+    
+    // Get the original category and other data attributes
+    const sourceCategory = draggedElement.dataset.skillCategory;
+    const skillSource = draggedElement.dataset.skillSource || 'manual';
+    let projectsData = [];
+    
+    // Try to parse projects data if it exists
+    try {
+        if (draggedElement.dataset.projects) {
+            projectsData = JSON.parse(draggedElement.dataset.projects);
+        }
+    } catch (e) {
+        console.error('Error parsing projects data:', e);
+    }
+    
+    // Find skill object in its original category
+    const skillIndex = cvSkills[sourceCategory].findIndex(s => s.name === skillName);
+    if (skillIndex === -1) return;
+    
+    // Clone the skill object to avoid reference issues
+    const skillObject = {...cvSkills[sourceCategory][skillIndex]};
+    
+    // Ensure source and projects properties are preserved
+    skillObject.source = skillSource;
+    if (projectsData.length > 0) {
+        skillObject.projects = projectsData;
+    }
+    
+    // Remove from original category
+    cvSkills[sourceCategory].splice(skillIndex, 1);
+    
+    // Add to new category
+    // If dropping in a specific position, insert at that position
+    // For simplicity, we'll just append to the end of the target category
+    cvSkills[targetCategory].push(skillObject);
+    
+    // Re-render to reflect the changes
+    renderCvSkillsTags();
+    
+    // Clear the dragged element
+    draggedElement = null;
+}
+
+// Attach drop zone listeners to all skill tag containers
+function attachDropZones() {
+    document.querySelectorAll('.skill-tags-container').forEach(container => {
+        container.addEventListener('dragover', handleDragOver);
+        container.addEventListener('dragleave', handleDragLeave);
+        container.addEventListener('drop', handleDrop);
+    });
+}
+
+// Main function to render the CV Skills form
+function renderCvSkillsForm() {
+    console.log("Rendering CV Skills form with new UI");
+    
+    // Initialize skill object if needed
+    if (!cvSkills) {
+        cvSkills = {
+            programming: [],
+            software: [],
+            technical: [],
+            allSkillsCache: []
+        };
+    }
+    
+    // Convert legacy array format to object format if needed
+    ['programming', 'software', 'technical'].forEach(category => {
+        if (Array.isArray(cvSkills[category]) && cvSkills[category].length > 0 && typeof cvSkills[category][0] === 'string') {
+            console.log(`Converting legacy ${category} skills format to object format`);
+            cvSkills[category] = cvSkills[category].map(name => ({ name }));
+        }
+        
+        // Make sure each category is at least an empty array
+        if (!cvSkills[category]) {
+            cvSkills[category] = [];
+        }
+    });
+    
+    // Initialize skills cache if it doesn't exist
+    if (!cvSkills.allSkillsCache) {
+        cvSkills.allSkillsCache = [];
+        // Populate from existing skills
+        ['programming', 'software', 'technical'].forEach(category => {
+            if (Array.isArray(cvSkills[category])) {
+                cvSkills[category].forEach(skill => {
+                    if (!cvSkills.allSkillsCache.includes(skill.name)) {
+                        cvSkills.allSkillsCache.push(skill.name);
+                    }
+                });
+            }
+        });
+    }
+    
+    // Render all skill tags
+    renderCvSkillsTags();
+    
+    // Setup Add Skill buttons for each category
+    ['programming', 'software', 'technical'].forEach(category => {
+        const addBtn = document.querySelector(`#${category}SkillsColumn .add-skill-btn`);
+        const input = document.querySelector(`#${category}SkillsColumn .new-skill-input`);
+        if (addBtn && input) {
+            addBtn.onclick = () => {
+                const skillName = input.value.trim();
+                if (skillName && !cvSkills[category].find(s => s.name === skillName)) {
+                    // Mark as manually added skill
+                    cvSkills[category].push({ 
+                        name: skillName,
+                        source: 'manual'
+                    });
+                    
+                    // Add to skills cache if not already there
+                    if (!cvSkills.allSkillsCache.includes(skillName)) {
+                        cvSkills.allSkillsCache.push(skillName);
+                    }
+                    
+                    renderCvSkillsTags(); // Re-render
+                    input.value = ''; // Clear input
+                }
+            };
+            
+            // Handle Enter key press on input
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addBtn.click();
+                }
+            });
+        }
+    });
+    
+    // Setup save button
+    const saveCvSkillsBtn = document.getElementById('saveCvSkillsButton');
+    if (saveCvSkillsBtn) {
+        saveCvSkillsBtn.addEventListener('click', async function() {
+            const success = await saveCvData('skills', cvSkills, this);
+            if (success) {
+                showNotification('CV skills saved successfully!', 'success');
+            }
+        });
+    }
+    
+    // Setup autocomplete
+    setupSkillsAutocomplete();
+}
+
+// Implement autocomplete for skill inputs (basic version)
+function setupSkillsAutocomplete() {
+    const skillInputs = document.querySelectorAll('.new-skill-input');
+    
+    skillInputs.forEach(input => {
+        // This is a simple implementation - in a real app you might use a library like autocomplete.js
+        input.addEventListener('input', function() {
+            const val = this.value.trim().toLowerCase();
+            if (val.length < 2) return; // Only autocomplete if at least 2 chars
+            
+            // Find matching skills
+            const matches = cvSkills.allSkillsCache.filter(skill => 
+                skill.toLowerCase().includes(val)
+            ).slice(0, 5); // Limit to 5 suggestions
+            
+            // Show suggestions (simplified version)
+            if (matches.length > 0) {
+                // In a real implementation, you would create a dropdown with suggestions
+                console.log('Skill suggestions:', matches.join(', '));
+                // For now, just log them - would need more DOM work for proper dropdown
+            }
+        });
     });
 }
 

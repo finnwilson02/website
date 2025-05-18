@@ -50,54 +50,15 @@
           <li><a href="#projects" data-tab-target="#projectManagementSection" class="tab-link" data-tab-group="projects">Projects</a></li>
           <li><a href="#trips" data-tab-target="#tripManagementSection" class="tab-link" data-tab-group="trips">Manage Trips</a></li>
           <li><a href="#research-content" data-tab-target="#researchContentSection" class="tab-link" data-tab-group="research">Edit Research</a></li>
-          <li><a href="#content-tab" data-tab-target="#contentTab" class="tab-link" data-tab-group="content">Edit Site Content</a></li>
-          <li><a href="#admin-config" data-tab-target="#adminConfigSection" class="tab-link" data-tab-group="admin">Admin Settings</a></li>
+          <li><a href="#edit-cv" data-tab-target="#editCvSection" class="tab-link" data-tab-group="cv">Edit CV</a></li>
+          <li><a href="#homepage-html" data-tab-target="#homepageEditorSection" class="tab-link" data-tab-group="content">Homepage HTML</a></li>
+          <li><a href="#contact-banner" data-tab-target="#contactBannerEditorSection" class="tab-link" data-tab-group="content">Contact Banner</a></li>
+          <!-- Admin Settings tab removed -->
           <!-- Add future tabs here -->
         </ul>
         
-        <!-- Tab filter dropdown -->
-        <div class="tab-filter-container">
-          <label for="tabGroupFilter">Filter by: </label>
-          <select id="tabGroupFilter">
-            <option value="all">All Tabs</option>
-            <option value="books">Books</option>
-            <option value="media">Media</option>
-            <option value="projects">Projects</option>
-            <option value="trips">Trips</option>
-            <option value="research">Research</option>
-            <option value="content">Site Content</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
       </div>
       
-      <style>
-        /* Tab filter styling */
-        .admin-tabs-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid #dee2e6;
-          padding-bottom: 10px;
-          margin-bottom: 20px;
-        }
-        
-        .tab-filter-container {
-          margin-right: 20px;
-        }
-        
-        #tabGroupFilter {
-          padding: 5px 10px;
-          border-radius: 4px;
-          border: 1px solid #ced4da;
-          margin-left: 5px;
-        }
-        
-        /* Hide tabs when filtered */
-        .tab-nav li.filtered {
-          display: none;
-        }
-      </style>
     </div>
 
     <!-- Tab Content -->
@@ -552,49 +513,47 @@
           </form>
         </div>
       </section>
-    </div>
-  </div>
-
-  <!-- Content Tab Section -->
-  <section id="contentTab" class="tab-pane">
-    <h2>Edit Site Content</h2>
-    
-    <!-- Content editor tabs -->
-    <div class="html-content-tabs">
-      <ul class="tab-nav html-tab-nav">
-        <li><a href="#" data-html-tab="homepage" class="html-tab-link active">Homepage HTML</a></li>
-        <li><a href="#" data-html-tab="contactBanner" class="html-tab-link">Contact Banner</a></li>
-      </ul>
-    </div>
-    
-    <!-- HTML content tabs content -->
-    <div class="html-tab-content">
-      <!-- Homepage Markdown Editor -->
-      <div id="homepageHTMLEditor" class="html-tab-pane active">
-        <h3>Edit Homepage Content (Markdown)</h3>
+      
+      <!-- Homepage HTML Editor Section -->
+      <section id="homepageEditorSection" class="tab-pane">
+        <h2>Edit Homepage Content</h2>
         <div class="markdown-container">
-          <h4>Editor</h4>
           <div class="md-flex">
-            <textarea id="homepageEditor"></textarea>
-            <div id="homepagePreview" class="md-preview markdown-body"></div>
+            <div>
+              <h4>Editor</h4>
+              <textarea id="homepageEditor"></textarea>
+            </div>
+            <div>
+              <h4>Preview</h4>
+              <div id="homepagePreview" class="md-preview markdown-body"></div>
+            </div>
           </div>
         </div>
-        <div class="editor-actions" style="margin-top: 10px;">
+        <!-- Button moved outside markdown-container with increased spacing -->
+        <div class="editor-actions" style="margin-top: 20px; text-align: left;">
           <button id="saveHomepageBtn" class="save-html-btn">Save Homepage Content</button>
           <span id="homepageSaveStatus" class="save-status"></span>
         </div>
-      </div>
-      
-      <!-- Contact Banner Editor -->
-      <div id="contactBannerHTMLEditor" class="html-tab-pane">
-        <h2>Contact banner text</h2>
+      </section>
+          
+      <!-- Contact Banner Editor Section -->
+      <section id="contactBannerEditorSection" class="tab-pane">
+        <h2>Edit Contact Banner</h2>
+        <h3>Contact banner text</h3>
         <div class="editor-container">
           <textarea id="bannerHtmlEditor" style="width: 100%; height: 150px; font-family: monospace;"></textarea>
         </div>
         
-        <h2>Links</h2>
+        <h3>Links</h3>
         <table id="bannerLinksTable" class="sortable">
-          <thead><tr><th>Icon</th><th>URL</th><th></th></tr></thead>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Icon</th>
+              <th>URL</th>
+              <th style="width: 40px;"></th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
         <button id="addLinkBtn" class="btn btn-primary" style="margin-top: 10px;">+ Add Link</button>
@@ -629,6 +588,10 @@
             padding: 5px;
             border: 1px solid #ddd;
           }
+          #bannerLinksTable tr td:last-child {
+            width: 40px;
+            text-align: center;
+          }
           .delBtn{
             background:#e74c3c;
             color:#fff;
@@ -643,118 +606,217 @@
           }
           .delBtn:focus{outline:none;}
         </style>
-      </div>
-    </div>
-    
-    <style>
-      .html-content-tabs {
-        margin-bottom: 20px;
-      }
-      .html-tab-nav {
-        display: flex;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        border-bottom: 1px solid #ddd;
-      }
-      .html-tab-nav li {
-        margin-right: 5px;
-      }
-      .html-tab-nav a {
-        display: block;
-        padding: 10px 15px;
-        border: 1px solid #ddd;
-        border-bottom: none;
-        border-radius: 5px 5px 0 0;
-        text-decoration: none;
-        color: #333;
-        background-color: #f5f5f5;
-      }
-      .html-tab-nav a.active {
-        background-color: #fff;
-        border-bottom: 1px solid #fff;
-        margin-bottom: -1px;
-        font-weight: bold;
-      }
-      .html-tab-pane {
-        display: none;
-        padding: 20px;
-        border-top: none;
-      }
-      .html-tab-pane.active {
-        display: block;
-      }
-      .editor-container {
-        border: 1px solid #ddd;
-        background-color: #f9f9f9;
-      }
-      .save-html-btn {
-        padding: 8px 15px;
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      .save-html-btn:hover {
-        background-color: #45a049;
-      }
-      .save-status {
-        margin-left: 10px;
-        color: #666;
-      }
-      /* Moved to admin.css */
+      </section>
+      <!-- Ordering Section -->
+      <section id="orderingSection" class="tab-pane">
+        <h2>Content Ordering</h2>
+        <p>Use these pages to drag-and-drop order your content:</p>
+        
+        <div class="ordering-buttons">
+          <a href="admin-projects.html" class="btn btn-primary">Order Projects</a>
+          <a href="admin-articles.html" class="btn btn-primary">Order Articles</a>
+          <a href="admin-theses.html" class="btn btn-primary">Order Theses</a>
+        </div>
+        
+        <style>
+          .ordering-buttons {
+            margin: 20px 0;
+          }
+          .ordering-buttons .btn {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            border: none;
+          }
+          .ordering-buttons .btn:hover {
+            background-color: #45a049;
+          }
+        </style>
+      </section>
       
-      .markdown-body h1, .markdown-body h2, .markdown-body h3 {
-        border-bottom: 1px solid #eaecef;
-        margin-top: 24px;
-        margin-bottom: 16px;
-        padding-bottom: 0.3em;
-      }
-      
-      .markdown-body p {
-        margin-top: 0;
-        margin-bottom: 16px;
-      }
-      
-      .markdown-body img {
-        max-width: 100%;
-        height: auto;
-      }
-    </style>
-  </section>
+      <!-- Edit CV Section -->
+      <section id="editCvSection" class="tab-pane">
+        <h2>Edit CV Content</h2>
 
-  <!-- Ordering Section -->
-  <section id="orderingSection" class="tab-pane">
-    <h2>Content Ordering</h2>
-    <p>Use these pages to drag-and-drop order your content:</p>
-    
-    <div class="ordering-buttons">
-      <a href="admin-projects.html" class="btn btn-primary">Order Projects</a>
-      <a href="admin-articles.html" class="btn btn-primary">Order Articles</a>
-      <a href="admin-theses.html" class="btn btn-primary">Order Theses</a>
+        <!-- Education Section -->
+        <div id="cvEducationSection">
+          <h3>Education</h3>
+          <table class="admin-table">
+            <thead><tr><th>Institution</th><th>Degree</th><th>Dates</th><th>Actions</th></tr></thead>
+            <tbody id="educationTableBody"></tbody>
+          </table>
+          <form id="educationForm" class="cv-form">
+            <h4>Add/Edit Education Entry</h4>
+            <input type="hidden" id="educationEditIndex" value="-1">
+            <label for="educationInstitution">Institution:</label><input type="text" id="educationInstitution" required>
+            <label for="educationDegree">Degree:</label><input type="text" id="educationDegree" required>
+            <label for="educationDates">Dates:</label><input type="text" id="educationDates">
+            <label for="educationDescription">Description (Markdown list):</label><textarea id="educationDescription" rows="5"></textarea>
+            <div class="form-buttons">
+              <button type="submit" id="educationSubmitButton">Add Entry</button>
+              <button type="button" id="educationCancelButton" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <hr style="margin: 30px 0;">
+
+        <!-- Research Experience Section (CV Entries) -->
+        <div id="cvResearchSection">
+          <h3>Research Experience (CV Entries)</h3>
+          <table class="admin-table">
+            <thead><tr><th>Title/Role</th><th>Organization/Lab</th><th>Dates</th><th>Actions</th></tr></thead>
+            <tbody id="researchTableBody"></tbody>
+          </table>
+          <form id="researchForm" class="cv-form">
+            <h4>Add/Edit CV Research Entry</h4>
+            <input type="hidden" id="researchEditIndex" value="-1">
+            <label for="researchTitle">Title/Role:</label><input type="text" id="researchTitle" required>
+            <label for="researchOrganization">Organization/Lab:</label><input type="text" id="researchOrganization" required>
+            <label for="researchDates">Dates:</label><input type="text" id="researchDates">
+            <label for="researchDescription">Description (Markdown list):</label><textarea id="researchDescription" rows="5"></textarea>
+            <div class="form-buttons">
+              <button type="submit" id="researchSubmitButton">Add Entry</button>
+              <button type="button" id="researchCancelButton" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+        
+        <hr style="margin: 30px 0;">
+
+        <!-- Work Experience Section -->
+        <div id="cvWorkSection">
+          <h3>Work Experience</h3>
+          <table class="admin-table">
+            <thead><tr><th>Position</th><th>Company</th><th>Dates</th><th>Actions</th></tr></thead>
+            <tbody id="workTableBody"></tbody>
+          </table>
+          <form id="workForm" class="cv-form">
+            <h4>Add/Edit Work Entry</h4>
+            <input type="hidden" id="workEditIndex" value="-1">
+            <label for="workPosition">Position:</label><input type="text" id="workPosition" required>
+            <label for="workCompany">Company:</label><input type="text" id="workCompany" required>
+            <label for="workDates">Dates:</label><input type="text" id="workDates">
+            <label for="workDescription">Description (Markdown list):</label><textarea id="workDescription" rows="5"></textarea>
+            <div class="form-buttons">
+              <button type="submit" id="workSubmitButton">Add Entry</button>
+              <button type="button" id="workCancelButton" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+        
+        <hr style="margin: 30px 0;">
+
+        <!-- Skills Section -->
+        <div id="cvSkillsSection">
+          <h3>Skills</h3>
+          
+          <div class="skills-editor-container">
+            <!-- Column for Programming Languages -->
+            <div class="skill-category-column" id="programmingSkillsColumn" data-category="programming">
+              <h4>Programming Languages</h4>
+              <div class="skill-tags-container" id="programmingSkillsTags">
+                <!-- Draggable skill tags will be populated here by JS -->
+              </div>
+              <div class="add-skill-area">
+                <input type="text" class="new-skill-input" placeholder="Add programming skill...">
+                <button type="button" class="add-skill-btn">Add</button>
+              </div>
+            </div>
+
+            <!-- Column for Software & Tools -->
+            <div class="skill-category-column" id="softwareSkillsColumn" data-category="software">
+              <h4>Software & Tools</h4>
+              <div class="skill-tags-container" id="softwareSkillsTags">
+                <!-- Draggable skill tags will be populated here by JS -->
+              </div>
+              <div class="add-skill-area">
+                <input type="text" class="new-skill-input" placeholder="Add software/tool...">
+                <button type="button" class="add-skill-btn">Add</button>
+              </div>
+            </div>
+
+            <!-- Column for Technical Skills -->
+            <div class="skill-category-column" id="technicalSkillsColumn" data-category="technical">
+              <h4>Technical Skills</h4>
+              <div class="skill-tags-container" id="technicalSkillsTags">
+                <!-- Draggable skill tags will be populated here by JS -->
+              </div>
+              <div class="add-skill-area">
+                <input type="text" class="new-skill-input" placeholder="Add technical skill...">
+                <button type="button" class="add-skill-btn">Add</button>
+              </div>
+            </div>
+
+            <!-- Column for Uncategorized Skills (from Projects) -->
+            <div class="skill-category-column" id="uncategorizedSkillsColumn" data-category="uncategorized">
+              <h4>Uncategorized (from Projects)</h4>
+              <div class="skill-tags-container" id="uncategorizedSkillsTags">
+                <!-- Draggable skill tags will be populated here by JS -->
+              </div>
+              <!-- No "add skill" input for uncategorized, as these come from projects -->
+            </div>
+          </div>
+
+          <div class="form-buttons" style="margin-top: 20px;">
+            <button type="button" id="saveCvSkillsButton">Save All Skills</button>
+          </div>
+        </div>
+        
+        <hr style="margin: 30px 0;">
+
+        <!-- Achievements Section -->
+        <div id="cvAchievementsSection">
+          <h3>Achievements</h3>
+          <table class="admin-table">
+            <thead><tr><th>Achievement</th><th>Year</th><th>Actions</th></tr></thead>
+            <tbody id="achievementsTableBody"></tbody>
+          </table>
+          <form id="achievementForm" class="cv-form">
+            <h4>Add/Edit Achievement</h4>
+            <input type="hidden" id="achievementEditIndex" value="-1">
+            <label for="achievementTitle">Achievement:</label><input type="text" id="achievementTitle" required>
+            <label for="achievementYear">Year:</label><input type="text" id="achievementYear">
+            <label for="achievementDescription">Description:</label><textarea id="achievementDescription" rows="3"></textarea>
+            <div class="form-buttons">
+              <button type="submit" id="achievementSubmitButton">Add Achievement</button>
+              <button type="button" id="achievementCancelButton" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+        
+        <hr style="margin: 30px 0;">
+
+        <!-- Positions Section -->
+        <div id="cvPositionsSection">
+          <h3>Positions</h3>
+          <table class="admin-table">
+            <thead><tr><th>Position</th><th>Organization</th><th>Dates</th><th>Actions</th></tr></thead>
+            <tbody id="positionsTableBody"></tbody>
+          </table>
+          <form id="positionForm" class="cv-form">
+            <h4>Add/Edit Position</h4>
+            <input type="hidden" id="positionEditIndex" value="-1">
+            <label for="positionTitle">Position:</label><input type="text" id="positionTitle" required>
+            <label for="positionOrganization">Organization:</label><input type="text" id="positionOrganization" required>
+            <label for="positionDates">Dates:</label><input type="text" id="positionDates">
+            <label for="positionDescription">Description:</label><textarea id="positionDescription" rows="3"></textarea>
+            <div class="form-buttons">
+              <button type="submit" id="positionSubmitButton">Add Position</button>
+              <button type="button" id="positionCancelButton" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Admin Settings Section Removed -->
     </div>
-    
-    <style>
-      .ordering-buttons {
-        margin: 20px 0;
-      }
-      .ordering-buttons .btn {
-        display: inline-block;
-        margin: 10px;
-        padding: 10px 15px;
-        background-color: #4CAF50;
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        font-weight: bold;
-        border: none;
-      }
-      .ordering-buttons .btn:hover {
-        background-color: #45a049;
-      }
-    </style>
-  </section>
+  </div>
 
   <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -763,6 +825,7 @@
 <script src="js/admin.js"></script>
   <script src="js/admin-cv-patches.js"></script>
   <script src="js/homeContentLoader.js"></script>
+  <script src="js/sortable.js"></script>
   <script src="js/homepageEditor.js"></script>
   <script src="js/contactBannerEditor.js"></script>
   

@@ -164,4 +164,82 @@ body {
   background-color: #e1e8f2;
   transform: translateY(-1px);
 }
-  
+
+/* CV Skills Styling */
+.skill-item {
+  display: inline-block;
+  margin: 0.3em 0.5em 0.3em 0;
+  padding: 0.3em 0.7em;
+  background-color: #f0f3f7;
+  border-radius: 4px;
+  color: #555;
+  font-size: 0.9em;
+  border: 1px solid #e1e8f2;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.skill-item:hover {
+  background-color: #e1e8f2;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Project-derived skills have a slightly different style */
+.project-derived-skill {
+  background-color: #e8f4ff;
+  border-color: #abd6ff;
+  cursor: pointer;
+  position: relative;
+}
+
+.project-derived-skill:hover {
+  background-color: #d0e8ff;
+}
+
+/* Tooltip for project-derived skills */
+.project-derived-skill::after {
+  content: '🔗';
+  font-size: 0.8em;
+  margin-left: 0.4em;
+  opacity: 0.7;
+}
+
+/* Tooltip popup */
+.skill-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.5em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: max-content;
+  max-width: 250px;
+  z-index: 100;
+  font-size: 0.85em;
+  display: none;
+}
+
+.skill-tooltip h4 {
+  margin: 0 0 0.5em 0;
+  font-size: 0.95em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.3em;
+}
+
+.skill-tooltip ul {
+  margin: 0;
+  padding-left: 1em;
+  list-style-type: square;
+}
+
+.skill-tooltip li {
+  margin-bottom: 0.3em;
+}
+
+.project-derived-skill:hover .skill-tooltip {
+  display: block;
+}

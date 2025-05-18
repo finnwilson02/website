@@ -23,8 +23,8 @@ function initShowOnCvCheckboxes() {
                 // Find the project in the global projects array
                 const projectIndex = document.getElementById('projectEditIndex').value;
                 if (projectIndex !== "-1" && window.projects && window.projects[projectIndex]) {
-                    // Add showOnCv to the project
-                    window.projects[projectIndex].showOnCv = projectShowOnCvCheckbox.checked;
+                    // Add showOnCv to the project - explicitly convert to boolean
+                    window.projects[projectIndex].showOnCv = !!projectShowOnCvCheckbox.checked;
                 }
             }
             
@@ -44,7 +44,7 @@ function initShowOnCvCheckboxes() {
             if (result !== false) {
                 const journalIndex = document.getElementById('journalEditIndex').value;
                 if (journalIndex !== "-1" && window.journalArticles && window.journalArticles[journalIndex]) {
-                    window.journalArticles[journalIndex].showOnCv = journalShowOnCvCheckbox.checked;
+                    window.journalArticles[journalIndex].showOnCv = !!journalShowOnCvCheckbox.checked;
                 }
             }
             
@@ -59,9 +59,9 @@ function initShowOnCvCheckboxes() {
     if (saveThesisButton && thesisShowOnCvCheckbox) {
         const originalThesisClick = saveThesisButton.onclick;
         saveThesisButton.onclick = function(event) {
-            // Update the thesis showOnCv flag
+            // Update the thesis showOnCv flag - explicitly convert to boolean
             if (window.thesis) {
-                window.thesis.showOnCv = thesisShowOnCvCheckbox.checked;
+                window.thesis.showOnCv = !!thesisShowOnCvCheckbox.checked;
             }
             
             // Call the original handler
@@ -84,7 +84,7 @@ function initShowOnCvCheckboxes() {
             if (result !== false) {
                 const conferenceIndex = document.getElementById('conferenceEditIndex').value;
                 if (conferenceIndex !== "-1" && window.conferencePapers && window.conferencePapers[conferenceIndex]) {
-                    window.conferencePapers[conferenceIndex].showOnCv = conferenceShowOnCvCheckbox.checked;
+                    window.conferencePapers[conferenceIndex].showOnCv = !!conferenceShowOnCvCheckbox.checked;
                 }
             }
             
@@ -104,7 +104,7 @@ function initShowOnCvCheckboxes() {
             if (result !== false) {
                 const patentIndex = document.getElementById('patentEditIndex').value;
                 if (patentIndex !== "-1" && window.patents && window.patents[patentIndex]) {
-                    window.patents[patentIndex].showOnCv = patentShowOnCvCheckbox.checked;
+                    window.patents[patentIndex].showOnCv = !!patentShowOnCvCheckbox.checked;
                 }
             }
             
@@ -134,10 +134,12 @@ window.gatherProjectFormData = function() {
     // Get the original data
     const projectData = originalGatherProjectFormData ? originalGatherProjectFormData() : {};
     
-    // Add showOnCv
+    // Add showOnCv - ensure it's a boolean with !! conversion
     const showOnCvCheckbox = document.getElementById('projectShowOnCv');
     if (showOnCvCheckbox) {
-        projectData.showOnCv = showOnCvCheckbox.checked;
+        projectData.showOnCv = !!showOnCvCheckbox.checked;
+    } else {
+        projectData.showOnCv = false; // Default to false if checkbox not found
     }
     
     return projectData;
@@ -164,10 +166,12 @@ window.gatherJournalFormData = function() {
     // Get the original data
     const journalData = originalGatherJournalFormData ? originalGatherJournalFormData() : {};
     
-    // Add showOnCv
+    // Add showOnCv - ensure it's a boolean with !! conversion
     const showOnCvCheckbox = document.getElementById('journalShowOnCv');
     if (showOnCvCheckbox) {
-        journalData.showOnCv = showOnCvCheckbox.checked;
+        journalData.showOnCv = !!showOnCvCheckbox.checked;
+    } else {
+        journalData.showOnCv = false; // Default to false if checkbox not found
     }
     
     return journalData;
@@ -194,10 +198,12 @@ window.gatherThesisFormData = function() {
     // Get the original data
     const thesisData = originalGatherThesisFormData ? originalGatherThesisFormData() : {};
     
-    // Add showOnCv
+    // Add showOnCv - ensure it's a boolean with !! conversion
     const showOnCvCheckbox = document.getElementById('thesisShowOnCv');
     if (showOnCvCheckbox) {
-        thesisData.showOnCv = showOnCvCheckbox.checked;
+        thesisData.showOnCv = !!showOnCvCheckbox.checked;
+    } else {
+        thesisData.showOnCv = false; // Default to false if checkbox not found
     }
     
     return thesisData;
@@ -224,10 +230,12 @@ window.gatherConferenceFormData = function() {
     // Get the original data
     const conferenceData = originalGatherConferenceFormData ? originalGatherConferenceFormData() : {};
     
-    // Add showOnCv
+    // Add showOnCv - ensure it's a boolean with !! conversion
     const showOnCvCheckbox = document.getElementById('conferenceShowOnCv');
     if (showOnCvCheckbox) {
-        conferenceData.showOnCv = showOnCvCheckbox.checked;
+        conferenceData.showOnCv = !!showOnCvCheckbox.checked;
+    } else {
+        conferenceData.showOnCv = false; // Default to false if checkbox not found
     }
     
     return conferenceData;
@@ -254,10 +262,12 @@ window.gatherPatentFormData = function() {
     // Get the original data
     const patentData = originalGatherPatentFormData ? originalGatherPatentFormData() : {};
     
-    // Add showOnCv
+    // Add showOnCv - ensure it's a boolean with !! conversion
     const showOnCvCheckbox = document.getElementById('patentShowOnCv');
     if (showOnCvCheckbox) {
-        patentData.showOnCv = patentShowOnCvCheckbox.checked;
+        patentData.showOnCv = !!showOnCvCheckbox.checked;
+    } else {
+        patentData.showOnCv = false; // Default to false if checkbox not found
     }
     
     return patentData;

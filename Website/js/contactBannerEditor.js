@@ -41,8 +41,12 @@
     
     // Attach sortable with callback that updates the order property
     makeSortable(table, ids => {
+      console.log('Banner links reordered:', ids);
       ids.forEach((id, idx) => {
-        bannerData.links.find(l => l.id === id).order = idx;
+        const link = bannerData.links.find(l => l.id === id);
+        if (link) {
+          link.order = idx;
+        }
       });
     });
   }
