@@ -1,0 +1,421 @@
+/* admin.css */
+
+/* Rotate buttons */
+.rotL,.rotR{
+    border: none;
+    background: #3a7bd5;
+    color: white;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 3px 8px;
+    margin-right: 5px;
+    border-radius: 3px;
+}
+
+.rotL:hover,.rotR:hover{
+    background: #2a6bc5;
+}
+
+/* Drag and drop styling for photo reordering */
+.photo-list-row {
+    cursor: grab; /* Indicate draggable */
+}
+
+.photo-list-row:active {
+    cursor: grabbing; /* Indicate dragging */
+}
+
+.photo-list-row.dragging {
+    opacity: 0.6; /* Make the dragged element semi-transparent */
+}
+
+.photo-list-row.dragging-over {
+    background-color: #e0f0ff; /* Highlight drop target */
+    border-top: 2px solid #99caff;
+}
+
+/* Small button styling for admin interface */
+.admin-small-button {
+    margin-left: 15px;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
+/* General styles */
+body {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+h1, h2, h3, h4 {
+  margin-top: 1em;
+  color: #333;
+}
+
+/* Admin warning box */
+.admin-warning {
+  background-color: #ffeeee;
+  border: 1px solid #ffaaaa;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+/* Table styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  background-color: #f0f0f0;
+}
+
+/* Form styles */
+input, textarea, select {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+}
+
+button {
+  padding: 8px 15px;
+  background-color: #3a7bd5;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  border-radius: 3px;
+}
+
+button:hover {
+  background-color: #2a6bc5;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Login section */
+#loginSection {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+/* Tab styles */
+.admin-tabs {
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 20px;
+}
+
+ul.tab-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex; /* Arrange tabs horizontally */
+}
+
+ul.tab-nav li {
+  margin-right: 5px;
+}
+
+a.tab-link {
+  display: inline-block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #007bff;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0; /* Rounded top corners */
+  background-color: #f8f9fa; /* Light background for inactive tabs */
+}
+
+a.tab-link:hover {
+  background-color: #e9ecef; /* Slightly darker on hover */
+  color: #0056b3;
+}
+
+/* Active tab styling */
+a.tab-link.active {
+  background-color: #fff; /* White background for active tab */
+  border-color: #ccc #ccc #fff; /* Border to blend with content area */
+  color: #495057;
+  font-weight: bold;
+}
+
+/* Content pane visibility */
+.tab-content {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-top: none;
+  background-color: #fff;
+}
+
+.tab-pane {
+  display: none; /* Hide inactive panes by default */
+}
+
+.tab-pane.active {
+  display: block; /* Show the active pane */
+}
+
+/* Section styling (no longer needed as separators) */
+section {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Form containers */
+#bookForm, #photoForm, #projectForm {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+/* Output JSON area */
+.output-json {
+  width: 100%;
+  min-height: 150px;
+  margin-top: 10px;
+  display: none; /* Hide initially */
+  background-color: #e9e9e9;
+  font-family: monospace;
+  font-size: 0.9em;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+/* Readonly input styling */
+input[readonly], textarea[readonly] {
+  background-color: #eee;
+  cursor: not-allowed;
+}
+
+/* Save blocks */
+.save-block {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #ccc;
+}
+
+.save-block:last-child {
+  border-bottom: none;
+}
+
+/* CV Content Section Styles */
+.cv-section-tabs {
+  margin: 15px 0;
+}
+
+ul.cv-tab-nav {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #ddd;
+}
+
+ul.cv-tab-nav li {
+  margin-right: 2px;
+}
+
+a.cv-tab-link {
+  display: inline-block;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #007bff;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background-color: #f8f9fa;
+  font-size: 0.9em;
+}
+
+a.cv-tab-link:hover {
+  background-color: #e9ecef;
+  color: #0056b3;
+}
+
+a.cv-tab-link.active {
+  background-color: #fff;
+  border-color: #ddd #ddd #fff;
+  color: #495057;
+  font-weight: bold;
+}
+
+.cv-tab-pane {
+  display: none;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-top: none;
+  margin-bottom: 20px;
+}
+
+.cv-tab-pane.active {
+  display: block;
+}
+
+.cv-list-container {
+  margin-bottom: 20px;
+}
+
+.cv-form-container {
+  width: 100%;
+}
+
+.cv-form {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-buttons {
+  margin-top: 15px;
+}
+
+/* Responsive adjustments for CV tabs */
+@media (max-width: 768px) {
+  ul.cv-tab-nav {
+    flex-direction: column;
+  }
+  
+  ul.cv-tab-nav li {
+    margin-bottom: 2px;
+  }
+  
+  a.cv-tab-link {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* EasyMDE Toolbar Visibility Fix */
+.editor-toolbar button,
+.editor-toolbar a {
+    color: #333 !important;
+    opacity: 1 !important;
+}
+
+.editor-toolbar button:hover,
+.editor-toolbar a:hover,
+.editor-toolbar a.active {
+    color: #000 !important;
+    background-color: #e9ecef !important;
+    border-color: #ccc !important;
+}
+
+/* Target FontAwesome icons used within buttons */
+.editor-toolbar button i.fa,
+.editor-toolbar a i.fa {
+    color: #333 !important;
+    opacity: 1 !important;
+}
+
+/* Style for separator */
+.editor-toolbar i.separator {
+    border-left: 1px solid #ddd !important;
+    border-right: 1px solid #f9f9f9 !important;
+}
+
+/* Loading Indicator Styles */
+#loadingIndicator {
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loadingIndicator div {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0, 123, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #007bff;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+/* Notification Styles */
+#adminNotifications {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1050;
+    max-width: 300px;
+}
+
+.notification {
+    padding: 10px 30px 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.notification.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.notification.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.notification.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.notification.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}

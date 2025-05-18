@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Adding GitHub Markdown styles for the preview -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css">
 </head>
 <body>
   <div id="loginSection">
@@ -41,15 +43,61 @@
 
     <!-- Tab Navigation -->
     <div class="admin-tabs">
-      <ul class="tab-nav">
-        <li><a href="#books" data-tab-target="#bookManagementSection" class="tab-link active">Books</a></li>
-        <li><a href="#photos" data-tab-target="#photoManagementSection" class="tab-link">Photos</a></li>
-        <li><a href="#projects" data-tab-target="#projectManagementSection" class="tab-link">Projects</a></li>
-        <li><a href="#trips" data-tab-target="#tripManagementSection" class="tab-link">Manage Trips</a></li>
-        <li><a href="#cv-content" data-tab-target="#cvContentSection" class="tab-link">CV Content</a></li>
-        <li><a href="#research-content" data-tab-target="#researchContentSection" class="tab-link">Edit Research</a></li>
-        <!-- Add future tabs here -->
-      </ul>
+      <div class="admin-tabs-header">
+        <ul class="tab-nav">
+          <li><a href="#books" data-tab-target="#bookManagementSection" class="tab-link active" data-tab-group="books">Books</a></li>
+          <li><a href="#photos" data-tab-target="#photoManagementSection" class="tab-link" data-tab-group="media">Photos</a></li>
+          <li><a href="#projects" data-tab-target="#projectManagementSection" class="tab-link" data-tab-group="projects">Projects</a></li>
+          <li><a href="#trips" data-tab-target="#tripManagementSection" class="tab-link" data-tab-group="trips">Manage Trips</a></li>
+          <li><a href="#research-content" data-tab-target="#researchContentSection" class="tab-link" data-tab-group="research">Edit Research</a></li>
+          <li><a href="#content-tab" data-tab-target="#contentTab" class="tab-link" data-tab-group="content">Edit Site Content</a></li>
+          <li><a href="#admin-config" data-tab-target="#adminConfigSection" class="tab-link" data-tab-group="admin">Admin Settings</a></li>
+          <!-- Add future tabs here -->
+        </ul>
+        
+        <!-- Tab filter dropdown -->
+        <div class="tab-filter-container">
+          <label for="tabGroupFilter">Filter by: </label>
+          <select id="tabGroupFilter">
+            <option value="all">All Tabs</option>
+            <option value="books">Books</option>
+            <option value="media">Media</option>
+            <option value="projects">Projects</option>
+            <option value="trips">Trips</option>
+            <option value="research">Research</option>
+            <option value="content">Site Content</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      
+      <style>
+        /* Tab filter styling */
+        .admin-tabs-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #dee2e6;
+          padding-bottom: 10px;
+          margin-bottom: 20px;
+        }
+        
+        .tab-filter-container {
+          margin-right: 20px;
+        }
+        
+        #tabGroupFilter {
+          padding: 5px 10px;
+          border-radius: 4px;
+          border: 1px solid #ced4da;
+          margin-left: 5px;
+        }
+        
+        /* Hide tabs when filtered */
+        .tab-nav li.filtered {
+          display: none;
+        }
+      </style>
     </div>
 
     <!-- Tab Content -->
@@ -220,6 +268,16 @@
                <label for="projectStatus">Status:</label>
                <input type="text" id="projectStatus">
                
+               <div style="margin: 10px 0;">
+                 <label>
+                   <input type="checkbox" id="projectShowOnCv"> 
+                   Show on CV page
+                 </label>
+                 <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                   When checked, this project will be listed on the CV page
+                 </p>
+               </div>
+               
                <label for="projectDetailMarkdown">Detail Page Content (Markdown):</label>
                <textarea id="projectDetailMarkdown"></textarea>
                
@@ -229,284 +287,7 @@
         </div>
       </section>
 
-      <!-- CV Content Section -->
-      <section id="cvContentSection" class="tab-pane">
-        <h2>CV Content Management</h2>
-        
-        <!-- Tab Navigation for CV Sections -->
-        <div class="cv-section-tabs">
-          <ul class="tab-nav cv-tab-nav">
-            <li><a href="#" data-cv-tab="education" class="cv-tab-link active">Education</a></li>
-            <li><a href="#" data-cv-tab="work" class="cv-tab-link">Work Experience</a></li>
-            <li><a href="#" data-cv-tab="research" class="cv-tab-link">Research</a></li>
-            <li><a href="#" data-cv-tab="projects" class="cv-tab-link">Projects</a></li>
-            <li><a href="#" data-cv-tab="skills" class="cv-tab-link">Skills</a></li>
-            <li><a href="#" data-cv-tab="achievements" class="cv-tab-link">Achievements</a></li>
-            <li><a href="#" data-cv-tab="positions" class="cv-tab-link">Positions</a></li>
-          </ul>
-        </div>
-        
-        <!-- CV Section Content -->
-        <div class="cv-tab-content">
-          <!-- Education Section -->
-          <div id="cvEducationSection" class="cv-tab-pane active">
-            <h3>Manage Education</h3>
-            <div class="cv-list-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Institution</th>
-                    <th>Degree</th>
-                    <th>Dates</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="educationTableBody"></tbody>
-              </table>
-            </div>
-            <div class="cv-form-container">
-              <form id="educationForm" class="cv-form">
-                <h4>Add/Edit Education</h4>
-                <input type="hidden" id="educationEditIndex" value="-1">
-                
-                <label for="educationInstitution">Institution:</label>
-                <input type="text" id="educationInstitution" required>
-                
-                <label for="educationDegree">Degree:</label>
-                <input type="text" id="educationDegree" required>
-                
-                <label for="educationHonours">Honours:</label>
-                <input type="text" id="educationHonours">
-                
-                <label for="educationDates">Dates:</label>
-                <input type="text" id="educationDates" placeholder="Jan 2020 - Dec 2024">
-                
-                <div class="form-buttons">
-                  <button type="submit" id="educationSubmitButton">Add Entry</button>
-                  <button type="button" id="educationCancelButton" style="display: none;">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
-          <!-- Work Experience Section -->
-          <div id="cvWorkSection" class="cv-tab-pane">
-            <h3>Manage Work Experience</h3>
-            <div class="cv-list-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Company</th>
-                    <th>Dates</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="workTableBody"></tbody>
-              </table>
-            </div>
-            <div class="cv-form-container">
-              <form id="workForm" class="cv-form">
-                <h4>Add/Edit Work Experience</h4>
-                <input type="hidden" id="workEditIndex" value="-1">
-                
-                <label for="workTitle">Title:</label>
-                <input type="text" id="workTitle" required>
-                
-                <label for="workCompany">Company:</label>
-                <input type="text" id="workCompany" required>
-                
-                <label for="workDates">Dates:</label>
-                <input type="text" id="workDates" placeholder="Jan 2020 - Present">
-                
-                <label for="workDescription">Description:</label>
-                <textarea id="workDescription" rows="5"></textarea>
-                
-                <div class="form-buttons">
-                  <button type="submit" id="workSubmitButton">Add Entry</button>
-                  <button type="button" id="workCancelButton" style="display: none;">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
-          <!-- Research Section -->
-          <div id="cvResearchSection" class="cv-tab-pane">
-            <h3>Manage Research Experience</h3>
-            <div class="cv-list-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Organization</th>
-                    <th>Dates</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="researchTableBody"></tbody>
-              </table>
-            </div>
-            <div class="cv-form-container">
-              <form id="researchForm" class="cv-form">
-                <h4>Add/Edit Research Experience</h4>
-                <input type="hidden" id="researchEditIndex" value="-1">
-                
-                <label for="researchTitle">Title:</label>
-                <input type="text" id="researchTitle" required>
-                
-                <label for="researchOrganization">Organization:</label>
-                <input type="text" id="researchOrganization" required>
-                
-                <label for="researchDates">Dates:</label>
-                <input type="text" id="researchDates" placeholder="Jan 2020 - Dec 2021">
-                
-                <label for="researchDescription">Description:</label>
-                <textarea id="researchDescription" rows="5"></textarea>
-                
-                <div class="form-buttons">
-                  <button type="submit" id="researchSubmitButton">Add Entry</button>
-                  <button type="button" id="researchCancelButton" style="display: none;">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
-          <!-- Projects Section -->
-          <div id="cvProjectsSection" class="cv-tab-pane">
-            <h3>Manage CV Projects</h3>
-            <div class="cv-list-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Dates</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="cvProjectsTableBody"></tbody>
-              </table>
-            </div>
-            <div class="cv-form-container">
-              <form id="cvProjectsForm" class="cv-form">
-                <h4>Add/Edit Project</h4>
-                <input type="hidden" id="cvProjectsEditIndex" value="-1">
-                
-                <label for="cvProjectsTitle">Title:</label>
-                <input type="text" id="cvProjectsTitle" required>
-                
-                <label for="cvProjectsDates">Dates:</label>
-                <input type="text" id="cvProjectsDates" placeholder="Jan 2020 - Mar 2021">
-                
-                <label for="cvProjectsDescription">Description:</label>
-                <textarea id="cvProjectsDescription" rows="5"></textarea>
-                
-                <div class="form-buttons">
-                  <button type="submit" id="cvProjectsSubmitButton">Add Entry</button>
-                  <button type="button" id="cvProjectsCancelButton" style="display: none;">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
-          <!-- Skills Section -->
-          <div id="cvSkillsSection" class="cv-tab-pane">
-            <h3>Manage Skills</h3>
-            <div class="cv-form-container" style="width: 100%;">
-              <form id="skillsForm" class="cv-form">
-                <h4>Edit Skills</h4>
-                
-                <label for="programmingSkills">Programming Skills:</label>
-                <input type="text" id="programmingSkills" placeholder="Comma-separated list of skills">
-                
-                <label for="softwareSkills">Software Skills:</label>
-                <input type="text" id="softwareSkills" placeholder="Comma-separated list of skills">
-                
-                <label for="technicalSkills">Technical Skills:</label>
-                <input type="text" id="technicalSkills" placeholder="Comma-separated list of skills">
-                
-                <div class="form-buttons">
-                  <button type="submit" id="skillsSubmitButton">Save Skills</button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
-          <!-- Achievements Section -->
-          <div id="cvAchievementsSection" class="cv-tab-pane">
-            <h3>Manage Achievements</h3>
-            <div class="cv-list-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Achievement</th>
-                    <th>Year</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="achievementsTableBody"></tbody>
-              </table>
-            </div>
-            <div class="cv-form-container">
-              <form id="achievementsForm" class="cv-form">
-                <h4>Add/Edit Achievement</h4>
-                <input type="hidden" id="achievementsEditIndex" value="-1">
-                
-                <label for="achievementTitle">Achievement:</label>
-                <input type="text" id="achievementTitle" required>
-                
-                <label for="achievementYear">Year:</label>
-                <input type="text" id="achievementYear" placeholder="2021">
-                
-                <div class="form-buttons">
-                  <button type="submit" id="achievementsSubmitButton">Add Entry</button>
-                  <button type="button" id="achievementsCancelButton" style="display: none;">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
-          <!-- Positions Section -->
-          <div id="cvPositionsSection" class="cv-tab-pane">
-            <h3>Manage Positions</h3>
-            <div class="cv-list-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Organization</th>
-                    <th>Dates</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="positionsTableBody"></tbody>
-              </table>
-            </div>
-            <div class="cv-form-container">
-              <form id="positionsForm" class="cv-form">
-                <h4>Add/Edit Position</h4>
-                <input type="hidden" id="positionsEditIndex" value="-1">
-                
-                <label for="positionTitle">Title:</label>
-                <input type="text" id="positionTitle" required>
-                
-                <label for="positionOrganization">Organization:</label>
-                <input type="text" id="positionOrganization" required>
-                
-                <label for="positionDates">Dates:</label>
-                <input type="text" id="positionDates" placeholder="Jan 2020 - Present">
-                
-                <label for="positionDescription">Description:</label>
-                <textarea id="positionDescription" rows="5"></textarea>
-                
-                <div class="form-buttons">
-                  <button type="submit" id="positionsSubmitButton">Add Entry</button>
-                  <button type="button" id="positionsCancelButton" style="display: none;">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </section>
+      <!-- CV Content Section has been removed, as research and projects now use showOnCv flags -->
 
       <!-- Trip Management Section -->
       <section id="tripManagementSection" class="tab-pane">
@@ -577,6 +358,16 @@
             <label for="journalAbstract">Abstract:</label>
             <textarea id="journalAbstract" rows="6"></textarea>
             
+            <div style="margin: 10px 0;">
+              <label>
+                <input type="checkbox" id="journalShowOnCv"> 
+                Show on CV page
+              </label>
+              <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                When checked, this article will be listed on the CV page
+              </p>
+            </div>
+            
             <label>Links:</label>
             <div id="journalLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
               <!-- Link rows will be dynamically added here -->
@@ -611,6 +402,16 @@
             
             <label for="thesisAbstract">Abstract:</label>
             <textarea id="thesisAbstract" rows="6"></textarea>
+            
+            <div style="margin: 10px 0;">
+              <label>
+                <input type="checkbox" id="thesisShowOnCv"> 
+                Show on CV page
+              </label>
+              <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                When checked, this thesis will be listed on the CV page
+              </p>
+            </div>
             
             <label>Links:</label>
             <div id="thesisLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
@@ -663,6 +464,16 @@
             
             <label for="conferenceAbstract">Abstract:</label>
             <textarea id="conferenceAbstract" rows="6"></textarea>
+            
+            <div style="margin: 10px 0;">
+              <label>
+                <input type="checkbox" id="conferenceShowOnCv"> 
+                Show on CV page
+              </label>
+              <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                When checked, this conference paper will be listed on the CV page
+              </p>
+            </div>
             
             <label>Links:</label>
             <div id="conferenceLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
@@ -717,6 +528,16 @@
             <label for="patentAbstract">Abstract:</label>
             <textarea id="patentAbstract" rows="6"></textarea>
             
+            <div style="margin: 10px 0;">
+              <label>
+                <input type="checkbox" id="patentShowOnCv"> 
+                Show on CV page
+              </label>
+              <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                When checked, this patent will be listed on the CV page
+              </p>
+            </div>
+            
             <label>Links:</label>
             <div id="patentLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
               <!-- Link rows will be dynamically added here -->
@@ -734,9 +555,218 @@
     </div>
   </div>
 
+  <!-- Content Tab Section -->
+  <section id="contentTab" class="tab-pane">
+    <h2>Edit Site Content</h2>
+    
+    <!-- Content editor tabs -->
+    <div class="html-content-tabs">
+      <ul class="tab-nav html-tab-nav">
+        <li><a href="#" data-html-tab="homepage" class="html-tab-link active">Homepage HTML</a></li>
+        <li><a href="#" data-html-tab="contactBanner" class="html-tab-link">Contact Banner</a></li>
+      </ul>
+    </div>
+    
+    <!-- HTML content tabs content -->
+    <div class="html-tab-content">
+      <!-- Homepage Markdown Editor -->
+      <div id="homepageHTMLEditor" class="html-tab-pane active">
+        <h3>Edit Homepage Content (Markdown)</h3>
+        <div class="markdown-container">
+          <h4>Editor</h4>
+          <div class="md-flex">
+            <textarea id="homepageEditor"></textarea>
+            <div id="homepagePreview" class="md-preview markdown-body"></div>
+          </div>
+        </div>
+        <div class="editor-actions" style="margin-top: 10px;">
+          <button id="saveHomepageBtn" class="save-html-btn">Save Homepage Content</button>
+          <span id="homepageSaveStatus" class="save-status"></span>
+        </div>
+      </div>
+      
+      <!-- Contact Banner Editor -->
+      <div id="contactBannerHTMLEditor" class="html-tab-pane">
+        <h2>Contact banner text</h2>
+        <div class="editor-container">
+          <textarea id="bannerHtmlEditor" style="width: 100%; height: 150px; font-family: monospace;"></textarea>
+        </div>
+        
+        <h2>Links</h2>
+        <table id="bannerLinksTable" class="sortable">
+          <thead><tr><th>Icon</th><th>URL</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button id="addLinkBtn" class="btn btn-primary" style="margin-top: 10px;">+ Add Link</button>
+        <input type="file" id="iconUpload" accept="image/svg+xml,image/png" style="display:none;">
+        
+        <div class="editor-actions" style="margin-top: 20px;">
+          <button id="saveContactBannerBtn" class="save-html-btn">Save Contact Banner</button>
+          <span id="contactBannerSaveStatus" class="save-status"></span>
+        </div>
+        
+        <style>
+          .sortable tr {
+            user-select: none;
+            cursor: grab;
+            background-color: #fff;
+            transition: background-color 0.2s;
+          }
+          .sortable tr:active {
+            cursor: grabbing;
+          }
+          .sortable tr:hover {
+            background-color: #f5f5f5;
+          }
+          #bannerLinksTable tr{cursor:grab; user-select:none;}
+          #bannerLinksTable tr:active{cursor:grabbing;}
+          .sortable td {
+            padding: 8px;
+            vertical-align: middle;
+          }
+          .sortable input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+          }
+          .delBtn{
+            background:#e74c3c;
+            color:#fff;
+            width:24px; height:24px;       /* perfect circle */
+            border:none; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:bold; cursor:pointer;
+            line-height:1;
+          }
+          .delBtn:hover {
+            background: #ff1744;
+          }
+          .delBtn:focus{outline:none;}
+        </style>
+      </div>
+    </div>
+    
+    <style>
+      .html-content-tabs {
+        margin-bottom: 20px;
+      }
+      .html-tab-nav {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border-bottom: 1px solid #ddd;
+      }
+      .html-tab-nav li {
+        margin-right: 5px;
+      }
+      .html-tab-nav a {
+        display: block;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-bottom: none;
+        border-radius: 5px 5px 0 0;
+        text-decoration: none;
+        color: #333;
+        background-color: #f5f5f5;
+      }
+      .html-tab-nav a.active {
+        background-color: #fff;
+        border-bottom: 1px solid #fff;
+        margin-bottom: -1px;
+        font-weight: bold;
+      }
+      .html-tab-pane {
+        display: none;
+        padding: 20px;
+        border-top: none;
+      }
+      .html-tab-pane.active {
+        display: block;
+      }
+      .editor-container {
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
+      }
+      .save-html-btn {
+        padding: 8px 15px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .save-html-btn:hover {
+        background-color: #45a049;
+      }
+      .save-status {
+        margin-left: 10px;
+        color: #666;
+      }
+      /* Moved to admin.css */
+      
+      .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+        border-bottom: 1px solid #eaecef;
+        margin-top: 24px;
+        margin-bottom: 16px;
+        padding-bottom: 0.3em;
+      }
+      
+      .markdown-body p {
+        margin-top: 0;
+        margin-bottom: 16px;
+      }
+      
+      .markdown-body img {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </section>
+
+  <!-- Ordering Section -->
+  <section id="orderingSection" class="tab-pane">
+    <h2>Content Ordering</h2>
+    <p>Use these pages to drag-and-drop order your content:</p>
+    
+    <div class="ordering-buttons">
+      <a href="admin-projects.html" class="btn btn-primary">Order Projects</a>
+      <a href="admin-articles.html" class="btn btn-primary">Order Articles</a>
+      <a href="admin-theses.html" class="btn btn-primary">Order Theses</a>
+    </div>
+    
+    <style>
+      .ordering-buttons {
+        margin: 20px 0;
+      }
+      .ordering-buttons .btn {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px 15px;
+        background-color: #4CAF50;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: bold;
+        border: none;
+      }
+      .ordering-buttons .btn:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </section>
+
   <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
-  <script src="js/admin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="js/admin.js"></script>
+  <script src="js/admin-cv-patches.js"></script>
+  <script src="js/homeContentLoader.js"></script>
+  <script src="js/homepageEditor.js"></script>
+  <script src="js/contactBannerEditor.js"></script>
+  
+  <footer id="footer"></footer>
+  <script src="js/footerLoader.js"></script>
 </body>
 </html>

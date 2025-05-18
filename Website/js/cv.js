@@ -5,27 +5,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadDynamicCvContent() {
     try {
-        console.log("Fetching CV data from structured endpoints...");
+        console.log("Fetching CV data from combined endpoint...");
         
-        // Load all CV sections concurrently using Promise.all
-        const [education, work, research, projects, skills, achievements, positions] = await Promise.all([
-            fetchCvSection('education'),
-            fetchCvSection('work'),
-            fetchCvSection('research'),
-            fetchCvSection('projects'),
-            fetchCvSection('skills'),
-            fetchCvSection('achievements'),
-            fetchCvSection('positions')
-        ]);
+        // Fetch combined CV data
+        const response = await fetch('/api/data/cv');
+        if (!response.ok) {
+            let errorMsg = `Failed to fetch CV data: ${response.status}`;
+            try { const errData = await response.json(); errorMsg += ` - ${errData.error || 'Unknown'}`; } catch(e){}
+            throw new Error(errorMsg);
+        }
+        
+        const cvData = await response.json();
+        console.log("CV data loaded successfully", cvData);
         
         // Render each section with the retrieved data
-        renderEducation(education);
-        renderWork(work);
-        renderResearch(research);
-        renderProjects(projects);
-        renderSkills(skills);
-        renderAchievements(achievements);
-        renderPositions(positions);
+        renderEducation(cvData.education);
+        renderWork(cvData.work);
+        renderResearch(cvData.research);
+        
+        // Filter projects and research items by showOnCv flag
+        const projectsToShow = cvData.projectsData ? 
+            cvData.projectsData.filter(project => project.showOnCv) : [];
+            
+        const articlesToShow = cvData.researchData && cvData.researchData.articles ? 
+            cvData.researchData.articles.filter(article => article.showOnCv) : [];
+            
+        const thesesToShow = cvData.researchData && cvData.researchData.theses ? 
+            cvData.researchData.theses.filter(thesis => thesis.showOnCv) : [];
+            
+        const researchToShow = [...articlesToShow, ...thesesToShow];
+        
+        // Log what's being displayed for debugging
+        console.log(`Displaying ${projectsToShow.length} projects and ${researchToShow.length} research items (${articlesToShow.length} articles, ${thesesToShow.length} theses)`);
+        
+        // Render the items that should be shown
+        renderProjectItems(projectsToShow);
+        renderResearchItems(researchToShow);
+        
+        renderSkills(cvData.skills);
+        renderAchievements(cvData.achievements);
+        renderPositions(cvData.positions);
         
     } catch (error) {
         console.error('Error loading dynamic CV content:', error);
@@ -38,22 +57,6 @@ async function loadDynamicCvContent() {
         errorDiv.style.padding = '10px';
         errorDiv.style.margin = '10px 0';
         if(body.firstChild) body.insertBefore(errorDiv, body.firstChild); else body.appendChild(errorDiv);
-    }
-}
-
-// Helper function to fetch a specific CV section
-async function fetchCvSection(section) {
-    try {
-        const response = await fetch(`/api/data/cv/${section}`);
-        if (!response.ok) {
-            let errorMsg = `Failed to fetch ${section} data: ${response.status}`;
-            try { const errData = await response.json(); errorMsg += ` - ${errData.error || 'Unknown'}`; } catch(e){}
-            throw new Error(errorMsg);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error(`Error fetching ${section} section:`, error);
-        throw error; // Re-throw to be handled by the main function
     }
 }
 
@@ -183,6 +186,267 @@ function renderResearch(data) {
     });
 }
 
+// New functions to render projects and research with showOnCv flag
+function renderProjectItems(projects) {
+    if (!Array.isArray(projects) || projects.length === 0) {
+        console.warn("No projects with showOnCv=true available");
+        return;
+    }
+    
+    const container = document.querySelector('#projects .project-list');
+    if (!container) {
+        console.error("Projects container not found - check that the selector #projects .project-list exists");
+        return;
+    }
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    // Sort projects by order field
+    const sortedProjects = [...projects].sort((a, b) => {
+        if (a.order !== undefined && b.order !== undefined) {
+            return a.order - b.order;
+        }
+        return 0;
+    });
+    
+    // Create a list element for the projects
+    const ul = document.createElement('ul');
+    container.appendChild(ul);
+    
+    // Render each project
+    sortedProjects.forEach(project => {
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="projects.html#${project.id}">${project.title}</a> – ${project.short || ''}`;
+        ul.appendChild(li);
+    });
+}
+
+function renderResearchItems(researchItems) {
+    if (!Array.isArray(researchItems) || researchItems.length === 0) {
+        console.warn("No research items with showOnCv=true available");
+        return;
+    }
+    
+    // Find or create research references container
+    let container = document.querySelector('#research-references');
+    if (!container) {
+        const research = document.querySelector('#research');
+        if (!research) {
+            console.error("Research section not found - check that the selector #research exists");
+            return;
+        }
+        
+        container = document.createElement('div');
+        container.id = 'research-references';
+        research.appendChild(container);
+    }
+    
+    // Clear existing content
+    container.innerHTML = '<h3>Publications</h3>';
+    
+    // Categorize research items
+    const articles = researchItems.filter(item => item.id && item.id.includes('paper'));
+    const theses = researchItems.filter(item => item.id && item.id.includes('thesis'));
+    
+    // Sort the items by order
+    const sortedItems = [...researchItems].sort((a, b) => {
+        // Group by type first
+        if ((a.id && a.id.includes('paper')) !== (b.id && b.id.includes('paper'))) {
+            return a.id.includes('paper') ? -1 : 1; // Articles first
+        }
+        
+        // Then sort by order
+        if (a.order !== undefined && b.order !== undefined) {
+            return a.order - b.order;
+        }
+        return 0;
+    });
+    
+    // Create a list for the publications
+    const ul = document.createElement('ul');
+    
+    // Render each research item
+    sortedItems.forEach(item => {
+        const li = document.createElement('li');
+        const isArticle = item.id && item.id.includes('paper');
+        
+        // Format link based on item type
+        const linkHref = isArticle ? 
+            `research.html#${item.id}` : 
+            'research.html#thesis';
+            
+        li.innerHTML = `<a href="${linkHref}">${item.title}</a> – ${item.short || ''}`;
+        ul.appendChild(li);
+    });
+    
+    container.appendChild(ul);
+}
+
+// Keep the original functions for backward compatibility
+function renderProjectReferences(references, projectsData) {
+    if (!Array.isArray(references) || references.length === 0) {
+        console.warn("No project references available or invalid format");
+        // Use the old method as fallback
+        if (Array.isArray(projectsData)) {
+            renderProjects(projectsData);
+        }
+        return;
+    }
+    
+    // Filter projects that have showOnCv flag
+    const cvProjects = Array.isArray(projectsData) ? 
+        projectsData.filter(project => project.showOnCv) : [];
+        
+    if (cvProjects.length > 0) {
+        renderProjectItems(cvProjects);
+        return;
+    }
+    
+    const container = document.querySelector('#projects .project-list');
+    if (!container) return;
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    // Sort references by the order field in the full project data
+    const projects = references
+        .map(ref => {
+            // Find the full project data for this reference
+            const fullProject = Array.isArray(projectsData) ? 
+                projectsData.find(p => p.id === ref.id) : null;
+                
+            return fullProject || null;
+        })
+        .filter(Boolean) // Remove nulls
+        .sort((a, b) => {
+            // Sort by order if available, otherwise keep original order
+            if (a.order !== undefined && b.order !== undefined) {
+                return a.order - b.order;
+            }
+            return 0;
+        });
+    
+    // Render projects
+    projects.forEach(project => {
+        const li = document.createElement('li');
+        
+        // Use the short description from the project data
+        li.innerHTML = `<a href="projects.html#${project.id}">${project.title}</a> – ${project.short || ''}`;
+        
+        // Add the list item to a <ul> element
+        let ul = container.querySelector('ul');
+        if (!ul) {
+            ul = document.createElement('ul');
+            container.appendChild(ul);
+        }
+        
+        ul.appendChild(li);
+    });
+}
+
+function renderResearchReferences(references, researchData) {
+    if (!Array.isArray(references) || references.length === 0) {
+        console.warn("No research references available or invalid format");
+        return;
+    }
+    
+    // Filter research items with showOnCv flag
+    let cvResearchItems = [];
+    
+    if (researchData && researchData.articles && Array.isArray(researchData.articles)) {
+        const articlesWithCvFlag = researchData.articles.filter(article => article.showOnCv);
+        cvResearchItems = cvResearchItems.concat(articlesWithCvFlag);
+    }
+    
+    if (researchData && researchData.theses && Array.isArray(researchData.theses)) {
+        const thesesWithCvFlag = researchData.theses.filter(thesis => thesis.showOnCv);
+        cvResearchItems = cvResearchItems.concat(thesesWithCvFlag);
+    }
+    
+    if (cvResearchItems.length > 0) {
+        renderResearchItems(cvResearchItems);
+        return;
+    }
+    
+    const container = document.querySelector('#research-references');
+    if (!container) {
+        // Create the container if it doesn't exist
+        const research = document.querySelector('#research');
+        if (!research) return;
+        
+        const referenceContainer = document.createElement('div');
+        referenceContainer.id = 'research-references';
+        
+        const title = document.createElement('h3');
+        title.textContent = 'Publications';
+        referenceContainer.appendChild(title);
+        
+        research.appendChild(referenceContainer);
+    }
+    
+    // Clear existing content
+    container.innerHTML = '<h3>Publications</h3>';
+    
+    // Collect all publication data
+    const publications = [];
+    
+    // Process each reference
+    references.forEach(ref => {
+        let fullPublication = null;
+        
+        // Find the full publication data based on the ID
+        if (ref.id.includes('paper')) {
+            // Journal article
+            fullPublication = researchData.articles && Array.isArray(researchData.articles) ? 
+                researchData.articles.find(a => a.id === ref.id) : null;
+        } else if (ref.id.includes('thesis')) {
+            // Thesis
+            fullPublication = researchData.theses && Array.isArray(researchData.theses) ? 
+                researchData.theses.find(t => t.id === ref.id) : null;
+        }
+        
+        if (fullPublication) {
+            // Add the publication type for sorting
+            fullPublication.pubType = ref.id.includes('paper') ? 'article' : 'thesis';
+            publications.push(fullPublication);
+        }
+    });
+    
+    // Sort publications by order if available
+    publications.sort((a, b) => {
+        // Group by publication type first
+        if (a.pubType !== b.pubType) {
+            return a.pubType === 'article' ? -1 : 1; // Articles first
+        }
+        
+        // Then sort by order within each type
+        if (a.order !== undefined && b.order !== undefined) {
+            return a.order - b.order;
+        }
+        return 0;
+    });
+    
+    // Create a list for the publications
+    const ul = document.createElement('ul');
+    
+    // Render each publication
+    publications.forEach(pub => {
+        const li = document.createElement('li');
+        
+        // Format differently based on publication type
+        if (pub.pubType === 'article') {
+            li.innerHTML = `<a href="research.html#${pub.id}">${pub.title}</a> – ${pub.short || ''}`;
+        } else {
+            li.innerHTML = `<a href="research.html#thesis">${pub.title}</a> – ${pub.short || ''}`;
+        }
+        
+        ul.appendChild(li);
+    });
+    
+    container.appendChild(ul);
+}
+
 function renderProjects(data) {
     if (!Array.isArray(data) || data.length === 0) {
         console.warn("No projects data available or invalid format");
@@ -246,7 +510,10 @@ function renderSkills(data) {
     }
     
     const container = document.querySelector('#skills ul');
-    if (!container) return;
+    if (!container) {
+        console.error("Skills container not found - check that the selector #skills ul exists");
+        return;
+    }
     
     container.innerHTML = ''; // Clear existing content
     

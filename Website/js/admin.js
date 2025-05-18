@@ -456,6 +456,64 @@ async function initializeAdminPanel() {
 
 // Tab navigation functionality
 function setupTabNavigation() {
+    // Setup new tab filter functionality first
+    const tabGroupFilter = document.getElementById('tabGroupFilter');
+    
+    // Handle tab filtering
+    if (tabGroupFilter) {
+        // Set initial filter value from session storage
+        const savedTabGroup = sessionStorage.getItem('activeTabGroup');
+        if (savedTabGroup) {
+            tabGroupFilter.value = savedTabGroup;
+            filterTabs(savedTabGroup);
+        }
+        
+        tabGroupFilter.addEventListener('change', function() {
+            const selectedGroup = this.value;
+            filterTabs(selectedGroup);
+            
+            // Save the filter selection to session storage
+            sessionStorage.setItem('activeTabGroup', selectedGroup !== 'all' ? selectedGroup : '');
+            
+            // If we're filtering to a specific group, and no tab in that group is active,
+            // activate the first available tab in that group
+            if (selectedGroup !== 'all') {
+                const activeTab = document.querySelector('.tab-link.active');
+                const activeTabGroup = activeTab ? activeTab.dataset.tabGroup : null;
+                
+                if (activeTabGroup !== selectedGroup) {
+                    // Find the first tab in the selected group and click it
+                    const firstTabInGroup = document.querySelector(`.tab-link[data-tab-group="${selectedGroup}"]`);
+                    if (firstTabInGroup) {
+                        firstTabInGroup.click();
+                    }
+                }
+            }
+        });
+    }
+    
+    // Function to filter tabs by group
+    function filterTabs(group) {
+        const tabLinks = document.querySelectorAll('.tab-link');
+        
+        if (group === 'all') {
+            // Show all tabs
+            tabLinks.forEach(tab => {
+                tab.parentElement.classList.remove('filtered');
+            });
+        } else {
+            // Show only tabs in the selected group
+            tabLinks.forEach(tab => {
+                if (tab.dataset.tabGroup === group) {
+                    tab.parentElement.classList.remove('filtered');
+                } else {
+                    tab.parentElement.classList.add('filtered');
+                }
+            });
+        }
+    }
+    
+    // Original tab navigation functionality
     const tabNav = document.querySelector('.admin-tabs ul.tab-nav');
 
     if (tabNav) {
@@ -484,6 +542,21 @@ function setupTabNavigation() {
                 // Add active class to the clicked tab and its target pane
                 clickedTab.classList.add('active');
                 targetPane.classList.add('active');
+                
+                // Dispatch a custom event when tab changes
+                document.dispatchEvent(new CustomEvent('tabChanged', {
+                    detail: {
+                        tabId: targetPaneSelector,
+                        tabGroup: clickedTab.dataset.tabGroup || null
+                    }
+                }));
+                
+                // Save the tab group if available
+                const tabGroup = clickedTab.dataset.tabGroup;
+                if (tabGroup && tabGroupFilter) {
+                    sessionStorage.setItem('activeTabGroup', tabGroup);
+                    tabGroupFilter.value = tabGroup;
+                }
 
                 // Special case: Re-initialize EasyMDE if the Projects tab becomes active
                 if (targetPaneSelector === '#projectManagementSection') {
@@ -4157,4 +4230,238 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.readAsDataURL(file); // Read file as Data URL
         });
     }
+    
+    // HTML Content Editor variables and selectors
+    const homepageEditor = document.getElementById('homepageEditor');
+    const markdownPreview = document.getElementById('markdownPreview');
+    const contactBannerEditor = document.getElementById('contactBannerEditor');
+    const saveHomepageBtn = document.getElementById('saveHomepageBtn');
+    const saveContactBannerBtn = document.getElementById('saveContactBannerBtn');
+    const homepageSaveStatus = document.getElementById('homepageSaveStatus');
+    const contactBannerSaveStatus = document.getElementById('contactBannerSaveStatus');
+    
+    // Setup HTML Content tab navigation
+    function setupHTMLContentTabNavigation() {
+        const htmlTabNav = document.querySelector('.html-tab-nav');
+        
+        if (htmlTabNav) {
+            htmlTabNav.addEventListener('click', (event) => {
+                // Check if the clicked element is a tab link
+                if (event.target.matches('.html-tab-link')) {
+                    event.preventDefault(); // Stop browser from following href="#"
+                    
+                    const clickedTab = event.target;
+                    const targetTabId = clickedTab.dataset.htmlTab;
+                    
+                    // Remove active class from all tabs and panes first
+                    document.querySelectorAll('.html-tab-link').forEach(tab => {
+                        tab.classList.remove('active');
+                    });
+                    document.querySelectorAll('.html-tab-pane').forEach(pane => {
+                        pane.classList.remove('active');
+                    });
+                    
+                    // Add active class to the clicked tab and its target pane
+                    clickedTab.classList.add('active');
+                    
+                    // Set the appropriate pane as active
+                    let targetPane;
+                    if (targetTabId === 'homepage') {
+                        targetPane = document.getElementById('homepageHTMLEditor');
+                    } else if (targetTabId === 'contactBanner') {
+                        targetPane = document.getElementById('contactBannerHTMLEditor');
+                    }
+                    
+                    if (targetPane) {
+                        targetPane.classList.add('active');
+                    }
+                }
+            });
+        }
+    }
+    
+    // Load HTML Content
+    async function loadHTMLContent() {
+        try {
+            toggleLoading(true);
+            
+            // Load homepage HTML content
+            if (homepageEditor) {
+                try {
+                    const response = await fetch('/api/content/homepage');
+                    if (response.ok) {
+                        const htmlContent = await response.text();
+                        homepageEditor.value = htmlContent;
+                        // Update the markdown preview with the loaded content
+                        updateMarkdownPreview();
+                    } else {
+                        console.error('Failed to load homepage HTML content:', response.statusText);
+                        showNotification('Failed to load homepage HTML content. Please try again.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error loading homepage HTML content:', error);
+                    showNotification('Error loading homepage HTML content: ' + error.message, 'error');
+                }
+            }
+            
+            // Load contact banner HTML content
+            if (contactBannerEditor) {
+                try {
+                    const response = await fetch('/api/content/contactBanner');
+                    if (response.ok) {
+                        const htmlContent = await response.text();
+                        contactBannerEditor.value = htmlContent;
+                    } else if (response.status === 404) {
+                        // If the file doesn't exist yet, leave the editor empty
+                        contactBannerEditor.value = '<!-- Create your contact banner HTML here -->';
+                    } else {
+                        console.error('Failed to load contact banner HTML content:', response.statusText);
+                        showNotification('Failed to load contact banner HTML content. Please try again.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error loading contact banner HTML content:', error);
+                    // If error is due to file not existing yet, don't show an error message
+                    if (error.name !== 'SyntaxError') {
+                        showNotification('Error loading contact banner HTML content: ' + error.message, 'error');
+                    }
+                }
+            }
+        } finally {
+            toggleLoading(false);
+        }
+    }
+    
+    // Save Homepage HTML Content
+    async function saveHomepageHTML() {
+        if (!homepageEditor) return;
+        
+        // Show saving status
+        homepageSaveStatus.textContent = 'Saving...';
+        saveHomepageBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/api/content/homepage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ html: homepageEditor.value })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showNotification('Homepage HTML content saved successfully.', 'success');
+                homepageSaveStatus.textContent = 'Saved!';
+                
+                // Reset status after 3 seconds
+                setTimeout(() => {
+                    homepageSaveStatus.textContent = '';
+                }, 3000);
+            } else {
+                // Handle authentication error
+                if (response.status === 401) {
+                    showNotification('Your session has expired. Please log in again.', 'error');
+                    if (adminContent) adminContent.style.display = 'none';
+                    if (loginSection) loginSection.style.display = 'block';
+                    if (passwordInput) passwordInput.value = '';
+                    return;
+                }
+                
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to save homepage HTML content');
+            }
+        } catch (error) {
+            console.error('Error saving homepage HTML content:', error);
+            showNotification('Error saving homepage HTML content: ' + error.message, 'error');
+            homepageSaveStatus.textContent = 'Failed to save!';
+        } finally {
+            saveHomepageBtn.disabled = false;
+        }
+    }
+    
+    // Save Contact Banner HTML Content
+    async function saveContactBannerHTML() {
+        if (!contactBannerEditor) return;
+        
+        // Show saving status
+        contactBannerSaveStatus.textContent = 'Saving...';
+        saveContactBannerBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/api/content/contactBanner', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ html: contactBannerEditor.value })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showNotification('Contact banner HTML content saved successfully.', 'success');
+                contactBannerSaveStatus.textContent = 'Saved!';
+                
+                // Reset status after 3 seconds
+                setTimeout(() => {
+                    contactBannerSaveStatus.textContent = '';
+                }, 3000);
+            } else {
+                // Handle authentication error
+                if (response.status === 401) {
+                    showNotification('Your session has expired. Please log in again.', 'error');
+                    if (adminContent) adminContent.style.display = 'none';
+                    if (loginSection) loginSection.style.display = 'block';
+                    if (passwordInput) passwordInput.value = '';
+                    return;
+                }
+                
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to save contact banner HTML content');
+            }
+        } catch (error) {
+            console.error('Error saving contact banner HTML content:', error);
+            showNotification('Error saving contact banner HTML content: ' + error.message, 'error');
+            contactBannerSaveStatus.textContent = 'Failed to save!';
+        } finally {
+            saveContactBannerBtn.disabled = false;
+        }
+    }
+    
+    // Function to update markdown preview
+    function updateMarkdownPreview() {
+        if (homepageEditor && markdownPreview) {
+            const markdownContent = homepageEditor.value;
+            try {
+                // Convert markdown to HTML and set it in the preview
+                markdownPreview.innerHTML = marked.parse(markdownContent);
+            } catch (error) {
+                console.error('Error parsing markdown:', error);
+                markdownPreview.innerHTML = '<p style="color: red;">Error parsing markdown: ' + error.message + '</p>';
+            }
+        }
+    }
+    
+    // Initialize HTML Content editor event listeners
+    if (homepageEditor) {
+        // Add input event listener to update preview in real-time
+        homepageEditor.addEventListener('input', updateMarkdownPreview);
+    }
+    
+    if (saveHomepageBtn) {
+        saveHomepageBtn.addEventListener('click', saveHomepageHTML);
+    }
+    
+    if (saveContactBannerBtn) {
+        saveContactBannerBtn.addEventListener('click', saveContactBannerHTML);
+    }
+    
+    // Setup HTML Content tab navigation
+    setupHTMLContentTabNavigation();
+    
+    // Call the loadHTMLContent function when data is being initialized
+    const originalInitializeAdminPanel = initializeAdminPanel;
+    initializeAdminPanel = async function() {
+        await originalInitializeAdminPanel();
+        await loadHTMLContent();
+    };
 });

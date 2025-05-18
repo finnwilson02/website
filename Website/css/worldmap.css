@@ -4,12 +4,20 @@
 }
   
 .photo-pin {
-    border-radius: 15%;
-    border: 2px solid white;
-    box-shadow: 0 0 4px rgba(0,0,0,0.5);
-    width: 75px;
-    height: 75px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 6px rgba(0,0,0,0.6);
+    width: 60px;
+    height: 60px;
     object-fit: cover;
+    transform: scale(1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.photo-pin:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(0,0,0,0.7);
+    z-index: 1000 !important;
 }
 
 /* Simple marker style for low zoom levels */
@@ -19,12 +27,17 @@
 }
 
 .simple-map-pin {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background-color: #e74c3c;
     border: 2px solid white;
-    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    box-shadow: 0 0 5px rgba(0,0,0,0.6);
+    transition: transform 0.2s ease;
+}
+
+.simple-map-pin:hover {
+    transform: scale(1.2);
 }
 
 /* Simple cluster icon style for low zoom levels */
@@ -34,18 +47,24 @@
 }
 
 .simple-cluster {
-    width: 30px;
-    height: 30px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
-    background-color: rgba(231, 76, 60, 0.8);
+    background-color: rgba(231, 76, 60, 0.85);
     color: white;
     font-weight: bold;
-    border: 2px solid white;
-    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    border: 3px solid white;
+    box-shadow: 0 0 6px rgba(0,0,0,0.6);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 13px;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.simple-cluster:hover {
+    transform: scale(1.1);
+    background-color: rgba(231, 76, 60, 1);
 }
 
 /* Tag Autocomplete Styles */
@@ -88,25 +107,39 @@
     position: absolute;
     width: 50px;
     height: 50px;
-    border-radius: 15%;
-    border: 2px solid white;
-    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 6px rgba(0,0,0,0.6);
+    transition: transform 0.2s ease;
 }
   
 .cluster-photo-0 {
     z-index: 3;
     top: 0;
     left: 0;
+    transform: scale(1.05);
 }
 .cluster-photo-1 {
     z-index: 2;
-    top: 5px;
-    left: 5px;
+    top: 8px;
+    left: 8px;
 }
 .cluster-photo-2 {
     z-index: 1;
-    top: 10px;
-    left: 10px;
+    top: 16px;
+    left: 16px;
+}
+
+.cluster-stack:hover .cluster-photo-0 {
+    transform: translateX(-8px) translateY(-8px) scale(1.05);
+}
+
+.cluster-stack:hover .cluster-photo-1 {
+    transform: translateY(0) translateX(0);
+}
+
+.cluster-stack:hover .cluster-photo-2 {
+    transform: translateX(8px) translateY(8px);
 }
 
 /* Map Control Styles */

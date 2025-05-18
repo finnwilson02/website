@@ -1,0 +1,55 @@
+{
+  "articles": [
+    {
+      "id": "uav-deterrence-paper",
+      "title": "Biomimetic UAV Flocking for Active Wildlife Deterrence: A Magnetodynamic Approach",
+      "authors": "**Finn Wilson**, Sarah Chen, Dr. Michael Roberts",
+      "venue": "Journal of Unmanned Aerial Systems",
+      "date": "2025",
+      "short": "Predator-inspired UAV control for 91% bird dispersal efficiency",
+      "order": 0,
+      "showOnCv": true,
+      "abstract": "This study presents a novel framework for UAV-based wildlife deterrence using a biomimetic approach inspired by predator flocking behavior. Unmanned aerial vehicles (UAVs) acting in coordinated swarms have shown promise for non-lethal wildlife management in agricultural and airport settings, but existing methods often use naive pursuit strategies that wildlife quickly habituate to. We propose a magnetodynamic framework that models UAV swarm behavior after wolf pack hunting tactics, allowing for more natural and unpredictable engagement patterns.\n\nField tests conducted at Sydney International Airport demonstrated approximately 91% effectiveness in bird dispersal using our biomimetic algorithm, compared to approximately 65% with traditional pursuit methods. The system dynamically adjusts UAV positioning based on flock responses, creating an adaptive deterrence pattern that maintains effectiveness over time. \n\nOur implementation includes a physics-based simulation environment and a high-performance C++ swarm control toolkit that addresses limitations in existing Python-based solutions. These tools enable real-time state estimation and coordinated control of the UAV swarm, even under challenging environmental conditions. The framework has potential applications in aviation safety, agriculture, and wildlife management contexts where humane deterrence methods are required.",
+      "links": {
+        "preprint": "#",
+        "code": "#",
+        "project": "projects.html#uav-deterrence"
+      }
+    },
+    {
+      "id": "mine-sampling-paper",
+      "title": "Adaptive Sampling for Resource Characterization: Optimizing Geological Survey Efficiency Using Machine Learning",
+      "authors": "Dr. James Carter, **Finn Wilson**, Dr. Lisa Zhang, Prof. Robert Johnson",
+      "venue": "Journal of Mining Engineering",
+      "date": "2024",
+      "short": "ML-optimized mining surveys with 50% information gain efficiency",
+      "order": 1,
+      "showOnCv": true,
+      "abstract": "This paper introduces a novel adaptive sampling methodology for geological surveying that demonstrates significant cost reductions while maintaining or reducing uncertainty in resource characterization models. Traditional sampling approaches in mining operations often rely on uniform or grid-based patterns that fail to account for the inherent spatial variability of geological properties.\n\nWe present a machine learning approach that combines Gaussian Processes and Random Forests to predict ore grade distributions and quantify prediction uncertainty. Our adaptive algorithm iteratively selects new sampling locations to maximize information gain, yielding a 50% improvement in information per sample compared to uniform sampling strategies.\n\nWhen tested on historical data from an operational mine site in Western Australia, our method achieved over 80% accuracy in ore grade prediction while suggesting a theoretical 40% reduction in required samples to achieve equivalent model confidence. This approach has significant implications for reducing exploration costs and improving resource characterization in mining operations.\n\nThe proposed methodology incorporates spatial constraints and practical field considerations, making it immediately applicable to real-world mining scenarios. A companion open-source implementation is provided to facilitate adoption by the mining industry.",
+      "links": {
+        "preprint": "#",
+        "doi": "#",
+        "code": "#",
+        "project": "projects.html#mine-sampling"
+      }
+    }
+  ],
+  "theses": [
+    {
+      "id": "phd-thesis",
+      "title": "Autonomous Systems for Environmental Management: UAV Swarms and Adaptive Sensing Strategies",
+      "authors": "**Finn Wilson**",
+      "venue": "B. Engineering Honours (Mechatronics/Space) & B. Science (Advanced Physics), Honours Class I, The University of Sydney",
+      "date": "2024",
+      "short": "Multi-domain autonomous systems for environmental applications",
+      "order": 0,
+      "showOnCv": true,
+      "abstract": "This thesis investigates two advanced autonomous systems designed for environmental management: coordinated UAV swarms for wildlife deterrence and adaptive geological sampling techniques. Both projects demonstrate how intelligent autonomous systems can address real-world challenges more effectively than traditional approaches.\n\nIn the first part, we develop a biomimetic UAV swarm control framework that mimics predator hunting behaviors to create more effective wildlife deterrence, particularly for airport safety applications. The system achieves 91% effectiveness in bird dispersal at test sites, representing a significant improvement over current methods. The implementation includes a physics-based simulation environment and a C++ control toolkit that enables coordinated multi-drone operations under challenging field conditions.\n\nThe second part presents an adaptive sampling methodology for geological surveying that incorporates machine learning to optimize information gathering in mining exploration. By leveraging Gaussian Processes and ensemble methods, the system demonstrates a 40% reduction in required sampling while maintaining equivalent model confidence. Field validation confirmed the practical applicability of the approach in real-world mining scenarios.\n\n*Note: This thesis contains intellectual property that is subject to patent applications and confidentiality agreements with industry partners. Certain implementation details have been omitted in accordance with these agreements.*",
+      "links": {
+        "project_uav": "projects.html#uav-deterrence",
+        "project_mining": "projects.html#mine-sampling",
+        "pdf": "#"
+      }
+    }
+  ]
+}

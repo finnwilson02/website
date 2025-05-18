@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Articles Admin</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <style>
+    .sortable tr {
+      cursor: move;
+    }
+    .drag-handle {
+      padding: 8px;
+      text-align: center;
+      font-size: 1.2em;
+      color: #666;
+    }
+    .dragging {
+      opacity: 0.5;
+      background-color: #f5f5f5;
+    }
+    .save-order-btn {
+      margin: 15px 0;
+      padding: 8px 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .save-order-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div id="loginSection">
+    <h1>Admin Login</h1>
+    <p style="color: red;">Note: This is basic protection for local use ONLY. Do not rely on this for security on a live server.</p>
+    <label for="password">Password:</label>
+    <input type="password" id="password">
+    <button id="loginButton">Login</button>
+    <p id="loginError" style="color: red; display: none;">Incorrect password.</p>
+  </div>
+
+  <div id="adminContent" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1>Articles Administration</h1>
+      <button id="backToAdmin" style="height: 36px; margin-right: 10px;">Back to Admin</button>
+      <button id="logoutButton" style="height: 36px; margin-right: 20px;">Logout</button>
+    </div>
+    
+    <!-- Notification area for success/error messages -->
+    <div id="adminNotifications" style="position: fixed; top: 10px; right: 10px; z-index: 1050; max-width: 300px;"></div>
+    
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" style="display: none; padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd; margin-bottom: 15px; text-align: center;">
+      <div style="display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(0, 123, 255, 0.3); border-radius: 50%; border-top-color: #007bff; animation: spin 1s linear infinite; margin-right: 10px;"></div>
+      <span>Loading data...</span>
+    </div>
+    
+    <div class="admin-warning">
+      <h3>⚠️ Articles Admin Panel</h3>
+      <p>Here you can reorder the research articles. Drag and drop to change the order, then click "Save Order" to persist your changes.</p>
+    </div>
+
+    <!-- Tab navigation -->
+    <div class="admin-tabs">
+      <button class="tab-button active" data-tab="journal">Journal Articles</button>
+      <button class="tab-button" data-tab="conference">Conference Papers</button>
+      <button class="tab-button" data-tab="patent">Patents</button>
+    </div>
+
+    <!-- Journal Articles Tab -->
+    <section id="journalManagement" class="tab-content active">
+      <h2>Journal Articles Order</h2>
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Authors</th>
+              <th>Journal</th>
+              <th>Order</th>
+            </tr>
+          </thead>
+          <tbody id="journalTableBody" class="sortable">
+            <!-- Journal article rows will be added dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Conference Papers Tab -->
+    <section id="conferenceManagement" class="tab-content">
+      <h2>Conference Papers Order</h2>
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Authors</th>
+              <th>Conference</th>
+              <th>Order</th>
+            </tr>
+          </thead>
+          <tbody id="conferenceTableBody" class="sortable">
+            <!-- Conference paper rows will be added dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Patents Tab -->
+    <section id="patentManagement" class="tab-content">
+      <h2>Patents Order</h2>
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Inventors</th>
+              <th>Status</th>
+              <th>Order</th>
+            </tr>
+          </thead>
+          <tbody id="patentTableBody" class="sortable">
+            <!-- Patent rows will be added dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <style>
+      /* Tab styling */
+      .admin-tabs {
+        display: flex;
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 20px;
+      }
+      
+      .tab-button {
+        padding: 10px 15px;
+        background: none;
+        border: 1px solid transparent;
+        border-radius: 5px 5px 0 0;
+        cursor: pointer;
+        margin-right: 5px;
+        font-weight: 500;
+      }
+      
+      .tab-button:hover {
+        border-color: #dee2e6 #dee2e6 #fff;
+        background-color: #f8f9fa;
+      }
+      
+      .tab-button.active {
+        border-color: #dee2e6 #dee2e6 #fff;
+        background-color: #fff;
+        border-bottom: 1px solid white;
+        margin-bottom: -1px;
+      }
+      
+      .tab-content {
+        display: none;
+      }
+      
+      .tab-content.active {
+        display: block;
+      }
+    </style>
+  </div>
+
+  <script src="js/sortable.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Selectors
+      const loginSection = document.getElementById('loginSection');
+      const adminContent = document.getElementById('adminContent');
+      const passwordInput = document.getElementById('password');
+      const loginButton = document.getElementById('loginButton');
+      const loginError = document.getElementById('loginError');
+      const logoutButton = document.getElementById('logoutButton');
+      const backToAdmin = document.getElementById('backToAdmin');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const journalTableBody = document.getElementById('journalTableBody');
+      const conferenceTableBody = document.getElementById('conferenceTableBody');
+      const patentTableBody = document.getElementById('patentTableBody');
+      const tabButtons = document.querySelectorAll('.tab-button');
+      const tabContents = document.querySelectorAll('.tab-content');
+
+      // Add spin animation to CSS
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Tab switching functionality
+      tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          // Remove active class from all buttons and contents
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          tabContents.forEach(content => content.classList.remove('active'));
+          
+          // Add active class to clicked button and corresponding content
+          button.classList.add('active');
+          const tabName = button.getAttribute('data-tab');
+          document.getElementById(`${tabName}Management`).classList.add('active');
+        });
+      });
+
+      // Check login status
+      checkAuthStatus();
+
+      // Login button click handler
+      loginButton.addEventListener('click', login);
+
+      // Password input enter key handler
+      passwordInput.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') login();
+      });
+
+      // Logout button click handler
+      logoutButton.addEventListener('click', logout);
+
+      // Back to admin button click handler
+      backToAdmin.addEventListener('click', () => {
+        window.location.href = 'admin.html';
+      });
+
+      // Authentication Functions
+      function login() {
+        const password = passwordInput.value;
+        
+        loadingIndicator.style.display = 'block';
+        
+        fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        })
+        .then(response => response.json())
+        .then(data => {
+          loadingIndicator.style.display = 'none';
+          
+          if (data.success) {
+            loginSection.style.display = 'none';
+            adminContent.style.display = 'block';
+            loginError.style.display = 'none';
+            loadAllArticleData();
+          } else {
+            loginError.style.display = 'block';
+          }
+        })
+        .catch(error => {
+          console.error('Login error:', error);
+          loadingIndicator.style.display = 'none';
+          loginError.textContent = 'Server error during login. Please try again.';
+          loginError.style.display = 'block';
+        });
+      }
+
+      function logout() {
+        fetch('/api/logout', {
+          method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            loginSection.style.display = 'block';
+            adminContent.style.display = 'none';
+            passwordInput.value = '';
+          }
+        })
+        .catch(error => {
+          console.error('Logout error:', error);
+        });
+      }
+
+      function checkAuthStatus() {
+        fetch('/api/auth/status')
+        .then(response => response.json())
+        .then(data => {
+          if (data.isAuthenticated) {
+            loginSection.style.display = 'none';
+            adminContent.style.display = 'block';
+            loadAllArticleData();
+          } else {
+            loginSection.style.display = 'block';
+            adminContent.style.display = 'none';
+          }
+        })
+        .catch(error => {
+          console.error('Auth check error:', error);
+        });
+      }
+
+      // Load all article data types
+      function loadAllArticleData() {
+        loadingIndicator.style.display = 'block';
+        
+        // Load all three types of research articles
+        Promise.all([
+          fetch('/api/data/journal').then(response => response.json()),
+          fetch('/api/data/conference').then(response => response.json()),
+          fetch('/api/data/patent').then(response => response.json())
+        ])
+        .then(([journalData, conferenceData, patentData]) => {
+          // Display data for each section
+          displayJournalArticles(journalData);
+          displayConferencePapers(conferenceData);
+          displayPatents(patentData);
+          
+          // Initialize sortable functionality for each table
+          makeSortable('journal', journalTableBody);
+          makeSortable('conference', conferenceTableBody);
+          makeSortable('patent', patentTableBody);
+        })
+        .catch(error => {
+          console.error('Error loading research data:', error);
+          showNotification('Error loading research data: ' + error.message, 'error');
+        })
+        .finally(() => {
+          loadingIndicator.style.display = 'none';
+        });
+      }
+
+      // Display journal articles in the table
+      function displayJournalArticles(articles) {
+        journalTableBody.innerHTML = '';
+        
+        // Ensure articles is an array
+        if (!Array.isArray(articles)) {
+          articles = [articles];
+        }
+        
+        // Sort articles by order if available
+        articles.sort((a, b) => {
+          if (a.order !== undefined && b.order !== undefined) {
+            return a.order - b.order;
+          }
+          return 0;
+        });
+        
+        articles.forEach((article, index) => {
+          const row = document.createElement('tr');
+          row.dataset.id = article.id || index.toString();
+          
+          row.innerHTML = `
+            <td>${article.id || index}</td>
+            <td>${article.title || ''}</td>
+            <td>${article.authors || ''}</td>
+            <td>${article.journal || ''}</td>
+            <td>${article.order !== undefined ? article.order : index}</td>
+          `;
+          
+          journalTableBody.appendChild(row);
+        });
+      }
+
+      // Display conference papers in the table
+      function displayConferencePapers(papers) {
+        conferenceTableBody.innerHTML = '';
+        
+        // Ensure papers is an array
+        if (!Array.isArray(papers)) {
+          papers = [papers];
+        }
+        
+        // Sort papers by order if available
+        papers.sort((a, b) => {
+          if (a.order !== undefined && b.order !== undefined) {
+            return a.order - b.order;
+          }
+          return 0;
+        });
+        
+        papers.forEach((paper, index) => {
+          const row = document.createElement('tr');
+          row.dataset.id = paper.id || index.toString();
+          
+          row.innerHTML = `
+            <td>${paper.id || index}</td>
+            <td>${paper.title || ''}</td>
+            <td>${paper.authors || ''}</td>
+            <td>${paper.conference || ''}</td>
+            <td>${paper.order !== undefined ? paper.order : index}</td>
+          `;
+          
+          conferenceTableBody.appendChild(row);
+        });
+      }
+
+      // Display patents in the table
+      function displayPatents(patents) {
+        patentTableBody.innerHTML = '';
+        
+        // Ensure patents is an array
+        if (!Array.isArray(patents)) {
+          patents = [patents];
+        }
+        
+        // Sort patents by order if available
+        patents.sort((a, b) => {
+          if (a.order !== undefined && b.order !== undefined) {
+            return a.order - b.order;
+          }
+          return 0;
+        });
+        
+        patents.forEach((patent, index) => {
+          const row = document.createElement('tr');
+          row.dataset.id = patent.id || index.toString();
+          
+          row.innerHTML = `
+            <td>${patent.id || index}</td>
+            <td>${patent.title || ''}</td>
+            <td>${patent.inventors || patent.authors || ''}</td>
+            <td>${patent.status || ''}</td>
+            <td>${patent.order !== undefined ? patent.order : index}</td>
+          `;
+          
+          patentTableBody.appendChild(row);
+        });
+      }
+
+      // Show notification function
+      function showNotification(message, type = 'info') {
+        const notificationArea = document.getElementById('adminNotifications');
+        if (!notificationArea) return;
+        
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = message;
+        
+        // Style based on type
+        switch (type) {
+          case 'success':
+            notification.style.backgroundColor = '#d4edda';
+            notification.style.color = '#155724';
+            notification.style.borderColor = '#c3e6cb';
+            break;
+          case 'error':
+            notification.style.backgroundColor = '#f8d7da';
+            notification.style.color = '#721c24';
+            notification.style.borderColor = '#f5c6cb';
+            break;
+          default:
+            notification.style.backgroundColor = '#d1ecf1';
+            notification.style.color = '#0c5460';
+            notification.style.borderColor = '#bee5eb';
+        }
+        
+        // Add some common styles
+        notification.style.padding = '10px';
+        notification.style.margin = '5px 0';
+        notification.style.borderRadius = '4px';
+        notification.style.border = '1px solid';
+        
+        notificationArea.appendChild(notification);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transition = 'opacity 0.5s ease';
+          
+          // Remove from DOM after fade-out
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 500);
+        }, 5000);
+      }
+    });
+  </script>
+</body>
+</html>

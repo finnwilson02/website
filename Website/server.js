@@ -908,23 +908,30 @@ app.post('/api/save/page_content', requireAuth, async (req, res) => {
   }
 });
 
+// === Content API Routes ===
+// Import the content routes
+const contentRoutes = require('./api/routes/content');
+
+// Use the content routes with /api/content prefix
+app.use('/api/content', contentRoutes);
+
 // === Research API Endpoints ===
 
 // GET Research Journal Data
 app.get('/api/data/research/journal', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_journal.json');
+    const filePath = path.join(__dirname, 'data', 'research.json');
     console.log(`GET /api/data/research/journal - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
         const jsonData = JSON.parse(fileContent);
         
         // Validate data format
-        if (!Array.isArray(jsonData)) {
-            throw new Error('Invalid format: Expected array of journal articles.');
+        if (typeof jsonData !== 'object' || jsonData === null || !jsonData.articles || !Array.isArray(jsonData.articles)) {
+            throw new Error('Invalid format: Expected object with articles array.');
         }
         
-        console.log(`Successfully read research journal data (${jsonData.length} articles)`);
-        res.json(jsonData);
+        console.log(`Successfully read research journal data (${jsonData.articles.length} articles)`);
+        res.json(jsonData.articles);
     } catch (error) {
         console.error(`Error reading or parsing ${filePath}:`, error);
         if (error.code === 'ENOENT') {
@@ -948,7 +955,7 @@ app.get('/api/data/research/journal', async (req, res) => {
 
 // SAVE Research Journal Data (Authenticated)
 app.post('/api/save/research/journal', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_journal.json');
+    const filePath = path.join(__dirname, 'data', 'research.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/research/journal - Saving to: ${filePath}`);
     
@@ -1013,6 +1020,17 @@ app.post('/api/save/research/journal', requireAuth, async (req, res) => {
     console.log("Journal article validation passed successfully");
     
     try {
+        // Read current research data
+        let research = { articles: [], theses: [] };
+        try {
+            const fileContent = await fs.readFile(filePath, 'utf8');
+            research = JSON.parse(fileContent);
+            if (!research.theses) research.theses = [];
+        } catch (readError) {
+            if (readError.code !== 'ENOENT') console.warn(`Warning when reading ${filePath}:`, readError);
+            // Create a new research object if file doesn't exist
+        }
+        
         // Backup logic
         try { 
             await fs.copyFile(filePath, backupFilePath); 
@@ -1022,7 +1040,10 @@ app.post('/api/save/research/journal', requireAuth, async (req, res) => {
                 console.warn(`Warning: Could not create backup for ${filePath}:`, backupError); 
         }
         
-        const jsonString = JSON.stringify(journalArticles, null, 2);
+        // Update articles array
+        research.articles = journalArticles;
+        
+        const jsonString = JSON.stringify(research, null, 2);
         await fs.writeFile(filePath, jsonString, 'utf8');
         console.log(`Successfully wrote ${journalArticles.length} journal articles to ${path.basename(filePath)}`);
         
@@ -1041,19 +1062,32 @@ app.post('/api/save/research/journal', requireAuth, async (req, res) => {
 
 // GET Research Thesis Data
 app.get('/api/data/research/thesis', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_thesis.json');
+    const filePath = path.join(__dirname, 'data', 'research.json');
     console.log(`GET /api/data/research/thesis - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
         const jsonData = JSON.parse(fileContent);
         
         // Validate format
-        if (typeof jsonData !== 'object' || jsonData === null || Array.isArray(jsonData)) {
-            throw new Error('Invalid format: Expected thesis object.');
+        if (typeof jsonData !== 'object' || jsonData === null || !jsonData.theses || !Array.isArray(jsonData.theses)) {
+            throw new Error('Invalid format: Expected object with theses array.');
         }
         
-        console.log("Successfully read thesis data");
-        res.json(jsonData);
+        // For backwards compatibility with code expecting a single thesis object,
+        // return the first thesis if the request includes ?first=true
+        if (req.query.first === 'true') {
+            const firstThesis = jsonData.theses.length > 0 ? jsonData.theses[0] : {};
+            console.log("Successfully read first thesis data");
+            return res.json(firstThesis);
+        }
+        
+        // Sort theses by order
+        const sortedTheses = [...jsonData.theses].sort((a, b) => {
+            return (a.order || 0) - (b.order || 0);
+        });
+        
+        console.log(`Successfully read thesis data (${sortedTheses.length} theses)`);
+        res.json(sortedTheses);
     } catch (error) {
         console.error(`Error reading or parsing ${filePath}:`, error);
         if (error.code === 'ENOENT') {
@@ -1077,53 +1111,186 @@ app.get('/api/data/research/thesis', async (req, res) => {
 
 // SAVE Research Thesis Data (Authenticated)
 app.post('/api/save/research/thesis', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_thesis.json');
+    const filePath = path.join(__dirname, 'data', 'research.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/research/thesis - Saving to: ${filePath}`);
     
-    // Object validation
-    const thesis = req.body;
-    if (typeof thesis !== 'object' || thesis === null || Array.isArray(thesis)) {
+    // Validate the thesis data
+    const thesisData = req.body;
+    if (!thesisData || typeof thesisData !== 'object' || !thesisData.id || !thesisData.title) {
         return res.status(400).json({ 
             success: false, 
-            error: 'Invalid data format. Expected a thesis object.' 
+            error: 'Invalid thesis data. Required fields: id, title.' 
         });
     }
     
-    // Required fields validation
-    console.log("Validating thesis data...");
-    if (!thesis.title || typeof thesis.title !== 'string' || thesis.title.trim() === '') {
+    // Read the existing data
+    try {
+        const fileContent = await fs.readFile(filePath, 'utf8');
+        const researchData = JSON.parse(fileContent);
+        
+        // Validate format
+        if (typeof researchData !== 'object' || researchData === null || !researchData.theses || !Array.isArray(researchData.theses)) {
+            researchData.theses = []; // Initialize if doesn't exist
+        }
+        
+        // Create backup of the existing file
+        try {
+            await fs.copyFile(filePath, backupFilePath); 
+            console.log(`Backup created: ${backupFilePath}`);
+        } catch (backupError) {
+            if (backupError.code !== 'ENOENT') 
+                console.warn(`Warning: Could not create backup for ${filePath}:`, backupError);
+        }
+        
+        // Check if this is an update or a new thesis
+        const existingIndex = researchData.theses.findIndex(t => t.id === thesisData.id);
+        
+        if (existingIndex >= 0) {
+            // Update existing thesis
+            researchData.theses[existingIndex] = thesisData;
+        } else {
+            // Add new thesis
+            // Set the order to the end if not provided
+            if (thesisData.order === undefined) {
+                const maxOrder = researchData.theses.reduce((max, t) => Math.max(max, t.order || 0), -1);
+                thesisData.order = maxOrder + 1;
+            }
+            researchData.theses.push(thesisData);
+        }
+        
+        // Save the updated data
+        await fs.writeFile(filePath, JSON.stringify(researchData, null, 2), 'utf8');
+        
+        console.log(`Thesis ${existingIndex >= 0 ? 'updated' : 'added'} successfully: ${thesisData.id}`);
+        res.json({ 
+            success: true, 
+            message: `Thesis ${existingIndex >= 0 ? 'updated' : 'added'} successfully.`,
+            thesis: thesisData
+        });
+    } catch (error) {
+        console.error(`Error saving thesis data:`, error);
+        res.status(500).json({ 
+            success: false, 
+            error: `Failed to save thesis data: ${error.message}` 
+        });
+    }
+});
+
+// GET Theses (All) Data
+app.get('/api/data/theses', async (req, res) => {
+    const filePath = path.join(__dirname, 'data', 'research.json');
+    console.log(`GET /api/data/theses - Reading: ${filePath}`);
+    try {
+        const fileContent = await fs.readFile(filePath, 'utf8');
+        const jsonData = JSON.parse(fileContent);
+        
+        // Validate format
+        if (typeof jsonData !== 'object' || jsonData === null || !jsonData.theses || !Array.isArray(jsonData.theses)) {
+            throw new Error('Invalid format: Expected object with theses array.');
+        }
+        
+        console.log(`Successfully read theses data (${jsonData.theses.length} theses)`);
+        res.json(jsonData.theses);
+    } catch (error) {
+        console.error(`Error reading or parsing ${filePath}:`, error);
+        if (error.code === 'ENOENT') {
+            res.status(404).json({ 
+                success: false, 
+                error: `Data file not found: ${path.basename(filePath)}` 
+            });
+        } else if (error instanceof SyntaxError || error.message.includes('Invalid format')) {
+            res.status(500).json({ 
+                success: false, 
+                error: `Failed to parse data file. Invalid JSON format in ${path.basename(filePath)}.` 
+            });
+        } else {
+            res.status(500).json({ 
+                success: false, 
+                error: `Internal server error while processing theses data.` 
+            });
+        }
+    }
+});
+
+// SAVE Theses Data (Authenticated)
+app.post('/api/save/theses', requireAuth, async (req, res) => {
+    const filePath = path.join(__dirname, 'data', 'research.json');
+    const backupFilePath = filePath + '.bak';
+    console.log(`POST /api/save/theses - Saving to: ${filePath}`);
+    
+    // Array validation
+    const theses = req.body;
+    if (!Array.isArray(theses)) {
         return res.status(400).json({ 
             success: false, 
-            error: `Missing or invalid 'title' in thesis.` 
+            error: 'Invalid data format. Expected an array of thesis objects.' 
         });
     }
     
-    if (!thesis.authors || typeof thesis.authors !== 'string' || thesis.authors.trim() === '') {
-        return res.status(400).json({ 
-            success: false, 
-            error: `Missing or invalid 'authors' in thesis.` 
-        });
+    // Item validation
+    console.log(`Validating ${theses.length} theses...`);
+    for (let i = 0; i < theses.length; i++) {
+        const thesis = theses[i];
+        // Check if thesis is an object
+        if (!thesis || typeof thesis !== 'object' || Array.isArray(thesis)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Invalid item format at index ${i}. Expected an object.` 
+            });
+        }
+        
+        // Required fields validation
+        if (!thesis.id || typeof thesis.id !== 'string' || thesis.id.trim() === '') {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Missing or invalid 'id' at index ${i}.` 
+            });
+        }
+        
+        if (!thesis.title || typeof thesis.title !== 'string' || thesis.title.trim() === '') {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Missing or invalid 'title' at index ${i}.` 
+            });
+        }
+        
+        if (!thesis.authors || typeof thesis.authors !== 'string' || thesis.authors.trim() === '') {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Missing or invalid 'authors' at index ${i}.` 
+            });
+        }
+        
+        if (!thesis.venue || typeof thesis.venue !== 'string' || thesis.venue.trim() === '') {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Missing or invalid 'venue' at index ${i}.` 
+            });
+        }
+        
+        // Check links is an object if present
+        if (thesis.links !== undefined && (typeof thesis.links !== 'object' || Array.isArray(thesis.links) || thesis.links === null)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Invalid 'links' at index ${i}. Expected an object of key-value pairs.` 
+            });
+        }
     }
-    
-    if (!thesis.venue || typeof thesis.venue !== 'string' || thesis.venue.trim() === '') {
-        return res.status(400).json({ 
-            success: false, 
-            error: `Missing or invalid 'venue' in thesis.` 
-        });
-    }
-    
-    // Check links is an object if present
-    if (thesis.links !== undefined && (typeof thesis.links !== 'object' || Array.isArray(thesis.links) || thesis.links === null)) {
-        return res.status(400).json({ 
-            success: false, 
-            error: `Invalid 'links' in thesis. Expected an object of key-value pairs.` 
-        });
-    }
-    
-    console.log("Thesis validation passed successfully");
+    console.log("Theses validation passed successfully");
     
     try {
+        // Read current research data
+        let research = { articles: [], theses: [] };
+        try {
+            const fileContent = await fs.readFile(filePath, 'utf8');
+            research = JSON.parse(fileContent);
+            if (!research.articles) research.articles = [];
+        } catch (readError) {
+            if (readError.code !== 'ENOENT') console.warn(`Warning when reading ${filePath}:`, readError);
+            // Create a new research object if file doesn't exist
+        }
+        
         // Backup logic
         try { 
             await fs.copyFile(filePath, backupFilePath); 
@@ -1133,19 +1300,22 @@ app.post('/api/save/research/thesis', requireAuth, async (req, res) => {
                 console.warn(`Warning: Could not create backup for ${filePath}:`, backupError); 
         }
         
-        const jsonString = JSON.stringify(thesis, null, 2);
+        // Update theses array
+        research.theses = theses;
+        
+        const jsonString = JSON.stringify(research, null, 2);
         await fs.writeFile(filePath, jsonString, 'utf8');
-        console.log(`Successfully wrote thesis data to ${path.basename(filePath)}`);
+        console.log(`Successfully wrote ${theses.length} theses to ${path.basename(filePath)}`);
         
         res.status(200).json({ 
             success: true, 
-            message: 'Research Thesis data saved successfully.' 
+            message: 'Theses data saved successfully.' 
         });
     } catch (error) {
         console.error(`Error writing ${filePath}:`, error);
         res.status(500).json({ 
             success: false, 
-            error: `Failed to save Research Thesis data: ${error.message}` 
+            error: `Failed to save Theses data: ${error.message}` 
         });
     }
 });
@@ -1244,6 +1414,82 @@ app.post('/api/save/research/patent', requireAuth, async (req, res) => {
         console.error(`Error writing ${filePath}:`, error);
         res.status(500).json({ error: 'Failed to save Research Patent data.' });
     }
+});
+
+// Configure storage for icon uploads
+const iconStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        // Ensure the 'icons/' directory exists relative to server.js
+        const uploadPath = path.join(__dirname, 'icons');
+        
+        // Create directory if it doesn't exist (sync for simplicity)
+        try {
+            if (!fsSync.existsSync(uploadPath)) {
+                fsSync.mkdirSync(uploadPath, { recursive: true });
+                console.log(`Created icon upload directory: ${uploadPath}`);
+            }
+        } catch (err) {
+            console.error(`Error ensuring icon upload directory exists: ${err.message}`);
+        }
+        
+        cb(null, uploadPath); // Save files to the 'icons' directory
+    },
+    filename: function (req, file, cb) {
+        // Keep the original filename for icons
+        cb(null, file.originalname);
+    }
+});
+
+// Configure multer for icon uploads
+const iconUpload = multer({
+    storage: iconStorage,
+    limits: { fileSize: 1024 * 1024 * 5 }, // 5MB size limit for icons
+    fileFilter: function (req, file, cb) {
+        // Check file types - accept SVG, PNG, JPG for icons
+        if (file.mimetype === 'image/svg+xml' || 
+            file.mimetype === 'image/png' || 
+            file.mimetype === 'image/jpeg') {
+            cb(null, true);
+        } else {
+            cb(new Error('Only SVG, PNG, and JPG files are allowed for icons!'), false);
+        }
+    }
+});
+
+// API Endpoint for Icon Upload (Authenticated)
+app.post('/api/upload/icon', requireAuth, (req, res) => {
+    // Use iconUpload.single middleware
+    iconUpload.single('icon')(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            // A Multer error occurred (e.g., file size limit)
+            console.error('Multer error during icon upload:', err);
+            return res.status(400).json({ 
+                success: false, 
+                error: `Icon upload error: ${err.message}` 
+            });
+        } else if (err) {
+            // An unknown error occurred
+            console.error('Unknown error during icon upload:', err);
+            return res.status(500).json({ 
+                success: false, 
+                error: `Icon upload failed: ${err.message}` 
+            });
+        }
+        
+        // If no file was uploaded
+        if (!req.file) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'No icon file was uploaded.' 
+            });
+        }
+        
+        // Return success with filename
+        return res.status(200).json({ 
+            success: true,
+            filename: req.file.filename
+        });
+    });
 });
 
 // API Endpoint for Image Upload (Authenticated)
@@ -1364,6 +1610,194 @@ app.get('/api/data/trips', async (req, res) => {
          // Simplified error sending
          if (error.code === 'ENOENT') { res.status(404).json({ success: false, error: 'Trips data not found.'}); }
          else { res.status(500).json({ success: false, error: 'Failed to retrieve trips data.' }); }
+    }
+});
+
+// API Endpoint to reorder projects
+app.post('/api/data/projects/order', requireAuth, async (req, res) => {
+  try {
+    const ids = req.body; // Expects array of project IDs in desired order
+    const filePath = path.join(__dirname, 'data', 'projects.json');
+    
+    if (!Array.isArray(ids)) {
+      return res.status(400).json({ error: 'Invalid data format. Expected array of project IDs.' });
+    }
+    
+    // Load current projects data
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const projects = JSON.parse(fileContent);
+    
+    if (!Array.isArray(projects)) {
+      return res.status(500).json({ error: 'Projects data is invalid. Expected array.' });
+    }
+    
+    // Create a map for quick lookups
+    const indexMap = new Map(ids.map((id, index) => [id, index]));
+    
+    // Update the order field for each project
+    projects.forEach(project => {
+      if (indexMap.has(project.id)) {
+        project.order = indexMap.get(project.id);
+      } else {
+        // If project was not in the provided order, put it at the end
+        project.order = ids.length;
+      }
+    });
+    
+    // Write updated data
+    await fs.writeFile(filePath, JSON.stringify(projects, null, 2));
+    
+    res.status(200).json({ message: 'Projects order updated successfully.' });
+  } catch (error) {
+    console.error('Error during projects reordering:', error);
+    res.status(500).json({ error: 'Failed to update projects order.' });
+  }
+});
+
+// API Endpoint to reorder articles
+app.post('/api/data/articles/order', requireAuth, async (req, res) => {
+  try {
+    const ids = req.body; // Expects array of article IDs in desired order
+    const filePath = path.join(__dirname, 'data', 'research.json');
+    
+    if (!Array.isArray(ids)) {
+      return res.status(400).json({ error: 'Invalid data format. Expected array of article IDs.' });
+    }
+    
+    // Load current research data
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const research = JSON.parse(fileContent);
+    
+    if (typeof research !== 'object' || !research.articles || !Array.isArray(research.articles)) {
+      return res.status(500).json({ error: 'Research data is invalid. Expected object with articles array.' });
+    }
+    
+    // Create a map for quick lookups
+    const indexMap = new Map(ids.map((id, index) => [id, index]));
+    
+    // Update the order field for each article
+    research.articles.forEach(article => {
+      if (indexMap.has(article.id)) {
+        article.order = indexMap.get(article.id);
+      } else {
+        // If article was not in the provided order, put it at the end
+        article.order = ids.length;
+      }
+    });
+    
+    // Write updated data
+    await fs.writeFile(filePath, JSON.stringify(research, null, 2));
+    
+    res.status(200).json({ message: 'Articles order updated successfully.' });
+  } catch (error) {
+    console.error('Error during articles reordering:', error);
+    res.status(500).json({ error: 'Failed to update articles order.' });
+  }
+});
+
+// API Endpoint to reorder theses
+app.post('/api/data/theses/order', requireAuth, async (req, res) => {
+  try {
+    const ids = req.body; // Expects array of thesis IDs in desired order
+    const filePath = path.join(__dirname, 'data', 'research.json');
+    
+    if (!Array.isArray(ids)) {
+      return res.status(400).json({ error: 'Invalid data format. Expected array of thesis IDs.' });
+    }
+    
+    // Load current research data
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const research = JSON.parse(fileContent);
+    
+    if (typeof research !== 'object' || !research.theses || !Array.isArray(research.theses)) {
+      return res.status(500).json({ error: 'Research data is invalid. Expected object with theses array.' });
+    }
+    
+    // Create a map for quick lookups
+    const indexMap = new Map(ids.map((id, index) => [id, index]));
+    
+    // Update the order field for each thesis
+    research.theses.forEach(thesis => {
+      if (indexMap.has(thesis.id)) {
+        thesis.order = indexMap.get(thesis.id);
+      } else {
+        // If thesis was not in the provided order, put it at the end
+        thesis.order = ids.length;
+      }
+    });
+    
+    // Write updated data
+    await fs.writeFile(filePath, JSON.stringify(research, null, 2));
+    
+    res.status(200).json({ message: 'Theses order updated successfully.' });
+  } catch (error) {
+    console.error('Error during theses reordering:', error);
+    res.status(500).json({ error: 'Failed to update theses order.' });
+  }
+});
+
+// Delete a Thesis (Authenticated)
+app.delete('/api/data/thesis/:id', requireAuth, async (req, res) => {
+    const { id } = req.params;
+    const filePath = path.join(__dirname, 'data', 'research.json');
+    const backupFilePath = filePath + '.bak';
+    
+    if (!id) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Thesis ID is required.' 
+        });
+    }
+    
+    try {
+        // Read the existing data
+        const fileContent = await fs.readFile(filePath, 'utf8');
+        const researchData = JSON.parse(fileContent);
+        
+        // Validate format
+        if (typeof researchData !== 'object' || researchData === null || !researchData.theses || !Array.isArray(researchData.theses)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Invalid research data format.' 
+            });
+        }
+        
+        // Create backup of the existing file
+        try {
+            await fs.copyFile(filePath, backupFilePath); 
+            console.log(`Backup created: ${backupFilePath}`);
+        } catch (backupError) {
+            if (backupError.code !== 'ENOENT') 
+                console.warn(`Warning: Could not create backup for ${filePath}:`, backupError);
+        }
+        
+        // Find the thesis to delete
+        const existingIndex = researchData.theses.findIndex(t => t.id === id);
+        
+        if (existingIndex === -1) {
+            return res.status(404).json({ 
+                success: false, 
+                error: `Thesis with ID ${id} not found.` 
+            });
+        }
+        
+        // Remove the thesis
+        researchData.theses.splice(existingIndex, 1);
+        
+        // Save the updated data
+        await fs.writeFile(filePath, JSON.stringify(researchData, null, 2), 'utf8');
+        
+        console.log(`Thesis deleted successfully: ${id}`);
+        res.json({ 
+            success: true, 
+            message: `Thesis deleted successfully.` 
+        });
+    } catch (error) {
+        console.error(`Error deleting thesis:`, error);
+        res.status(500).json({ 
+            success: false, 
+            error: `Failed to delete thesis: ${error.message}` 
+        });
     }
 });
 
@@ -1490,6 +1924,152 @@ app.post('/api/images/:slug/rotate', requireAuth, async (req, res, next) => {
 
     res.sendStatus(204);
   } catch (e) { next(e); }
+});
+
+// Combined API Endpoint for all CV data
+app.get('/api/data/cv', async (req, res) => {
+    console.log(`GET /api/data/cv - Fetching all CV data`);
+    
+    try {
+        // Define all paths
+        const cvPaths = {
+            education: path.join(__dirname, 'data', 'cv_education.json'),
+            work: path.join(__dirname, 'data', 'cv_work.json'),
+            research: path.join(__dirname, 'data', 'cv_research.json'),
+            projects: path.join(__dirname, 'data', 'cv_projects.json'),
+            skills: path.join(__dirname, 'data', 'cv_skills.json'),
+            achievements: path.join(__dirname, 'data', 'cv_achievements.json'),
+            positions: path.join(__dirname, 'data', 'cv_positions.json'),
+            cv: path.join(__dirname, 'data', 'cv.json'),
+            projectsData: path.join(__dirname, 'data', 'projects.json'),
+            researchData: path.join(__dirname, 'data', 'research.json')
+        };
+        
+        // Read all files in parallel
+        const [
+            educationContent, 
+            workContent, 
+            researchContent, 
+            projectsContent, 
+            skillsContent, 
+            achievementsContent, 
+            positionsContent,
+            cvContent,
+            projectsDataContent,
+            researchDataContent
+        ] = await Promise.all([
+            fs.readFile(cvPaths.education, 'utf8').catch(() => '[]'),
+            fs.readFile(cvPaths.work, 'utf8').catch(() => '[]'),
+            fs.readFile(cvPaths.research, 'utf8').catch(() => '[]'),
+            fs.readFile(cvPaths.projects, 'utf8').catch(() => '[]'),
+            fs.readFile(cvPaths.skills, 'utf8').catch(() => '{}'),
+            fs.readFile(cvPaths.achievements, 'utf8').catch(() => '[]'),
+            fs.readFile(cvPaths.positions, 'utf8').catch(() => '[]'),
+            fs.readFile(cvPaths.cv, 'utf8').catch(() => '{"projects":[],"research":[]}'),
+            fs.readFile(cvPaths.projectsData, 'utf8').catch(() => '[]'),
+            fs.readFile(cvPaths.researchData, 'utf8').catch(() => '{"articles":[],"theses":[]}')
+        ]);
+        
+        // Parse all JSON data
+        const cvData = {
+            education: JSON.parse(educationContent),
+            work: JSON.parse(workContent),
+            research: JSON.parse(researchContent),
+            projects: JSON.parse(projectsContent),
+            skills: JSON.parse(skillsContent),
+            achievements: JSON.parse(achievementsContent),
+            positions: JSON.parse(positionsContent)
+        };
+        
+        // Parse reference data
+        const mainCv = JSON.parse(cvContent);
+        const projectsReference = JSON.parse(projectsDataContent);
+        const researchData = JSON.parse(researchDataContent);
+        
+        // Add project and research references
+        cvData.projectReferences = mainCv.projects || [];
+        cvData.researchReferences = mainCv.research || [];
+        
+        // Add complete reference data
+        cvData.projectsData = projectsReference;
+        cvData.researchData = {
+            articles: researchData.articles || [],
+            theses: researchData.theses || []
+        };
+        
+        // For backward compatibility
+        try {
+            const conferencePath = path.join(__dirname, 'data', 'research_conference.json');
+            const patentPath = path.join(__dirname, 'data', 'research_patent.json');
+            
+            const [conferenceContent, patentContent] = await Promise.all([
+                fs.readFile(conferencePath, 'utf8').catch(() => '[]'),
+                fs.readFile(patentPath, 'utf8').catch(() => '[]')
+            ]);
+            
+            cvData.researchData.conference = JSON.parse(conferenceContent);
+            cvData.researchData.patent = JSON.parse(patentContent);
+        } catch (researchError) {
+            console.warn('Error loading conference/patent references:', researchError);
+            cvData.researchData.conference = [];
+            cvData.researchData.patent = [];
+        }
+        
+        console.log(`Successfully assembled complete CV data`);
+        res.json(cvData);
+    } catch (error) {
+        console.error(`Error assembling CV data:`, error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to retrieve combined CV data.' 
+        });
+    }
+});
+
+// API Endpoint for all thesis data
+app.get('/api/data/theses', async (req, res) => {
+    console.log(`GET /api/data/theses - Fetching thesis data`);
+    
+    try {
+        const thesisPath = path.join(__dirname, 'data', 'research_thesis.json');
+        
+        try {
+            const fileContent = await fs.readFile(thesisPath, 'utf8');
+            const jsonData = JSON.parse(fileContent);
+            
+            // Validate format - research_thesis.json can be an object or array
+            if (typeof jsonData !== 'object') {
+                throw new Error('Invalid format: Expected thesis object or array.');
+            }
+            
+            console.log("Successfully read thesis data");
+            res.json(jsonData);
+        } catch (error) {
+            console.error(`Error reading or parsing ${thesisPath}:`, error);
+            if (error.code === 'ENOENT') {
+                res.status(404).json({ 
+                    success: false, 
+                    error: `Data file not found: ${path.basename(thesisPath)}` 
+                });
+            } else if (error instanceof SyntaxError || error.message.includes('Invalid format')) {
+                res.status(500).json({ 
+                    success: false, 
+                    error: `Failed to parse data file. Invalid JSON format in ${path.basename(thesisPath)}.` 
+                });
+            } else {
+                res.status(500).json({ 
+                    success: false, 
+                    error: `Internal server error while processing thesis data.` 
+                });
+            }
+        }
+    } catch (error) {
+        console.error(`Error processing thesis request:`, error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to retrieve thesis data.' 
+        });
+    }
 });
 
 // API Endpoint to provide the Cesium Ion Token to the frontend securely

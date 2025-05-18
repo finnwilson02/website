@@ -1,0 +1,10 @@
+{
+  "html": "<p>Email: contact@finnwilson.me · Phone: +61-400-000-000</p>",
+  "links": [
+    { "id": "github", "icon": "github.svg", "href": "https://github.com/finnwilson02", "order": 0 },
+    { "id": "linkedin", "icon": "linkedin.svg", "href": "https://www.linkedin.com/in/finn-wilson-73a162177/", "order": 1 },
+    { "id": "twitter", "icon": "twitter.svg", "href": "https://twitter.com/YOURHANDLE", "order": 2 },
+    { "id": "medium", "icon": "medium.svg", "href": "https://medium.com/@YOURHANDLE", "order": 3 },
+    { "id": "youtube", "icon": "youtube.svg", "href": "https://www.youtube.com/@YOURHANDLE", "order": 4 }
+  ]
+}

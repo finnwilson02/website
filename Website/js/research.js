@@ -127,7 +127,7 @@ function renderJournalEntries(data) {
 }
 
 function renderThesis(data) {
-    if (typeof data !== 'object' || data === null) {
+    if (!Array.isArray(data) || data.length === 0) {
         console.warn("No thesis data available or invalid format");
         return;
     }
@@ -136,73 +136,81 @@ function renderThesis(data) {
     if (!container) return;
     
     // Clear any existing content
-    container.innerHTML = '<h2>Thesis</h2>';
+    container.innerHTML = '<h2>Theses</h2>';
     
-    // Create the entry container
-    const entryDiv = document.createElement('div');
-    entryDiv.className = 'research-entry';
-    entryDiv.id = 'honours-thesis';
+    // Sort theses by order
+    const sortedTheses = [...data].sort((a, b) => (a.order || 0) - (b.order || 0));
     
-    // Create and add the title
-    const title = document.createElement('h3');
-    title.className = 'entry-title';
-    title.textContent = data.title || 'Thesis Title';
-    entryDiv.appendChild(title);
-    
-    // Create and add the authors
-    const authors = document.createElement('p');
-    authors.className = 'entry-authors';
-    authors.innerHTML = marked.parse(data.authors || '**Finn Wilson**');
-    entryDiv.appendChild(authors);
-    
-    // Create and add the venue
-    const venue = document.createElement('p');
-    venue.className = 'entry-venue';
-    venue.textContent = data.venue || '';
-    entryDiv.appendChild(venue);
-    
-    // Create and add the date
-    const date = document.createElement('p');
-    date.className = 'entry-date';
-    date.textContent = data.date || '';
-    entryDiv.appendChild(date);
-    
-    // Create and add the abstract
-    const abstract = document.createElement('div');
-    abstract.className = 'entry-abstract';
-    abstract.innerHTML = marked.parse(data.abstract || '');
-    entryDiv.appendChild(abstract);
-    
-    // Create and add the links
-    const links = document.createElement('div');
-    links.className = 'entry-links';
-    
-    if (data.links && typeof data.links === 'object') {
-        Object.entries(data.links).forEach(([type, url]) => {
-            if (url) {
-                const link = document.createElement('a');
-                link.href = url;
-                
-                // Format the link text based on the type
-                let linkText;
-                if (type.startsWith('project_')) {
-                    linkText = `[Related Project: ${type.substring(8).charAt(0).toUpperCase() + type.substring(9)}]`;
-                } else {
-                    linkText = `[${type.charAt(0).toUpperCase() + type.slice(1)}]`;
+    // Process each thesis
+    sortedTheses.forEach(thesisData => {
+        // Create the entry container
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'research-entry';
+        if (thesisData.id) {
+            entryDiv.id = thesisData.id;
+        }
+        
+        // Create and add the title
+        const title = document.createElement('h3');
+        title.className = 'entry-title';
+        title.textContent = thesisData.title || 'Thesis Title';
+        entryDiv.appendChild(title);
+        
+        // Create and add the authors
+        const authors = document.createElement('p');
+        authors.className = 'entry-authors';
+        authors.innerHTML = marked.parse(thesisData.authors || '**Finn Wilson**');
+        entryDiv.appendChild(authors);
+        
+        // Create and add the venue
+        const venue = document.createElement('p');
+        venue.className = 'entry-venue';
+        venue.textContent = thesisData.venue || '';
+        entryDiv.appendChild(venue);
+        
+        // Create and add the date
+        const date = document.createElement('p');
+        date.className = 'entry-date';
+        date.textContent = thesisData.date || '';
+        entryDiv.appendChild(date);
+        
+        // Create and add the abstract
+        const abstract = document.createElement('div');
+        abstract.className = 'entry-abstract';
+        abstract.innerHTML = marked.parse(thesisData.abstract || '');
+        entryDiv.appendChild(abstract);
+        
+        // Create and add the links
+        const links = document.createElement('div');
+        links.className = 'entry-links';
+        
+        if (thesisData.links && typeof thesisData.links === 'object') {
+            Object.entries(thesisData.links).forEach(([type, url]) => {
+                if (url) {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    
+                    // Format the link text based on the type
+                    let linkText;
+                    if (type.startsWith('project_')) {
+                        linkText = `[Related Project: ${type.substring(8).charAt(0).toUpperCase() + type.substring(9)}]`;
+                    } else {
+                        linkText = `[${type.charAt(0).toUpperCase() + type.slice(1)}]`;
+                    }
+                    
+                    link.textContent = linkText;
+                    links.appendChild(link);
+                    // Add a space after the link
+                    links.appendChild(document.createTextNode(' '));
                 }
-                
-                link.textContent = linkText;
-                links.appendChild(link);
-                // Add a space after the link
-                links.appendChild(document.createTextNode(' '));
-            }
-        });
-    }
-    
-    entryDiv.appendChild(links);
-    
-    // Add the complete entry to the container
-    container.appendChild(entryDiv);
+            });
+        }
+        
+        entryDiv.appendChild(links);
+        
+        // Add the complete entry to the container
+        container.appendChild(entryDiv);
+    });
 }
 
 function renderConferenceEntries(data) {

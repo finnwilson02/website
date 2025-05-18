@@ -39,16 +39,9 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(error => console.error("Error loading header:", error));
 
-  // Load footer
-  fetch("footer.html")
-    .then(response => response.text())
-    .then(data => {
-      const footerElement = document.getElementById("footer");
-      if (footerElement) {
-        footerElement.innerHTML = data;
-      } else {
-        console.warn("Footer element not found in the page");
-      }
-    })
-    .catch(error => console.error("Error loading footer:", error));
+  // Load footer script dynamically
+  // The actual footer loading is handled by footerLoader.js
+  const footerScript = document.createElement('script');
+  footerScript.src = 'js/footerLoader.js';
+  document.body.appendChild(footerScript);
 });

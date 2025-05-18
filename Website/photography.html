@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finn Wilson - Photography</title>
+  
+  <!-- Common styles -->
+  <link rel="stylesheet" href="css/style.css" />
+  
+  <!-- Photography page specific styles -->
+  <link rel="stylesheet" href="css/photography.css" />
+  
+  <!-- Map-specific styles and libraries -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="css/worldmap.css" />
+  
+  <!-- GLightbox CSS for photo gallery -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css" />
+</head>
+<body>
+  <!-- Include header -->
+  <div id="header-placeholder"></div>
+  <script>
+    fetch('includes/header.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('header-placeholder').innerHTML = html;
+        // Highlight the current page in navigation
+        document.getElementById('nav-photography').classList.add('active');
+      });
+  </script>
+  
+  <div class="photography-container full-width">
+    <!-- Minimal Toggle Button -->
+    <div class="view-toggle minimal">
+      <button id="mapToggle" class="active" data-view="map">2D Map</button>
+      <button id="globeToggle" data-view="globe">3D Globe</button>
+    </div>
+    
+    <!-- Map container -->
+    <div id="photoMapView">
+      <!-- Map Controls -->
+      <div id="mapControls">
+        <!-- Filter Section -->
+        <div id="filterSection">
+          <h3>Filter Photos</h3>
+          <div>
+            <label for="filterDateStart">From:</label>
+            <input type="text" id="filterDateStart" placeholder="YYYY-MM-DD">
+          </div>
+          <div>
+            <label for="filterDateEnd">To:</label>
+            <input type="text" id="filterDateEnd" placeholder="YYYY-MM-DD">
+          </div>
+          <div class="filter-buttons">
+            <button id="filterApplyButton">Apply Filters</button>
+            <button id="filterClearButton">Clear</button>
+          </div>
+        </div>
+        
+        <!-- Trip Select -->
+        <div id="tripFilterSection">
+          <h3>Trips</h3>
+          <select id="tripSelector">
+            <option value="">-- All Trips --</option>
+            <!-- Trip options will be filled dynamically -->
+          </select>
+        </div>
+        
+        <!-- Country Select -->
+        <div id="countryFilterSection">
+          <h3>Countries</h3>
+          <select id="countrySelector">
+            <option value="">-- All Countries --</option>
+            <!-- Country options will be filled dynamically -->
+          </select>
+        </div>
+      </div>
+      
+      <!-- The actual map -->
+      <div id="map"></div>
+    </div>
+    
+    <!-- Globe container -->
+    <div id="photoGlobeView" style="display: none;">
+      <div id="cesiumContainer"></div>
+    </div>
+  </div>
+  
+  <!-- Loading overlay -->
+  <div id="globeLoadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-message">Loading 3D Globe...</div>
+  </div>
+  
+  <!-- Footer -->
+  <footer id="footer"></footer>
+  
+  <!-- Common scripts -->
+  <script src="js/script.js"></script>
+  <script src="js/footerLoader.js"></script>
+  
+  <!-- Map libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  
+  <!-- GLightbox for photo gallery -->
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+  
+  <!-- Cesium will be lazy-loaded when needed -->
+  
+  <!-- Photography page script - contains both map and globe functionality -->
+  <script src="js/photography.js"></script>
+</body>
+</html>

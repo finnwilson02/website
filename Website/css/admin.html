@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Website Admin Panel</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Adding GitHub Markdown styles for the preview -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css">
+</head>
+<body>
+  <div id="loginSection">
+    <h1>Admin Login</h1>
+    <p style="color: red;">Note: This is basic protection for local use ONLY. Do not rely on this for security on a live server.</p>
+    <label for="password">Password:</label>
+    <input type="password" id="password">
+    <button id="loginButton">Login</button>
+    <p id="loginError" style="color: red; display: none;">Incorrect password.</p>
+  </div>
+
+  <div id="adminContent" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1>Website Administration</h1>
+      <button id="logoutButton" style="height: 36px; margin-right: 20px;">Logout</button>
+    </div>
+    
+    <!-- Notification area for success/error messages -->
+    <div id="adminNotifications" style="position: fixed; top: 10px; right: 10px; z-index: 1050; max-width: 300px;"></div>
+    
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" style="display: none; padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd; margin-bottom: 15px; text-align: center;">
+      <div style="display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(0, 123, 255, 0.3); border-radius: 50%; border-top-color: #007bff; animation: spin 1s linear infinite; margin-right: 10px;"></div>
+      <span>Loading data...</span>
+    </div>
+    
+    <div class="admin-warning">
+      <h3>⚠️ Admin Panel</h3>
+      <p>Changes made here will be saved directly to the server.</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="admin-tabs">
+      <div class="admin-tabs-header">
+        <ul class="tab-nav">
+          <li><a href="#books" data-tab-target="#bookManagementSection" class="tab-link active" data-tab-group="books">Books</a></li>
+          <li><a href="#photos" data-tab-target="#photoManagementSection" class="tab-link" data-tab-group="media">Photos</a></li>
+          <li><a href="#projects" data-tab-target="#projectManagementSection" class="tab-link" data-tab-group="projects">Projects</a></li>
+          <li><a href="#trips" data-tab-target="#tripManagementSection" class="tab-link" data-tab-group="trips">Manage Trips</a></li>
+          <li><a href="#research-content" data-tab-target="#researchContentSection" class="tab-link" data-tab-group="research">Edit Research</a></li>
+          <li><a href="#content-tab" data-tab-target="#contentTab" class="tab-link" data-tab-group="content">Edit Site Content</a></li>
+          <li><a href="#admin-config" data-tab-target="#adminConfigSection" class="tab-link" data-tab-group="admin">Admin Settings</a></li>
+          <!-- Add future tabs here -->
+        </ul>
+        
+        <!-- Tab filter dropdown -->
+        <div class="tab-filter-container">
+          <label for="tabGroupFilter">Filter by: </label>
+          <select id="tabGroupFilter">
+            <option value="all">All Tabs</option>
+            <option value="books">Books</option>
+            <option value="media">Media</option>
+            <option value="projects">Projects</option>
+            <option value="trips">Trips</option>
+            <option value="research">Research</option>
+            <option value="content">Site Content</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      
+      <style>
+        /* Tab filter styling */
+        .admin-tabs-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #dee2e6;
+          padding-bottom: 10px;
+          margin-bottom: 20px;
+        }
+        
+        .tab-filter-container {
+          margin-right: 20px;
+        }
+        
+        #tabGroupFilter {
+          padding: 5px 10px;
+          border-radius: 4px;
+          border: 1px solid #ced4da;
+          margin-left: 5px;
+        }
+        
+        /* Hide tabs when filtered */
+        .tab-nav li.filtered {
+          display: none;
+        }
+      </style>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Books Management Tab -->
+      <section id="bookManagementSection" class="tab-pane active">
+        <h2>Manage Books</h2>
+        <div id="bookListSection">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Rating</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookTableBody">
+              <!-- Book rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="bookFormSection">
+          <form id="bookForm" style="border: 1px solid #ddd; padding: 15px; margin-top: 20px;">
+            <h3 id="formTitle">Add New Book</h3>
+            <input type="hidden" id="bookIndex" value="">
+            
+            <label for="title">Title:</label>
+            <input type="text" id="title" required>
+            
+            <label for="author">Author:</label>
+            <input type="text" id="author" required>
+            
+            <label for="spineColor">Spine Color:</label>
+            <input type="color" id="spineColor" value="#ca0b0b">
+            
+            <label for="titleColor">Title Text Color:</label>
+            <input type="color" id="titleColor" value="#ffffff">
+            
+            <label for="authorColor">Author Text Color:</label>
+            <input type="color" id="authorColor" value="#ffffff">
+            
+            <label for="rating">Rating (1-5):</label>
+            <select id="rating">
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★☆</option>
+              <option value="3">★★★☆☆</option>
+              <option value="2">★★☆☆☆</option>
+              <option value="1">★☆☆☆☆</option>
+            </select>
+            
+            <label for="genre">Genre(s) (comma-separated):</label>
+            <input type="text" id="genre" placeholder="Fiction, Literature, etc.">
+            
+            <label for="datesRead">Date Read:</label>
+            <input type="text" id="datesRead" placeholder="month year">
+            
+            <label for="review">Review:</label>
+            <textarea id="review" rows="6"></textarea>
+            
+            <div style="margin-top: 15px;">
+              <button type="submit" id="saveBookBtn">Save Book</button>
+              <button type="button" id="cancelBtn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Photos Management Tab -->
+      <section id="photoManagementSection" class="tab-pane">
+        <h2>Manage Photos (World Map)</h2>
+        <div id="photoListSection">
+          <!-- Trip groups will be added here by JS -->
+          <div id="photosGroupContainer">
+              <p>Loading photo groups...</p>
+          </div>
+        </div>
+        <hr> <!-- Separator -->
+        <div id="photoFormSection">
+          <!-- Photo add/edit form -->
+          <form id="photoForm" enctype="multipart/form-data" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
+              <h3>Add/Edit Photo</h3>
+              <input type="hidden" id="photoEditIndex" value="-1">
+              <label for="photoFile">Upload New Image (Optional):</label>
+              <input type="file" id="photoFile" name="uploadedImage" accept="image/jpeg, image/png, image/gif, image/webp, image/heic, image/heif, .heic, .heif, image/*">
+              <input type="hidden" id="currentPhotoThumbnail">
+              <input type="hidden" id="currentPhotoImageFull">
+              <p style="font-size: 0.8em; margin-top: -5px;">Leave empty if not changing the image.</p>
+              <label for="photoTitle">Title:</label> <input type="text" id="photoTitle"><br>
+              <label for="photoDate">Date:</label> <input type="text" id="photoDate" placeholder="YYYY-MM-DD"><br>
+              <label for="photoDescription">Description:</label> <textarea id="photoDescription"></textarea><br>
+              <label for="photoLat">Latitude:</label> <input type="number" step="any" id="photoLat" required>
+              <label for="photoLng">Longitude:</label> <input type="number" step="any" id="photoLng" required>
+              
+              <div style="margin-top: 5px; margin-bottom: 10px;">
+                <button type="button" id="showCoordMapButton">Select on Map</button>
+                <span style="font-size:0.9em; color: #555;"> (Attempts auto-fill from EXIF on file select)</span>
+              </div>
+              <div id="coordMap" style="height: 400px; width: 100%; margin-bottom: 15px; display: none; border: 1px solid #ccc;"></div><br>
+              <label for="photoRanking">Ranking (1-10):</label>
+              <input type="number" id="photoRanking" min="1" max="10" value="5"><br>
+                            <input type="hidden" id="photoFullWidth">
+              <input type="hidden" id="photoFullHeight">
+              <label for="photoTags">Tags (comma-separated):</label>
+              <input type="text" id="photoTags" placeholder="landscape, city, landmark"><br>
+              <label for="photoTripIdSelect">Assign to Trip (Optional):</label>
+              <select id="photoTripIdSelect">
+                <option value="">-- No Trip --</option>
+                <!-- Trip options will be added by JS -->
+              </select><br>
+              <button type="submit" id="photoSubmitButton">Add Photo</button>
+              <button type="button" id="photoCancelButton" style="display: none;">Cancel Edit</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Projects Management Tab -->
+      <section id="projectManagementSection" class="tab-pane">
+        <h2>Manage Projects</h2>
+        <div id="projectListSection">
+          <!-- Placeholder for project list -->
+           <table>
+             <thead>
+               <tr>
+                 <th>Title</th>
+                 <th>Status</th>
+                 <th>Actions</th>
+               </tr>
+             </thead>
+             <tbody id="projectTableBody"></tbody>
+           </table>
+        </div>
+        <div id="projectFormSection">
+           <form id="projectForm" enctype="multipart/form-data" style="margin-top: 15px; border: 1px solid #eee; padding: 10px;">
+               <h3>Add/Edit Project</h3>
+               <input type="hidden" id="projectEditIndex" value="-1">
+               
+               <label for="projectId">Project ID (Unique, for linking, e.g., 'uav-deterrence'):</label>
+               <input type="text" id="projectId" required>
+               
+               <label for="projectTitle">Title:</label>
+               <input type="text" id="projectTitle" required>
+               
+               <label for="projectFile">Upload New Project Image (Optional):</label>
+               <input type="file" id="projectFile" name="uploadedImage" accept="image/jpeg, image/png, image/gif, image/webp, image/heic, image/heif, .heic, .heif, image/*">
+               <input type="hidden" id="currentProjectImage">
+               <input type="hidden" id="projectFullWidth">
+               <input type="hidden" id="projectFullHeight">
+               <p style="font-size: 0.8em; margin-top: -5px;">Leave empty if not changing the image.</p>
+               
+               <label for="projectSummary">Summary (Short, for card):</label>
+               <textarea id="projectSummary" rows="3"></textarea>
+               
+               <label for="projectRole">My Role:</label>
+               <textarea id="projectRole" rows="3"></textarea>
+               
+               <label for="projectSkills">Skills (comma-separated):</label>
+               <input type="text" id="projectSkills">
+               
+               <label>Project Links:</label>
+               <div id="projectLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+                 <!-- Link rows will be dynamically added here -->
+                 <p id="noLinksMsg" style="color: #888;">No links added yet.</p>
+               </div>
+               <button type="button" id="addProjectLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+               
+               <label for="projectStatus">Status:</label>
+               <input type="text" id="projectStatus">
+               
+               <div style="margin: 10px 0;">
+                 <label>
+                   <input type="checkbox" id="projectShowOnCv"> 
+                   Show on CV page
+                 </label>
+                 <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                   When checked, this project will be listed on the CV page
+                 </p>
+               </div>
+               
+               <label for="projectDetailMarkdown">Detail Page Content (Markdown):</label>
+               <textarea id="projectDetailMarkdown"></textarea>
+               
+               <button type="submit" id="projectSubmitButton">Add Project</button>
+               <button type="button" id="projectCancelButton" style="display: none;">Cancel Edit</button>
+           </form>
+        </div>
+      </section>
+
+      <!-- CV Content Section has been removed, as research and projects now use showOnCv flags -->
+
+      <!-- Trip Management Section -->
+      <section id="tripManagementSection" class="tab-pane">
+        <h2>Manage Trips</h2>
+        <table style="width:100%; margin-bottom:10px;">
+          <thead><tr><th>Trip Name</th><th>Date Range</th><th>Trip ID</th><th>Actions</th></tr></thead>
+          <tbody id="tripTableBody"></tbody>
+        </table>
+        <hr>
+        <form id="tripForm">
+          <h4 id="tripFormTitle">Add New Trip</h4>
+          <input type="hidden" id="tripEditIndex" value="-1">
+
+          <label for="tripName">Trip Name:</label>
+          <input type="text" id="tripName" required>
+
+          <label for="tripDateRange">Date Range (e.g., Jul 2023):</label>
+          <input type="text" id="tripDateRange">
+
+          <label for="tripId">Trip ID (Unique, no spaces/special chars):</label>
+          <input type="text" id="tripId" required title="Use only letters, numbers, hyphens, underscores">
+
+          <button type="submit" id="tripSubmitButton">Add Trip</button>
+          <button type="button" id="tripCancelButton" style="display: none;">Cancel Edit</button>
+        </form>
+      </section>
+
+      <!-- Research Content Section -->
+      <section id="researchContentSection" class="tab-pane">
+        <h2>Edit Research Page Content</h2>
+        
+        <!-- Journal Articles Subsection -->
+        <div class="research-admin-subsection">
+          <h3>Journal Articles</h3>
+          <table style="width:100%; margin-bottom:10px;">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Venue</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="researchJournalTableBody"></tbody>
+          </table>
+          <button type="button" class="admin-add-button" onclick="showResearchEntryForm('journal')">+ Add Journal Article</button>
+          
+          <!-- Journal Article Form (Initially Hidden) -->
+          <form id="researchJournalForm" class="admin-entry-form" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h4>Journal Article Details</h4>
+            <input type="hidden" id="journalEditIndex" value="-1">
+            
+            <label for="journalId">ID (used for anchors, e.g., 'uav-paper'):</label>
+            <input type="text" id="journalId" required>
+            
+            <label for="journalTitle">Title:</label>
+            <input type="text" id="journalTitle" required>
+            
+            <label for="journalAuthors">Authors (use **Finn Wilson** for your name):</label>
+            <input type="text" id="journalAuthors" required>
+            
+            <label for="journalVenue">Venue (journal name):</label>
+            <input type="text" id="journalVenue" required>
+            
+            <label for="journalDate">Date:</label>
+            <input type="text" id="journalDate" placeholder="YYYY">
+            
+            <label for="journalAbstract">Abstract:</label>
+            <textarea id="journalAbstract" rows="6"></textarea>
+            
+            <div style="margin: 10px 0;">
+              <label>
+                <input type="checkbox" id="journalShowOnCv"> 
+                Show on CV page
+              </label>
+              <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                When checked, this article will be listed on the CV page
+              </p>
+            </div>
+            
+            <label>Links:</label>
+            <div id="journalLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+              <!-- Link rows will be dynamically added here -->
+              <p id="journalNoLinksMsg" style="color: #888;">No links added yet.</p>
+            </div>
+            <button type="button" id="addJournalLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+            
+            <div style="margin-top: 15px;">
+              <button type="submit" id="journalSubmitButton">Save Article</button>
+              <button type="button" id="journalCancelButton">Cancel</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Thesis Subsection -->
+        <div class="research-admin-subsection" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc;">
+          <h3>Thesis</h3>
+          <form id="researchThesisForm" style="margin-top: 15px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h4>Edit Thesis Details</h4>
+            
+            <label for="thesisTitle">Title:</label>
+            <input type="text" id="thesisTitle" required>
+            
+            <label for="thesisAuthors">Authors (use **Finn Wilson** for your name):</label>
+            <input type="text" id="thesisAuthors" required>
+            
+            <label for="thesisVenue">Venue (degree/institution):</label>
+            <input type="text" id="thesisVenue" required>
+            
+            <label for="thesisDate">Date:</label>
+            <input type="text" id="thesisDate" placeholder="YYYY">
+            
+            <label for="thesisAbstract">Abstract:</label>
+            <textarea id="thesisAbstract" rows="6"></textarea>
+            
+            <div style="margin: 10px 0;">
+              <label>
+                <input type="checkbox" id="thesisShowOnCv"> 
+                Show on CV page
+              </label>
+              <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                When checked, this thesis will be listed on the CV page
+              </p>
+            </div>
+            
+            <label>Links:</label>
+            <div id="thesisLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+              <!-- Link rows will be dynamically added here -->
+              <p id="thesisNoLinksMsg" style="color: #888;">No links added yet.</p>
+            </div>
+            <button type="button" id="addThesisLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+            
+            <div style="margin-top: 15px;">
+              <button type="button" id="saveThesisButton">Save Thesis</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Conference Papers Subsection -->
+        <div class="research-admin-subsection" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc;">
+          <h3>Conference Papers</h3>
+          <table style="width:100%; margin-bottom:10px;">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Venue</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="researchConferenceTableBody"></tbody>
+          </table>
+          <button type="button" class="admin-add-button" onclick="showResearchEntryForm('conference')">+ Add Conference Paper</button>
+          
+          <!-- Conference Paper Form (Initially Hidden) -->
+          <form id="researchConferenceForm" class="admin-entry-form" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h4>Conference Paper Details</h4>
+            <input type="hidden" id="conferenceEditIndex" value="-1">
+            
+            <label for="conferenceId">ID (used for anchors, e.g., 'acfr-paper'):</label>
+            <input type="text" id="conferenceId" required>
+            
+            <label for="conferenceTitle">Title:</label>
+            <input type="text" id="conferenceTitle" required>
+            
+            <label for="conferenceAuthors">Authors (use **Finn Wilson** for your name):</label>
+            <input type="text" id="conferenceAuthors" required>
+            
+            <label for="conferenceVenue">Venue (conference name):</label>
+            <input type="text" id="conferenceVenue" required>
+            
+            <label for="conferenceDate">Date:</label>
+            <input type="text" id="conferenceDate" placeholder="YYYY">
+            
+            <label for="conferenceAbstract">Abstract:</label>
+            <textarea id="conferenceAbstract" rows="6"></textarea>
+            
+            <div style="margin: 10px 0;">
+              <label>
+                <input type="checkbox" id="conferenceShowOnCv"> 
+                Show on CV page
+              </label>
+              <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                When checked, this conference paper will be listed on the CV page
+              </p>
+            </div>
+            
+            <label>Links:</label>
+            <div id="conferenceLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+              <!-- Link rows will be dynamically added here -->
+              <p id="conferenceNoLinksMsg" style="color: #888;">No links added yet.</p>
+            </div>
+            <button type="button" id="addConferenceLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+            
+            <div style="margin-top: 15px;">
+              <button type="submit" id="conferenceSubmitButton">Save Paper</button>
+              <button type="button" id="conferenceCancelButton">Cancel</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Patents Subsection -->
+        <div class="research-admin-subsection" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ccc;">
+          <h3>Patents</h3>
+          <table style="width:100%; margin-bottom:10px;">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="researchPatentTableBody"></tbody>
+          </table>
+          <button type="button" class="admin-add-button" onclick="showResearchEntryForm('patent')">+ Add Patent</button>
+          
+          <!-- Patent Form (Initially Hidden) -->
+          <form id="researchPatentForm" class="admin-entry-form" style="display:none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <h4>Patent Details</h4>
+            <input type="hidden" id="patentEditIndex" value="-1">
+            
+            <label for="patentId">ID (used for anchors, e.g., 'mining-patent'):</label>
+            <input type="text" id="patentId" required>
+            
+            <label for="patentTitle">Title:</label>
+            <input type="text" id="patentTitle" required>
+            
+            <label for="patentAuthors">Authors/Inventors (use **Finn Wilson** for your name):</label>
+            <input type="text" id="patentAuthors" required>
+            
+            <label for="patentVenue">Status (e.g., "Status: Patent Application Filed"):</label>
+            <input type="text" id="patentVenue" required>
+            
+            <label for="patentDate">Date:</label>
+            <input type="text" id="patentDate" placeholder="YYYY">
+            
+            <label for="patentAbstract">Abstract:</label>
+            <textarea id="patentAbstract" rows="6"></textarea>
+            
+            <div style="margin: 10px 0;">
+              <label>
+                <input type="checkbox" id="patentShowOnCv"> 
+                Show on CV page
+              </label>
+              <p style="font-size: 0.8em; margin-top: 0; color: #555;">
+                When checked, this patent will be listed on the CV page
+              </p>
+            </div>
+            
+            <label>Links:</label>
+            <div id="patentLinksContainer" style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px;">
+              <!-- Link rows will be dynamically added here -->
+              <p id="patentNoLinksMsg" style="color: #888;">No links added yet.</p>
+            </div>
+            <button type="button" id="addPatentLinkButton" style="margin-bottom: 15px;">+ Add Link</button>
+            
+            <div style="margin-top: 15px;">
+              <button type="submit" id="patentSubmitButton">Save Patent</button>
+              <button type="button" id="patentCancelButton">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Content Tab Section -->
+  <section id="contentTab" class="tab-pane">
+    <h2>Edit Site Content</h2>
+    
+    <!-- Content editor tabs -->
+    <div class="html-content-tabs">
+      <ul class="tab-nav html-tab-nav">
+        <li><a href="#" data-html-tab="homepage" class="html-tab-link active">Homepage HTML</a></li>
+        <li><a href="#" data-html-tab="contactBanner" class="html-tab-link">Contact Banner</a></li>
+      </ul>
+    </div>
+    
+    <!-- HTML content tabs content -->
+    <div class="html-tab-content">
+      <!-- Homepage Markdown Editor -->
+      <div id="homepageHTMLEditor" class="html-tab-pane active">
+        <h3>Edit Homepage Content (Markdown)</h3>
+        <div class="markdown-container">
+          <div class="editor-preview-layout">
+            <div class="editor-pane">
+              <h4>Editor</h4>
+              <div class="editor-container">
+                <textarea id="homepageEditor" style="width: 100%; height: 400px; font-family: monospace;"></textarea>
+              </div>
+            </div>
+            <div class="preview-pane">
+              <h4>Preview</h4>
+              <div id="markdownPreview" class="markdown-body" style="padding: 20px; border: 1px solid #ddd; border-radius: 5px; height: 400px; overflow: auto;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="editor-actions" style="margin-top: 10px;">
+          <button id="saveHomepageBtn" class="save-html-btn">Save Homepage Content</button>
+          <span id="homepageSaveStatus" class="save-status"></span>
+        </div>
+      </div>
+      
+      <!-- Contact Banner Editor -->
+      <div id="contactBannerHTMLEditor" class="html-tab-pane">
+        <h3>Edit Contact Banner</h3>
+        
+        <h2>Contact banner text</h2>
+        <div class="editor-container">
+          <textarea id="bannerHtmlEditor" style="width: 100%; height: 150px; font-family: monospace;"></textarea>
+        </div>
+        
+        <h2>Links</h2>
+        <table id="bannerLinksTable" class="sortable">
+          <thead><tr><th>Icon</th><th>URL</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button id="addLinkBtn" class="btn btn-primary" style="margin-top: 10px;">+ Add Link</button>
+        <input type="file" id="iconUpload" accept="image/svg+xml,image/png" hidden>
+        
+        <div class="editor-actions" style="margin-top: 20px;">
+          <button id="saveContactBannerBtn" class="save-html-btn">Save Contact Banner</button>
+          <span id="contactBannerSaveStatus" class="save-status"></span>
+        </div>
+        
+        <style>
+          .sortable tr {
+            user-select: none;
+            cursor: grab;
+            background-color: #fff;
+            transition: background-color 0.2s;
+          }
+          .sortable tr:active {
+            cursor: grabbing;
+          }
+          .sortable tr:hover {
+            background-color: #f5f5f5;
+          }
+          .sortable td {
+            padding: 8px;
+            vertical-align: middle;
+          }
+          .sortable input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+          }
+          .delBtn{
+            background:#e74c3c;
+            color:#fff;
+            width:24px; height:24px;       /* perfect circle */
+            border:none; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:bold; cursor:pointer;
+            line-height:1;
+          }
+          .delBtn:hover {
+            background: #ff1744;
+          }
+          .delBtn:focus{outline:none;}
+        </style>
+      </div>
+    </div>
+    
+    <style>
+      .html-content-tabs {
+        margin-bottom: 20px;
+      }
+      .html-tab-nav {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border-bottom: 1px solid #ddd;
+      }
+      .html-tab-nav li {
+        margin-right: 5px;
+      }
+      .html-tab-nav a {
+        display: block;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-bottom: none;
+        border-radius: 5px 5px 0 0;
+        text-decoration: none;
+        color: #333;
+        background-color: #f5f5f5;
+      }
+      .html-tab-nav a.active {
+        background-color: #fff;
+        border-bottom: 1px solid #fff;
+        margin-bottom: -1px;
+        font-weight: bold;
+      }
+      .html-tab-pane {
+        display: none;
+        padding: 20px;
+        border-top: none;
+      }
+      .html-tab-pane.active {
+        display: block;
+      }
+      .editor-container {
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
+      }
+      .save-html-btn {
+        padding: 8px 15px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .save-html-btn:hover {
+        background-color: #45a049;
+      }
+      .save-status {
+        margin-left: 10px;
+        color: #666;
+      }
+      .editor-preview-layout {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      
+      .editor-pane, .preview-pane {
+        flex: 1;
+      }
+      
+      .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+        border-bottom: 1px solid #eaecef;
+        margin-top: 24px;
+        margin-bottom: 16px;
+        padding-bottom: 0.3em;
+      }
+      
+      .markdown-body p {
+        margin-top: 0;
+        margin-bottom: 16px;
+      }
+      
+      .markdown-body img {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </section>
+
+  <!-- Ordering Section -->
+  <section id="orderingSection" class="tab-pane">
+    <h2>Content Ordering</h2>
+    <p>Use these pages to drag-and-drop order your content:</p>
+    
+    <div class="ordering-buttons">
+      <a href="admin-projects.html" class="btn btn-primary">Order Projects</a>
+      <a href="admin-articles.html" class="btn btn-primary">Order Articles</a>
+      <a href="admin-theses.html" class="btn btn-primary">Order Theses</a>
+    </div>
+    
+    <style>
+      .ordering-buttons {
+        margin: 20px 0;
+      }
+      .ordering-buttons .btn {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px 15px;
+        background-color: #4CAF50;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: bold;
+        border: none;
+      }
+      .ordering-buttons .btn:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </section>
+
+  <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="js/admin.js"></script>
+  <script src="js/admin-cv-patches.js"></script>
+  <script src="js/homeContentLoader.js"></script>
+  <script src="js/homepageEditor.js"></script>
+  <script src="js/contactBannerEditor.js"></script>
+  
+  <footer id="footer"></footer>
+  <script src="js/footerLoader.js"></script>
+</body>
+</html>

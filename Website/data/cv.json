@@ -1,0 +1,12 @@
+{
+  "name": "Finn Wilson",
+  "title": "Mechatronics & Space Engineering Student",
+  "email": "contact@finnwilson.com.au",
+  "phone": "+61 400 123 456",
+  "location": "Sydney, Australia",
+  "summary": "Final-year Mechatronics/Space Engineering and Advanced Physics student with research experience in UAV swarm dynamics, computer vision, autonomous systems, and space engineering. Skilled in C++, Python, robotics frameworks (ROS), and physics simulation. Passionate about multi-agent systems, space flight dynamics, and engineering solutions for real-world problems.",
+  "profiles": [
+    {"name": "GitHub", "url": "https://github.com/finnwilson02", "icon": "github"},
+    {"name": "LinkedIn", "url": "https://linkedin.com/in/finnwilson02", "icon": "linkedin"}
+  ]
+}

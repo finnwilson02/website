@@ -171,6 +171,18 @@ a.tab-link.active {
   background-color: #fff;
 }
 
+.tab-panel{
+  border:1px solid #d0d0d0;
+  border-top:none;          /* top border supplied by tab-link strip */
+  padding:1rem;
+  background:#fff;
+}
+
+/* remove duplicate left/right borders from inner boxes if any */
+.tab-panel .inner-box{
+  border-left:none; border-right:none;
+}
+
 .tab-pane {
   display: none; /* Hide inactive panes by default */
 }
@@ -371,6 +383,26 @@ a.cv-tab-link.active {
     border-top-color: #007bff;
     animation: spin 1s linear infinite;
     margin-right: 10px;
+}
+
+/* Markdown editor / preview layout */
+.md-flex{
+    display:flex;
+    gap:1rem;
+    height:1000px;           /* doubled from ~500px */
+}
+#homepageEditor,
+#homepagePreview{
+    flex:1 1 50%;
+    height:100%;             /* fixed */
+    overflow:auto;
+    border:1px solid #ccc;
+    padding:.75rem;
+    box-sizing:border-box;
+    resize:none;             /* textarea won't auto-grow */
+}
+#homepagePreview{
+    background:#fafafa;
 }
 
 /* Notification Styles */
