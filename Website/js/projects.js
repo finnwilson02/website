@@ -32,14 +32,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             projectsGrid.innerHTML = ''; // Clear any placeholders
 
+            console.log(`Projects loaded: ${projects.length} projects found`);
+            
             projects.forEach(project => {
+                console.log(`Rendering project: ${project.id} - ${project.title}`, 
+                            `Skills: ${Array.isArray(project.skills) ? project.skills.length : 0} skills`);
+                
                 const card = document.createElement('div');
                 card.className = 'project-card';
                 card.id = project.id || ''; // For deep linking
 
                 // Build skills list HTML
                 const skillsHTML = Array.isArray(project.skills) && project.skills.length > 0
-                    ? `<ul>${project.skills.map(skill => `<li>${skill}</li>`).join('')}</ul>`
+                    ? `<ul>${project.skills.map(skill => {
+                        console.log(`Project ${project.id} skill: ${skill}`);
+                        return `<li>${skill}</li>`;
+                      }).join('')}</ul>`
                     : '<ul><li>Not specified</li></ul>';
 
                 // Build links HTML

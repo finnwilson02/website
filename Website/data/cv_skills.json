@@ -156,13 +156,6 @@
   ],
   "uncategorized": [
     {
-      "name": "Test",
-      "source": "project",
-      "projects": [
-        "uav-deterrence"
-      ]
-    },
-    {
       "name": "Machine Learning (GP",
       "source": "project",
       "projects": [
@@ -195,6 +188,13 @@
       "source": "project",
       "projects": [
         "mine-sampling"
+      ]
+    },
+    {
+      "name": "Test",
+      "source": "project",
+      "projects": [
+        "uav-deterrence"
       ]
     }
   ],

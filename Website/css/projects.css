@@ -105,11 +105,15 @@
   color: #555;
   border: 1px solid #e1e8f2;
   transition: all 0.2s ease;
+  margin: 0.2em;
+  display: inline-block;
 }
 
 .project-skills li:hover {
   background-color: #e1e8f2;
   color: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .project-links {

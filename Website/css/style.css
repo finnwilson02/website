@@ -197,13 +197,7 @@ body {
   background-color: #d0e8ff;
 }
 
-/* Tooltip for project-derived skills */
-.project-derived-skill::after {
-  content: '🔗';
-  font-size: 0.8em;
-  margin-left: 0.4em;
-  opacity: 0.7;
-}
+/* Removed the ::after icon marker for project-derived skills */
 
 /* Tooltip popup */
 .skill-tooltip {

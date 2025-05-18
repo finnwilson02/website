@@ -560,9 +560,20 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
        const projectSkillsMap = new Map();
        
        // Extract all skills from projects
+       console.log("SKILL SYNC: Processing", savedProjects.length, "projects for skills");
        savedProjects.forEach(project => {
+         if (!project.id) {
+           console.warn("SKILL SYNC: Project missing ID, skipping skill extraction", project.title || "Untitled");
+           return;
+         }
+         
          if (Array.isArray(project.skills)) {
            project.skills.forEach(skillName => {
+             if (!skillName || typeof skillName !== 'string') {
+               console.warn("SKILL SYNC: Invalid skill name format in project", project.id, skillName);
+               return;
+             }
+             
              const normalizedName = skillName.trim();
              if (!normalizedName) return;
              
@@ -573,6 +584,7 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
                  source: "project",
                  projects: new Set()
                });
+               console.log(`SKILL SYNC: Found new skill "${normalizedName}" in project ${project.id}`);
              }
              
              projectSkillsMap.get(lowerName).projects.add(project.id);
@@ -599,6 +611,10 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
        });
        
        // Now process project-derived skills
+       console.log("SKILL SYNC: Processing", projectSkillsMap.size, "unique skills");
+       
+       const handledProjectSkills = new Set(); // Track which skills we've added to categories
+       
        projectSkillsMap.forEach((skillData, lowerName) => {
          const existingSkillInfo = categorizedSkills.get(lowerName);
          
@@ -613,6 +629,8 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
            // If the skill already exists and is project-derived,
            // keep it in its current category
            newCategories[existingSkillInfo.category].push(skillObject);
+           console.log(`SKILL SYNC: Updating project-derived skill "${skillData.name}" in ${existingSkillInfo.category} category`);
+           handledProjectSkills.add(lowerName);
          } else if (existingSkillInfo && existingSkillInfo.obj.source === 'manual') {
            // If a manually added skill exists with the same name, update its projects
            // but keep it as manual source (manual skills take precedence)
@@ -622,10 +640,32 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
            if (manualSkill) {
              // Add projects info to the manual skill
              manualSkill.projects = skillObject.projects;
+             console.log(`SKILL SYNC: Adding project info to manual skill "${skillData.name}" in ${existingSkillInfo.category} category`);
+           } else {
+             // This shouldn't happen (manual skill should already be in newCategories),
+             // but just in case, create a copy of the manual skill with projects added
+             const updatedManualSkill = {...existingSkillInfo.obj, projects: skillObject.projects};
+             newCategories[existingSkillInfo.category].push(updatedManualSkill);
+             console.log(`SKILL SYNC: Adding missing manual skill "${skillData.name}" to ${existingSkillInfo.category} with project info`);
            }
+           handledProjectSkills.add(lowerName);
          } else {
-           // New project skill - add to uncategorized
+           // Check if it's already in uncategorized from a previous sync
+           const alreadyUncategorized = cvSkillsData.uncategorized.find(s => 
+             s.name.trim().toLowerCase() === lowerName
+           );
+           
+           if (alreadyUncategorized) {
+             // Update project list for existing uncategorized skill
+             console.log(`SKILL SYNC: Updating existing uncategorized skill "${skillData.name}"`);
+           } else {
+             // Truly new skill - add to uncategorized
+             console.log(`SKILL SYNC: Adding new skill "${skillData.name}" to uncategorized`);
+           }
+           
+           // Either way, add the current version to uncategorized
            newCategories.uncategorized.push(skillObject);
+           handledProjectSkills.add(lowerName);
          }
        });
        
@@ -638,13 +678,17 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
        // Update allSkillsCache with all unique skill names
        const allSkillNames = new Set();
        ['programming', 'software', 'technical', 'uncategorized'].forEach(category => {
-         cvSkillsData[category].forEach(skill => {
+         // Make sure we're using the new categories we just built
+         newCategories[category].forEach(skill => {
            if (skill.name) {
              allSkillNames.add(skill.name);
            }
          });
        });
+       
+       const oldCacheSize = (cvSkillsData.allSkillsCache || []).length;
        cvSkillsData.allSkillsCache = Array.from(allSkillNames).sort();
+       console.log(`SKILL SYNC: Updated allSkillsCache from ${oldCacheSize} to ${cvSkillsData.allSkillsCache.length} skills`);
        
        // Write the updated cv_skills.json file
        await fs.writeFile(cvSkillsPath, JSON.stringify(cvSkillsData, null, 2), 'utf8');
