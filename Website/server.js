@@ -92,6 +92,9 @@ loadGeoJsonData();
 // 2. Create an Express application instance
 const app = express();
 
+// Trust Render's proxy
+app.set('trust proxy', 1);  // Trusts 1 proxy hop (Render's default)
+
 // IMPORTANT: Replace with the actual hash generated for the "finnwilson" password
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2b$10$IhEVxRBIRWx3AW89DUpOU...UFHS/h6aDadCACmnYPfw3ye4oGoCa';
 const ADMIN_USERNAME = 'admin'; // Optional username
@@ -100,19 +103,24 @@ const ADMIN_USERNAME = 'admin'; // Optional username
 app.use(express.json({ limit: '10mb' })); // Allow larger payload for potential markdown content
 
 // Session configuration
+let sessionStore;
+if (process.env.NODE_ENV === 'production') {
+  sessionStore = new MemoryStore({ checkPeriod: 86400000 });  // For Render: In-memory, prunes expired
+} else {
+  sessionStore = new FileStore({ path: './.sessions', logFn: function(){} });  // For local: Keeps your original
+}
+
 app.use(session({
-  store: new MemoryStore({
-    checkPeriod: 86400000  // Prune expired entries every 24h (in ms)
-  }),
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'dev-fallback-secret-change-me', // Long random string for session security
-  resave: false, // Don't save session if unmodified
+  resave: false,  // Don't resave unchanged sessions (efficient)
   saveUninitialized: false, // Don't create session until something stored
-  rolling: true,  // Renew expiration on each request
+  rolling: true,  // Renew cookie on every request to prevent expiry mid-action
   cookie: {
-      secure: process.env.NODE_ENV === 'production',  // HTTPS on Render
+      secure: process.env.NODE_ENV === 'production',  // HTTPS on Render, HTTP local
       httpOnly: true, // Prevent client-side JS access to cookie
-      sameSite: 'lax',  // Add this: Helps with cross-request cookies
-      maxAge: 1000 * 60 * 60 * 24 * 7  // 7 days
+      sameSite: 'lax',  // Balances security/cross-request issues (better than default 'strict')
+      maxAge: 1000 * 60 * 60 * 24 * 7  // 7 days—adjust if too long/short
   }
 }));
 
@@ -195,6 +203,12 @@ const upload = multer({
 });
 // --- End Multer Configuration ---
 
+// Request logging middleware (temporary for debugging)
+app.use((req, res, next) => {
+  console.log(`Request: ${req.method} ${req.path} - Authenticated: ${!!req.session?.isAuthenticated}`);
+  next();
+});
+
 // Middleware function to check if user is authenticated
 function requireAuth(req, res, next) {
     if (req.session && req.session.isAuthenticated) {
@@ -209,46 +223,43 @@ function requireAuth(req, res, next) {
 
 // API Endpoint for Login
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body; // Get username (optional) and password
-
-    console.log(`Login attempt: user='${username}'`); // Log attempt
-
+    const { username = 'admin', password } = req.body;  // Default if not sent
+    console.log(`Login attempt: user='${username}'`);
+    
     // Basic validation
     if (!password) {
-        return res.status(400).json({ success: false, message: 'Password is required.' });
+        return res.status(400).json({ success: false, error: 'Password is required.' });
     }
-
+    
     try {
-        const match = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
-
-        if (match) {
-            console.log(`Login successful for user: '${ADMIN_USERNAME}'`);
+        if (await bcrypt.compare(password, ADMIN_PASSWORD_HASH)) {
             // Regenerate session ID on login for security
             req.session.regenerate(err => {
                 if (err) {
                     console.error("Session regeneration error:", err);
-                    return res.status(500).json({ success: false, message: 'Login failed (session error).' });
+                    return res.status(500).json({ success: false, error: 'Login failed (session error).' });
                 }
                 // Store authentication status in session
                 req.session.isAuthenticated = true;
-                req.session.username = ADMIN_USERNAME; // Store username if needed
-
-                // Save the session before sending response
-                req.session.save(err => {
+                req.session.username = username;
+                
+                // Force session save
+                req.session.save((err) => {
                     if (err) {
-                        console.error("Session save error:", err);
-                        return res.status(500).json({ success: false, message: 'Login failed (session save error).' });
+                        console.error('Session save error:', err);
+                        return res.status(500).json({ success: false, error: 'Login failed (session save error).' });
                     }
-                    res.json({ success: true, message: 'Login successful.' });
+                    console.log('Login successful for user:', username);
+                    res.status(200).json({ success: true });
                 });
             });
         } else {
-            console.log('Login failed: Incorrect password');
-            res.status(401).json({ success: false, message: 'Invalid credentials.' });
+            console.log('Invalid password attempt');
+            res.status(401).json({ success: false, error: 'Invalid password' });
         }
-    } catch (error) {
-        console.error("Error during login:", error);
-        res.status(500).json({ success: false, message: 'An internal error occurred during login.' });
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
     }
 });
 

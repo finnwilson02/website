@@ -159,8 +159,9 @@ async function uploadFile(fileInputId) {
         console.log(`DEBUG uploadFile: Sending fetch request to /api/upload/image`);
         const response = await fetch('/api/upload/image', {
             method: 'POST',
-            body: formData
+            body: formData,
             // DO NOT set Content-Type header, browser does it for FormData
+            credentials: 'include'  // Sends/receives cookies
         });
         
         console.log(`DEBUG uploadFile: Response received - status: ${response.status}, ok: ${response.ok}`);
@@ -354,7 +355,8 @@ async function saveData(dataType, data, buttonElement = null) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data) // Send the data (array or object depending on type)
+      body: JSON.stringify(data), // Send the data (array or object depending on type)
+      credentials: 'include'  // Sends/receives cookies—add to all fetches
     });
     
     console.log(`DEBUG saveData: Response received - status: ${response.status}, ok: ${response.ok}`);
@@ -542,7 +544,8 @@ if (loginButton) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ password }) // Send password to server
+                body: JSON.stringify({ password }), // Send password to server
+                credentials: 'include'  // Sends/receives cookies
             });
             
             if (response.ok) {
@@ -574,7 +577,8 @@ if (logoutButton) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                },
+                credentials: 'include'  // Sends/receives cookies
             });
             
             if (response.ok) {
@@ -630,7 +634,9 @@ if (passwordInput) {
 async function loadBooks() {
     toggleLoading(true);
     try {
-        const response = await fetch('/api/data/books');
+        const response = await fetch('/api/data/books', {
+            credentials: 'include'  // Sends/receives cookies
+        });
         if (!response.ok) {
             let errorMsg = `HTTP error! Status: ${response.status}`;
             try { 
@@ -686,8 +692,22 @@ function renderBookTable() {
 }
 
 function handleEditBook(event) {
-    const index = event.target.dataset.index;
+    const index = parseInt(event.target.dataset.index);
+    console.log('Editing book at index:', index);
+    
+    if (typeof index !== 'number' || isNaN(index) || index < 0 || index >= (books?.length || 0)) {
+        console.error('Invalid index for editing book:', index);
+        showNotification('Invalid book index. Please reload the page.', 'error');
+        return;
+    }
+    
     const book = books[index];
+    if (!book || !book.title) {  // Check existence and key props
+        console.error('Book data missing or incomplete at index:', index);
+        showNotification('Book not found or data incomplete. Reloading...', 'error');
+        location.reload();  // Force reload to resync
+        return;
+    }
     
     formTitle.textContent = 'Edit Book';
     bookIndex.value = index;
@@ -727,8 +747,8 @@ async function handleDeleteBook(event) {
         
         // Handle result
         if (isSuccess) {
-            books = updatedBooks; // SUCCESS: Update the main array
-            renderBookTable();    // Re-render table
+            // Force reload data from server to ensure sync
+            await loadBooks();  // Reload to sync
             // Reset form if the deleted item was being edited
             if (parseInt(bookIndex.value, 10) === index) {
                 resetBookForm();
@@ -790,8 +810,8 @@ if (bookForm) {
         
         // Handle result
         if (isSuccess) {
-            books = updatedBooks; // SUCCESS: Update the main array
-            renderBookTable();    // Re-render table
+            // Force reload data from server to ensure sync
+            await loadBooks();  // Reload to sync
             resetBookForm();      // Reset form
         } else {
             // FAILURE: Notification already shown by saveData
@@ -912,7 +932,9 @@ async function restoreDefaultPhotoOrder(tripIdToRestore) {
 async function loadPhotos() {
     toggleLoading(true);
     try {
-        const response = await fetch('/api/data/images');
+        const response = await fetch('/api/data/images', {
+            credentials: 'include'  // Sends/receives cookies
+        });
         if (!response.ok) {
             let errorMsg = `HTTP error! Status: ${response.status}`;
             try { 
@@ -1123,7 +1145,8 @@ document.addEventListener('click', async e => {
             const response = await fetch(`/api/images/${slug}/rotate`, {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({dir})
+                body: JSON.stringify({dir}),
+                credentials: 'include'  // Sends/receives cookies
             });
             
             if (response.ok) {
@@ -1299,6 +1322,7 @@ function setupGroupedPhotoActionListeners() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'include',  // Sends/receives cookies
                 body: JSON.stringify(items)
             });
             
@@ -1339,8 +1363,22 @@ function renderPhotoTable() {
 }
 
 function handleEditPhoto(event) {
-    const index = event.target.dataset.index;
+    const index = parseInt(event.target.dataset.index);
+    console.log('Editing photo at index:', index);
+    
+    if (typeof index !== 'number' || isNaN(index) || index < 0 || index >= (photos?.length || 0)) {
+        console.error('Invalid photo index:', index);
+        showNotification('Invalid photo index. Reload page.', 'error');
+        return;
+    }
+    
     const photo = photos[index];
+    if (!photo || !photo.thumbnail) {
+        console.error('Photo data missing or incomplete:', photo);
+        showNotification('Photo not found. Reloading...', 'error');
+        location.reload();
+        return;
+    }
     
     photoEditIndex.value = index;
     // Store the existing path in the hidden input
@@ -1390,7 +1428,8 @@ async function handleDeletePhoto(event) {
         
         // Handle result
         if (isSuccess) {
-            photos = updatedPhotos; // SUCCESS: Update the main array
+            // Force reload data from server to ensure sync
+            await loadPhotos();  // Reload to sync
             
             const openStates = getOpenTripGroupStates(); // Remember state BEFORE re-render
             renderGroupedPhotoLists();                  // Re-render table
@@ -1448,7 +1487,9 @@ async function loadTrips() {
     toggleLoading(true);
     try {
         console.log("loadTrips: Fetching trips data from server...");
-        const response = await fetch('/api/data/trips');
+        const response = await fetch('/api/data/trips', {
+            credentials: 'include'  // Sends/receives cookies
+        });
         if (!response.ok) {
             let errorMsg = `HTTP error! Status: ${response.status}`;
             try { 
@@ -1753,7 +1794,8 @@ if (photoForm) {
         // Handle result
         if (isSuccess) {
             console.log("DEBUG photoForm: Save successful, updating local array and UI");
-            photos = updatedPhotos; // SUCCESS: Update the main array
+            // Force reload data from server to ensure sync
+            await loadPhotos();  // Reload to sync
             
             const openStates = getOpenTripGroupStates(); // Remember state BEFORE re-render
             renderGroupedPhotoLists();                  // Re-render table
@@ -1779,7 +1821,9 @@ async function loadProjects() {
     toggleLoading(true);
     try {
         // Try to load projects.json, create it if it doesn't exist
-        const response = await fetch('/api/data/projects');
+        const response = await fetch('/api/data/projects', {
+            credentials: 'include'  // Sends/receives cookies
+        });
         if (!response.ok) {
             console.log("projects.json not found, using empty array");
             projects = [];
@@ -1908,8 +1952,8 @@ async function handleDeleteProject(event) {
         
         // Handle result
         if (isSuccess) {
-            projects = updatedProjects; // SUCCESS: Update the main array
-            renderProjectList();        // Re-render list
+            // Force reload data from server to ensure sync
+            await loadProjects();  // Reload to sync
             // Reset form if the deleted item was being edited
             if (parseInt(projectEditIndex.value, 10) === index) {
                 resetProjectForm();
@@ -2061,8 +2105,8 @@ if (projectForm) {
             // Handle result
             if (isSuccess) {
                 console.log("DEBUG projectForm: Save successful, updating local array and UI");
-                projects = updatedProjects; // SUCCESS: Update the main array
-                renderProjectList();        // Re-render list
+                // Force reload data from server to ensure sync
+                await loadProjects();  // Reload to sync
                 resetProjectForm();         // Reset form
             } else {
                 // FAILURE: Notification already shown by saveData
@@ -2137,7 +2181,9 @@ async function loadCvData() {
 
 async function fetchCvSection(section) {
     try {
-        const response = await fetch(`/api/data/cv/${section}`);
+        const response = await fetch(`/api/data/cv/${section}`, {
+            credentials: 'include'  // Sends/receives cookies
+        });
         if (!response.ok) {
             let errorMsg = `HTTP error! Status: ${response.status}`;
             try { 
@@ -2945,7 +2991,9 @@ if (positionsCancelButton) {
 async function loadPageContent() {
     console.log("Loading page content...");
     try {
-        const response = await fetch('/api/data/page_content');
+        const response = await fetch('/api/data/page_content', {
+            credentials: 'include'  // Sends/receives cookies
+        });
         if (!response.ok) {
             // Try parsing error from backend
             let errorMsg = `HTTP error! Status: ${response.status}`;
@@ -3093,7 +3141,9 @@ async function loadResearchData() {
 // Fetch a specific research section from the API
 async function fetchResearchSection(section) {
     try {
-        const response = await fetch(`/api/data/research/${section}`);
+        const response = await fetch(`/api/data/research/${section}`, {
+            credentials: 'include'  // Sends/receives cookies
+        });
         if (!response.ok) {
             let errorMsg = `HTTP error! Status: ${response.status}`;
             try { 
