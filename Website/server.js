@@ -14,9 +14,15 @@ const pointInPolygon = require('point-in-polygon'); // For determining country f
 const heicConvert = require('heic-convert'); // For converting HEIC images to JPEG
 const sharp = require('sharp'); // For image processing
 
+// Configure persistent storage paths
+const persistPath = process.env.PERSIST_PATH || __dirname;  // Fallback for local dev
+const dataPath = path.join(persistPath, 'data');  // For JSON files
+const imgPath = path.join(persistPath, 'img');    // For full images
+const thumbsPath = path.join(persistPath, 'thumbs');  // For thumbnails
+
 // --- Load Country GeoJSON Data at Startup ---
 let countryFeatures = []; // Store loaded country features
-const geojsonPath = path.join(__dirname, 'data', 'countries.geojson');
+const geojsonPath = path.join(dataPath, 'countries.geojson');
 
 async function loadGeoJsonData() {
     console.log(`Loading country boundaries from: ${geojsonPath}`);
@@ -86,7 +92,7 @@ loadGeoJsonData();
 const app = express();
 
 // IMPORTANT: Replace with the actual hash generated for the "finnwilson" password
-const ADMIN_PASSWORD_HASH = '$2b$10$IhEVxRBIRWx3AW89DUpOU...UFHS/h6aDadCACmnYPfw3ye4oGoCa';
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2b$10$IhEVxRBIRWx3AW89DUpOU...UFHS/h6aDadCACmnYPfw3ye4oGoCa';
 const ADMIN_USERNAME = 'admin'; // Optional username
 
 // Middleware to parse JSON bodies
@@ -100,13 +106,13 @@ app.use(session({
    }), 
   // !! IMPORTANT !! Replace with environment variable in production
   // e.g., secret: process.env.SESSION_SECRET || 'fallback-dev-secret',
-  secret: 'RyQRKhvC5JnQkzrz3cwRTgApM6eMVJ7r', // Long random string for session security
+  secret: process.env.SESSION_SECRET || 'dev-fallback-secret-change-me', // Long random string for session security
   resave: false, // Don't save session if unmodified
   saveUninitialized: false, // Don't create session until something stored
   cookie: {
       // Set to true if using HTTPS in production
-      // secure: process.env.NODE_ENV === 'production',
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
+      // secure: false,
       httpOnly: true, // Prevent client-side JS access to cookie
       maxAge: 1000 * 60 * 60 * 24 // Cookie valid for 1 day
   }
@@ -126,7 +132,7 @@ app.use(express.static(path.join(__dirname))); // Serves files from the root pro
 // Optional: Serve specific directories if needed (usually app.use(express.static(__dirname)) is enough)
 // app.use('/css', express.static(path.join(__dirname, 'css')));
 // app.use('/js', express.static(path.join(__dirname, 'js')));
-app.use('/img', express.static(path.join(__dirname, 'img'))); // Explicitly serve the image directory
+app.use('/img', express.static(imgPath)); // Explicitly serve the image directory
 app.use('/icons', express.static(path.join(__dirname, 'icons'))); // Explicitly serve the icons directory
 // app.use('/data', express.static(path.join(__dirname, 'data')));
 
@@ -143,7 +149,7 @@ app.use('/icons', express.static(path.join(__dirname, 'icons'))); // Explicitly 
 const imageStorage = multer.diskStorage({
     destination: function (req, file, cb) {
         // Ensure the 'img/' directory exists relative to server.js
-        const uploadPath = path.join(__dirname, 'img');
+        const uploadPath = imgPath;
         
         // Create directory if it doesn't exist (sync for simplicity)
         try {
@@ -279,7 +285,7 @@ app.get('/api/auth/status', (req, res) => {
 
 // API Endpoint to get Books data
 app.get('/api/data/books', async (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'books.json');
+  const filePath = path.join(dataPath, 'books.json');
   console.log(`GET /api/data/books - Reading: ${filePath}`); // Server log
   try {
     const fileContent = await fs.readFile(filePath, 'utf8');
@@ -315,7 +321,7 @@ app.get('/api/data/books', async (req, res) => {
 
 // API Endpoint to get Images data
 app.get('/api/data/images', async (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'images.json');
+  const filePath = path.join(dataPath, 'images.json');
   console.log(`GET /api/data/images - Reading: ${filePath}`);
   try {
     const fileContent = await fs.readFile(filePath, 'utf8');
@@ -342,7 +348,7 @@ app.get('/api/data/images', async (req, res) => {
 
 // API Endpoint to get Projects data
 app.get('/api/data/projects', async (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'projects.json');
+  const filePath = path.join(dataPath, 'projects.json');
   console.log(`GET /api/data/projects - Reading: ${filePath}`);
   try {
     const fileContent = await fs.readFile(filePath, 'utf8');
@@ -362,7 +368,7 @@ app.get('/api/data/projects', async (req, res) => {
 
 // API Endpoint to SAVE Books data
 app.post('/api/save/books', requireAuth, async (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'books.json');
+  const filePath = path.join(dataPath, 'books.json');
   const backupFilePath = filePath + '.bak'; // Backup file path
   console.log(`POST /api/save/books - Saving to: ${filePath}`);
 
@@ -447,7 +453,7 @@ app.post('/api/save/books', requireAuth, async (req, res) => {
 
 // API Endpoint to SAVE Images data
 app.post('/api/save/images', requireAuth, async (req, res) => {
-   const filePath = path.join(__dirname, 'data', 'images.json');
+   const filePath = path.join(dataPath, 'images.json');
    const backupFilePath = filePath + '.bak';
    console.log(`POST /api/save/images - Saving to: ${filePath}`);
    if (!Array.isArray(req.body)) {
@@ -501,7 +507,7 @@ app.post('/api/save/images', requireAuth, async (req, res) => {
 
 // API Endpoint to SAVE Projects data
 app.post('/api/save/projects', requireAuth, async (req, res) => {
-   const filePath = path.join(__dirname, 'data', 'projects.json');
+   const filePath = path.join(dataPath, 'projects.json');
    const backupFilePath = filePath + '.bak';
    console.log(`POST /api/save/projects - Saving to: ${filePath}`);
    if (!Array.isArray(req.body)) {
@@ -524,7 +530,7 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
 
 // GET CV Education Data
 app.get('/api/data/cv/education', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_education.json');
+    const filePath = path.join(dataPath, 'cv_education.json');
     console.log(`GET /api/data/cv/education - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -545,7 +551,7 @@ app.get('/api/data/cv/education', async (req, res) => {
 
 // SAVE CV Education Data (Authenticated)
 app.post('/api/save/cv/education', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_education.json');
+    const filePath = path.join(dataPath, 'cv_education.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/cv/education - Saving to: ${filePath}`);
     if (!Array.isArray(req.body)) {
@@ -572,7 +578,7 @@ app.post('/api/save/cv/education', requireAuth, async (req, res) => {
 
 // GET CV Work Data
 app.get('/api/data/cv/work', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_work.json');
+    const filePath = path.join(dataPath, 'cv_work.json');
     console.log(`GET /api/data/cv/work - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -593,7 +599,7 @@ app.get('/api/data/cv/work', async (req, res) => {
 
 // SAVE CV Work Data (Authenticated)
 app.post('/api/save/cv/work', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_work.json');
+    const filePath = path.join(dataPath, 'cv_work.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/cv/work - Saving to: ${filePath}`);
     if (!Array.isArray(req.body)) {
@@ -620,7 +626,7 @@ app.post('/api/save/cv/work', requireAuth, async (req, res) => {
 
 // GET CV Research Data
 app.get('/api/data/cv/research', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_research.json');
+    const filePath = path.join(dataPath, 'cv_research.json');
     console.log(`GET /api/data/cv/research - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -641,7 +647,7 @@ app.get('/api/data/cv/research', async (req, res) => {
 
 // SAVE CV Research Data (Authenticated)
 app.post('/api/save/cv/research', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_research.json');
+    const filePath = path.join(dataPath, 'cv_research.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/cv/research - Saving to: ${filePath}`);
     if (!Array.isArray(req.body)) {
@@ -668,7 +674,7 @@ app.post('/api/save/cv/research', requireAuth, async (req, res) => {
 
 // GET CV Projects Data
 app.get('/api/data/cv/projects', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_projects.json');
+    const filePath = path.join(dataPath, 'cv_projects.json');
     console.log(`GET /api/data/cv/projects - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -689,7 +695,7 @@ app.get('/api/data/cv/projects', async (req, res) => {
 
 // SAVE CV Projects Data (Authenticated)
 app.post('/api/save/cv/projects', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_projects.json');
+    const filePath = path.join(dataPath, 'cv_projects.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/cv/projects - Saving to: ${filePath}`);
     if (!Array.isArray(req.body)) {
@@ -716,7 +722,7 @@ app.post('/api/save/cv/projects', requireAuth, async (req, res) => {
 
 // GET CV Skills Data
 app.get('/api/data/cv/skills', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_skills.json');
+    const filePath = path.join(dataPath, 'cv_skills.json');
     console.log(`GET /api/data/cv/skills - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -738,7 +744,7 @@ app.get('/api/data/cv/skills', async (req, res) => {
 
 // SAVE CV Skills Data (Authenticated)
 app.post('/api/save/cv/skills', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_skills.json');
+    const filePath = path.join(dataPath, 'cv_skills.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/cv/skills - Saving to: ${filePath}`);
     if (typeof req.body !== 'object' || req.body === null || Array.isArray(req.body)) {
@@ -765,7 +771,7 @@ app.post('/api/save/cv/skills', requireAuth, async (req, res) => {
 
 // GET CV Achievements Data
 app.get('/api/data/cv/achievements', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_achievements.json');
+    const filePath = path.join(dataPath, 'cv_achievements.json');
     console.log(`GET /api/data/cv/achievements - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -786,7 +792,7 @@ app.get('/api/data/cv/achievements', async (req, res) => {
 
 // SAVE CV Achievements Data (Authenticated)
 app.post('/api/save/cv/achievements', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_achievements.json');
+    const filePath = path.join(dataPath, 'cv_achievements.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/cv/achievements - Saving to: ${filePath}`);
     if (!Array.isArray(req.body)) {
@@ -813,7 +819,7 @@ app.post('/api/save/cv/achievements', requireAuth, async (req, res) => {
 
 // GET CV Positions Data
 app.get('/api/data/cv/positions', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_positions.json');
+    const filePath = path.join(dataPath, 'cv_positions.json');
     console.log(`GET /api/data/cv/positions - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -834,7 +840,7 @@ app.get('/api/data/cv/positions', async (req, res) => {
 
 // SAVE CV Positions Data (Authenticated)
 app.post('/api/save/cv/positions', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'cv_positions.json');
+    const filePath = path.join(dataPath, 'cv_positions.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/cv/positions - Saving to: ${filePath}`);
     if (!Array.isArray(req.body)) {
@@ -861,7 +867,7 @@ app.post('/api/save/cv/positions', requireAuth, async (req, res) => {
 
 // GET Endpoint for Page Content
 app.get('/api/data/page_content', async (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'page_content.json');
+  const filePath = path.join(dataPath, 'page_content.json');
   console.log(`GET /api/data/page_content - Reading: ${filePath}`);
   try {
     const fileContent = await fs.readFile(filePath, 'utf8');
@@ -885,7 +891,7 @@ app.get('/api/data/page_content', async (req, res) => {
 
 // POST Endpoint to SAVE Page Content (Authenticated)
 app.post('/api/save/page_content', requireAuth, async (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'page_content.json');
+  const filePath = path.join(dataPath, 'page_content.json');
   const backupFilePath = filePath + '.bak';
   console.log(`POST /api/save/page_content - Saving to: ${filePath}`);
 
@@ -912,7 +918,7 @@ app.post('/api/save/page_content', requireAuth, async (req, res) => {
 
 // GET Research Journal Data
 app.get('/api/data/research/journal', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_journal.json');
+    const filePath = path.join(dataPath, 'research_journal.json');
     console.log(`GET /api/data/research/journal - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -948,7 +954,7 @@ app.get('/api/data/research/journal', async (req, res) => {
 
 // SAVE Research Journal Data (Authenticated)
 app.post('/api/save/research/journal', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_journal.json');
+    const filePath = path.join(dataPath, 'research_journal.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/research/journal - Saving to: ${filePath}`);
     
@@ -1041,7 +1047,7 @@ app.post('/api/save/research/journal', requireAuth, async (req, res) => {
 
 // GET Research Thesis Data
 app.get('/api/data/research/thesis', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_thesis.json');
+    const filePath = path.join(dataPath, 'research_thesis.json');
     console.log(`GET /api/data/research/thesis - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -1077,7 +1083,7 @@ app.get('/api/data/research/thesis', async (req, res) => {
 
 // SAVE Research Thesis Data (Authenticated)
 app.post('/api/save/research/thesis', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_thesis.json');
+    const filePath = path.join(dataPath, 'research_thesis.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/research/thesis - Saving to: ${filePath}`);
     
@@ -1152,7 +1158,7 @@ app.post('/api/save/research/thesis', requireAuth, async (req, res) => {
 
 // GET Research Conference Data
 app.get('/api/data/research/conference', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_conference.json');
+    const filePath = path.join(dataPath, 'research_conference.json');
     console.log(`GET /api/data/research/conference - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -1173,7 +1179,7 @@ app.get('/api/data/research/conference', async (req, res) => {
 
 // SAVE Research Conference Data (Authenticated)
 app.post('/api/save/research/conference', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_conference.json');
+    const filePath = path.join(dataPath, 'research_conference.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/research/conference - Saving to: ${filePath}`);
     if (!Array.isArray(req.body)) {
@@ -1200,7 +1206,7 @@ app.post('/api/save/research/conference', requireAuth, async (req, res) => {
 
 // GET Research Patent Data
 app.get('/api/data/research/patent', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_patent.json');
+    const filePath = path.join(dataPath, 'research_patent.json');
     console.log(`GET /api/data/research/patent - Reading: ${filePath}`);
     try {
         const fileContent = await fs.readFile(filePath, 'utf8');
@@ -1221,7 +1227,7 @@ app.get('/api/data/research/patent', async (req, res) => {
 
 // SAVE Research Patent Data (Authenticated)
 app.post('/api/save/research/patent', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'research_patent.json');
+    const filePath = path.join(dataPath, 'research_patent.json');
     const backupFilePath = filePath + '.bak';
     console.log(`POST /api/save/research/patent - Saving to: ${filePath}`);
     if (!Array.isArray(req.body)) {
@@ -1285,7 +1291,7 @@ app.post('/api/upload/image', requireAuth, (req, res) => {
 
         const originalPath = req.file.path;
         const outputFilename = req.file.filename.replace(/\.[^.]+$/, '.webp');
-        const outputPath = path.join(__dirname, 'img', outputFilename);
+        const outputPath = path.join(imgPath, outputFilename);
         let processedImageBufferOrPath = originalPath; // Start with original path
 
         console.log(`Processing uploaded file: ${originalPath}, mimetype: ${req.file.mimetype}`);
@@ -1350,7 +1356,7 @@ app.post('/api/upload/image', requireAuth, (req, res) => {
 
 // GET Trips Data
 app.get('/api/data/trips', async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'trips.json');
+    const filePath = path.join(dataPath, 'trips.json');
     console.log(`GET ${filePath}`);
     try {
         const d = await fs.readFile(filePath, 'utf8');
@@ -1369,7 +1375,7 @@ app.get('/api/data/trips', async (req, res) => {
 
 // SAVE Trips Data (Authenticated)
 app.post('/api/save/trips', requireAuth, async (req, res) => {
-    const filePath = path.join(__dirname, 'data', 'trips.json');
+    const filePath = path.join(dataPath, 'trips.json');
     const trips = req.body;
     console.log(`POST ${filePath}`);
     if (!Array.isArray(trips)) {
@@ -1405,7 +1411,7 @@ app.post('/api/save/trips', requireAuth, async (req, res) => {
 app.post('/api/images/reorder', requireAuth, async (req, res, next) => {
   try {
     const payload = req.body;  // [{slug:'foo.jpg', idx:3}, …]
-    const filePath = path.join(__dirname, 'data', 'images.json');
+    const filePath = path.join(dataPath, 'images.json');
     
     if (!Array.isArray(payload)) {
       return res.status(400).json({ error: 'Invalid data format. Expected an array of updates.' });
@@ -1466,23 +1472,23 @@ app.post('/api/images/:slug/rotate', requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid image filename' });
     }
 
-    const imgPath = path.join(__dirname, 'img', slug);
+    const imageFilePath = path.join(imgPath, slug);
     
-    console.log(`Rotating image ${imgPath} by ${deg} degrees`);
+    console.log(`Rotating image ${imageFilePath} by ${deg} degrees`);
     
     // Check if file exists
     try {
-      await fs.access(imgPath);
+      await fs.access(imageFilePath);
     } catch (err) {
-      console.error(`File not found: ${imgPath}`);
+      console.error(`File not found: ${imageFilePath}`);
       return res.status(404).json({ error: 'Image not found' });
     }
 
     // Rotate the image
     try {
-      const buffer = await sharp(imgPath).rotate(deg).toBuffer();
-      await fs.writeFile(imgPath, buffer);
-      console.log(`Successfully rotated ${imgPath}`);
+      const buffer = await sharp(imageFilePath).rotate(deg).toBuffer();
+      await fs.writeFile(imageFilePath, buffer);
+      console.log(`Successfully rotated ${imageFilePath}`);
     } catch (err) {
       console.error(`Error rotating image: ${err.message}`);
       return res.status(500).json({ error: 'Failed to process image' });

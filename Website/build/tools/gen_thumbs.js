@@ -3,8 +3,10 @@ const fs    = require('fs').promises;
 const path  = require('path');
 const sharp = require('sharp');
 
-const IMG_DIR   = path.resolve(__dirname, '../../img');
-const THUMB_DIR = path.resolve(__dirname, '../../thumbs');
+// Configure persistent storage paths
+const persistPath = process.env.PERSIST_PATH || path.resolve(__dirname, '../..');  // Fallback for local dev
+const IMG_DIR   = path.join(persistPath, 'img');
+const THUMB_DIR = path.join(persistPath, 'thumbs');
 const SIZE      = 96;            // px
 
 (async () => {
