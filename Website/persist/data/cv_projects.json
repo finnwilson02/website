@@ -1,0 +1,32 @@
+[
+  {
+    "title": "ZenCopter – Noise-Cancelling Octocopter",
+    "dates": "Sep 2024 – Present",
+    "link": {"url": "projects.html#zencopter", "text": "Details"},
+    "description": "- Personal project to design and build an octocopter with omnidirectional active and passive noise cancellation (inspired by noise-canceling headphones).\n- Utilizes custom parts 3D-printed in polycarbonate/carbon fiber and CNC-machined from aluminum and acrylic.\n- Programmed the flight controller in C++ and ROS for advanced autonomous control and signal processing."
+  },
+  {
+    "title": "SLOSHSAT – CubeSat Fluids Experiment",
+    "dates": "Feb 2024 – Jun 2024",
+    "link": {"url": "projects.html#sloshsat", "text": "Details"},
+    "description": "- University project to create a CubeSat platform for studying fluid dynamics relevant to in-orbit refueling in microgravity.\n- Responsible for designing and testing the onboard computer, data transfer protocols, custom 3D-printed parts, PCBs, and sensors. Led a team of 6 to meet strict mass, power, and cost constraints.\n- Gained experience with Altium for PCB design, FreeRTOS for real-time systems, and advanced 3D printing techniques for technical materials."
+  },
+  {
+    "title": "Autonomous Quadrotor Landing",
+    "dates": "Apr 2023 – May 2023",
+    "link": {"url": "projects.html#quadrotor-landing", "text": "Details"},
+    "description": "- Course project focused on autonomous tracking and landing of a quadrotor (Tello EDU drone) on a moving ground vehicle using computer vision and control theory.\n- Achieved ~80% successful landings on a straight-moving target (~5 cm accuracy), ~60% for partially occluded motion, and some success (~20%) on curvilinear moving targets."
+  },
+  {
+    "title": "TurtleBot Disaster Response & Maze Solver",
+    "dates": "Sep 2022 – Nov 2022",
+    "link": {"url": "projects.html#turtlebot", "text": "Details"},
+    "description": "- Developed a TurtleBot system in C++/Python (using ROS, OpenCV, PyTorch) to autonomously map and navigate a disaster environment using SLAM (extended Kalman filter) and neural network-based object detection.\n- Achieved 95% object classification accuracy and ~7.5 cm SLAM localization error. Also implemented a maze-solving algorithm (Dijkstra's) for a related challenge in the same course."
+  },
+  {
+    "title": "FPGA Line-Following Robot",
+    "dates": "Sep 2022 – Nov 2022",
+    "link": {"url": "projects.html#fpga-robot", "text": "Details"},
+    "description": "- Built a line-following robot using an FPGA (Verilog) with an Arduino for sensor interfacing. The robot tracks a colored line via camera input and a PID controller, and can be commanded via Wi-Fi or IR remote.\n- Demonstrated reliable line-following under various lighting conditions and responsive control (including reverse movement), outperforming similar projects in stability and accuracy."
+  }
+]
