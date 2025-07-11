@@ -8,6 +8,7 @@ const fs = require('fs').promises; // Use promises version for cleaner async han
 const fsSync = require('fs'); // Standard fs for synchronous operations
 const session = require('express-session');
 const FileStore = require('session-file-store')(session); // Store sessions in files
+const MemoryStore = require('memorystore')(session);
 const bcrypt = require('bcryptjs');
 const multer = require('multer'); // For handling multipart/form-data (file uploads)
 const pointInPolygon = require('point-in-polygon'); // For determining country from coordinates
@@ -100,21 +101,18 @@ app.use(express.json({ limit: '10mb' })); // Allow larger payload for potential 
 
 // Session configuration
 app.use(session({
-  store: new FileStore({
-     path: './.sessions', // Directory to store session files
-     logFn: function(){} // Suppress verbose logging by session-file-store
-   }), 
-  // !! IMPORTANT !! Replace with environment variable in production
-  // e.g., secret: process.env.SESSION_SECRET || 'fallback-dev-secret',
+  store: new MemoryStore({
+    checkPeriod: 86400000  // Prune expired entries every 24h (in ms)
+  }),
   secret: process.env.SESSION_SECRET || 'dev-fallback-secret-change-me', // Long random string for session security
   resave: false, // Don't save session if unmodified
   saveUninitialized: false, // Don't create session until something stored
+  rolling: true,  // Renew expiration on each request
   cookie: {
-      // Set to true if using HTTPS in production
-      secure: process.env.NODE_ENV === 'production',
-      // secure: false,
+      secure: process.env.NODE_ENV === 'production',  // HTTPS on Render
       httpOnly: true, // Prevent client-side JS access to cookie
-      maxAge: 1000 * 60 * 60 * 24 // Cookie valid for 1 day
+      sameSite: 'lax',  // Add this: Helps with cross-request cookies
+      maxAge: 1000 * 60 * 60 * 24 * 7  // 7 days
   }
 }));
 
