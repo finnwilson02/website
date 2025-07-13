@@ -1,3 +1,7 @@
 persist/
 node_modules/
 *.zip
+img/
+data/
+thumbs/
+.env
