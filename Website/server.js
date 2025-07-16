@@ -377,11 +377,12 @@ app.get('/api/data/projects', async (req, res) => {
 
 // GET Homepage Data
 app.get('/api/data/homepage', async (req, res) => {
-  const filePath = path.join(dataPath, 'homepage.md');
+  const filePath = path.join(dataPath, 'homepage.json');
   console.log(`GET /api/data/homepage - Reading: ${filePath}`);
   try {
-    const content = await fs.readFile(filePath, 'utf8');
-    res.json({ content });
+    const data = await fs.readFile(filePath, 'utf8');
+    const homepageData = JSON.parse(data);
+    res.json(homepageData);
   } catch (error) {
     console.error(`Error reading ${filePath}:`, error);
     if (error.code === 'ENOENT') {
@@ -427,7 +428,7 @@ app.get('/api/data/contactBanner', async (req, res) => {
 
 // POST Homepage Data
 app.post('/api/save/homepage', requireAuth, async (req, res) => {
-  const filePath = path.join(dataPath, 'homepage.md');
+  const filePath = path.join(dataPath, 'homepage.json');
   const backupFilePath = filePath + '.bak';
   console.log(`POST /api/save/homepage - Saving to: ${filePath}`);
   
@@ -436,6 +437,15 @@ app.post('/api/save/homepage', requireAuth, async (req, res) => {
   }
   
   try {
+    // Read existing data to preserve image field
+    let existingData = { content: '', image: '' };
+    try {
+      const existingFile = await fs.readFile(filePath, 'utf8');
+      existingData = JSON.parse(existingFile);
+    } catch (readError) {
+      console.log('No existing homepage.json found, creating new one');
+    }
+    
     // Backup logic
     try { 
       await fs.copyFile(filePath, backupFilePath); 
@@ -445,8 +455,19 @@ app.post('/api/save/homepage', requireAuth, async (req, res) => {
         console.warn(`Warning: Could not create backup for ${filePath}:`, backupError); 
     }
     
-    await fs.writeFile(filePath, req.body.content, 'utf8');
-    res.status(200).json({ message: 'Homepage content saved successfully.' });
+    // Update content while preserving image
+    const updatedData = {
+      content: req.body.content,
+      image: req.body.image || existingData.image || ''
+    };
+    
+    await fs.writeFile(filePath, JSON.stringify(updatedData, null, 2), 'utf8');
+    console.log('Homepage data saved successfully:', { content: updatedData.content.substring(0, 50) + '...', image: updatedData.image });
+    res.status(200).json({ 
+      success: true, 
+      message: 'Homepage content saved successfully.',
+      data: updatedData 
+    });
   } catch (error) {
     console.error(`Error writing ${filePath}:`, error);
     res.status(500).json({ error: 'Failed to save homepage content.' });

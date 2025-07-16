@@ -1,7 +1,7 @@
 // js/homeContentLoader.js
 
 /**
- * Loads and renders homepage content from homepage.md
+ * Loads and renders homepage content from homepage.json including image and content
  */
 async function loadHomeContent() {
     try {
@@ -12,56 +12,49 @@ async function loadHomeContent() {
         }
         
         const data = await response.json();
+        console.log('Homepage data loaded:', data); // TEMP LOG
         
-        // Check if marked.js is available for Markdown parsing
+        let htmlContent = '';
+        
+        // 1. Add content parsed from Markdown first.
         if (typeof marked !== 'undefined') {
-            const htmlContent = marked.parse(data.content);
-            insertHomeContent(htmlContent);
+            htmlContent += marked.parse(data.content || '');
         } else {
-            // Fallback: insert as plain text with basic formatting
             console.warn('marked.js not loaded, using plain text fallback');
-            const plainContent = data.content.replace(/\n/g, '<br>');
-            insertHomeContent(plainContent);
+            htmlContent += (data.content || '').replace(/\n/g, '<br>');
         }
+
+        // 2. Add the image after the text content.
+        if (data.image && data.image.trim() !== '') {
+            const imageSrc = `img/${data.image}`;
+            console.log('Rendering image src:', imageSrc); // TEMP LOG
+            htmlContent += `<img src="${imageSrc}" class="profile-pic" alt="Homepage Image">`;
+        } else {
+            console.log('No image in data:', data); // TEMP LOG
+        }
+        
+        insertHomeContent(htmlContent);
         
     } catch (error) {
         console.error('Error loading homepage content:', error);
         // Show a fallback message
-        const fallbackContent = `
-            <h1>Welcome</h1>
-            <p>Welcome to my portfolio website. Please check back later for updated content.</p>
-        `;
+        const fallbackContent = `<h1>Welcome</h1><p>Welcome to my portfolio website. Please check back later for updated content.</p>`;
         insertHomeContent(fallbackContent);
     }
 }
 
 /**
- * Inserts the parsed content into the homepage
+ * Inserts the parsed content into the homepage, replacing existing content
  * @param {string} htmlContent - The HTML content to insert
  */
 function insertHomeContent(htmlContent) {
-    // Look for common container IDs/classes where homepage content should go
-    const containers = [
-        document.getElementById('homeContent'),
-        document.getElementById('mainContent'),
-        document.querySelector('.home-content'),
-        document.querySelector('.main-content'),
-        document.querySelector('main'),
-        document.querySelector('.container')
-    ];
-    
-    // Find the first available container
-    const container = containers.find(el => el !== null);
+    const container = document.getElementById('homeContent');
     
     if (container) {
         container.innerHTML = htmlContent;
+        console.log('Homepage content loaded successfully');
     } else {
-        console.warn('No suitable container found for homepage content');
-        // Create a container and append to body as fallback
-        const fallbackContainer = document.createElement('div');
-        fallbackContainer.id = 'homeContent';
-        fallbackContainer.innerHTML = htmlContent;
-        document.body.appendChild(fallbackContainer);
+        console.error('Container with ID "homeContent" not found for homepage content.');
     }
 }
 

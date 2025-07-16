@@ -107,6 +107,12 @@
             <label for="genre">Genre(s) (comma-separated):</label>
             <input type="text" id="genre" placeholder="Fiction, Literature, etc.">
             
+            <label for="bookType">Type:</label>
+            <select id="bookType">
+              <option value="book" selected>Book</option>
+              <option value="movie">Movie</option>
+            </select>
+            
             <label for="datesRead">Date Read:</label>
             <input type="text" id="datesRead" placeholder="month year">
             
@@ -799,6 +805,27 @@
       <section id="homepageSection" class="tab-pane">
         <h2>Edit Homepage</h2>
         
+        <!-- Homepage Image Section -->
+        <div style="margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+          <h3>Homepage Image</h3>
+          <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">Upload an image to display at the top of the homepage (above the content).</p>
+          
+          <div style="margin-bottom: 15px;">
+            <label for="homepageImageUpload">Choose Image:</label>
+            <input type="file" id="homepageImageUpload" accept="image/*" style="margin-bottom: 10px;">
+            <button id="uploadImageBtn" style="background: #17a2b8; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Upload Image</button>
+          </div>
+          
+          <div id="currentImageContainer" style="margin-top: 15px;">
+            <label>Current Image:</label>
+            <div id="currentImagePreview" style="margin-top: 5px;">
+              <img id="currentImage" src="" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; border-radius: 4px; display: none;">
+              <p id="noImageText" style="color: #666; font-style: italic;">No image uploaded</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Homepage Content Section -->
         <div style="margin-bottom: 20px;">
           <h3>Homepage Content (Markdown)</h3>
           <p>Edit the homepage content using Markdown syntax. Changes will be reflected on the main homepage.</p>

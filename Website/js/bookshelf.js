@@ -64,6 +64,7 @@ function initFilters() {
     });
     
     // Add event listeners for filter changes
+    document.getElementById('typeFilter').addEventListener('change', filterAndSortBooks);
     document.getElementById('genreFilter').addEventListener('change', filterAndSortBooks);
     document.getElementById('ratingFilter').addEventListener('change', filterAndSortBooks);
     document.getElementById('sortOrder').addEventListener('change', filterAndSortBooks);
@@ -73,12 +74,17 @@ function initFilters() {
  * Filters and sorts books based on current filter selections, then renders them
  */
 function filterAndSortBooks() {
+    const typeFilter = document.getElementById('typeFilter').value;
     const genreFilter = document.getElementById('genreFilter').value;
     const ratingFilter = document.getElementById('ratingFilter').value;
     const sortOrder = document.getElementById('sortOrder').value;
     
     // Filter books
     let filteredBooks = books.filter(book => {
+        // Type filter
+        const matchType = typeFilter === 'all' || 
+            (book.type || 'book') === typeFilter;
+        
         // Genre filter
         const matchGenre = genreFilter === 'all' || 
             (book.genre && book.genre.includes(genreFilter));
@@ -87,7 +93,7 @@ function filterAndSortBooks() {
         const matchRating = ratingFilter === 'all' || 
             book.rating >= parseInt(ratingFilter, 10);
         
-        return matchGenre && matchRating;
+        return matchType && matchGenre && matchRating;
     });
     
     // Sort books
@@ -114,47 +120,90 @@ function filterAndSortBooks() {
 }
 
 /**
- * Renders books as cards in the books-row container
- * @param {Array} booksToRender - Array of book objects to render
+ * Renders books with dynamic multi-shelf creation
+ * @param {Array} itemsToRender - Array of book/movie objects to render
  */
-function renderBooks(booksToRender) {
-    const booksRow = document.getElementById('books-row');
-    if (!booksRow) {
-        console.error('books-row element not found');
+function renderBooks(itemsToRender) {
+    const container = document.getElementById('bookshelf-container');
+    if (!container) {
+        console.error('bookshelf-container element not found');
         return;
     }
     
-    // Clear existing books
-    booksRow.innerHTML = '';
+    // Clear existing shelves
+    container.innerHTML = '';
     
-    if (!booksToRender || booksToRender.length === 0) {
-        booksRow.innerHTML = '<p style="padding: 20px; color: #666;">No books match the current filters.</p>';
+    if (!itemsToRender || itemsToRender.length === 0) {
+        container.innerHTML = '<p style="padding: 20px; color: #666;">No items match the current filters.</p>';
         return;
     }
     
-    // Create book cards
-    booksToRender.forEach(book => {
-        const bookCard = document.createElement('div');
-        bookCard.className = 'book-card';
-        bookCard.onclick = () => openOverlay(book);
+    // Create initial shelf
+    let shelfCount = 0;
+    let currentShelf = createNewShelf(shelfCount);
+    container.appendChild(currentShelf);
+    
+    // Add books to shelves, creating new ones as needed
+    itemsToRender.forEach(item => {
+        const spine = createBookSpine(item);
         
-        // Generate star rating display
-        const stars = '★'.repeat(book.rating || 0) + '☆'.repeat(5 - (book.rating || 0));
+        // Add spine to current shelf
+        currentShelf.appendChild(spine);
         
-        // Create card content
-        bookCard.innerHTML = `
-            <div class="book-card-content">
-                <h3 class="book-title">${escapeHtml(book.title || 'Untitled')}</h3>
-                <p class="book-author">${escapeHtml(book.author || 'Unknown Author')}</p>
-                <div class="book-rating">${stars}</div>
-                <p class="book-genre">${escapeHtml(book.genre || '')}</p>
-            </div>
-        `;
-        
-        booksRow.appendChild(bookCard);
+        // Check if shelf is overflowing
+        if (currentShelf.scrollWidth > currentShelf.clientWidth) {
+            // Remove the last spine that caused overflow
+            currentShelf.removeChild(spine);
+            
+            // Create new shelf
+            shelfCount++;
+            currentShelf = createNewShelf(shelfCount);
+            container.appendChild(currentShelf);
+            
+            // Add spine to new shelf
+            currentShelf.appendChild(spine);
+        }
     });
     
-    console.log(`Rendered ${booksToRender.length} books`);
+    console.log(`Rendered ${itemsToRender.length} items across ${shelfCount + 1} shelves`);
+}
+
+/**
+ * Creates a new shelf element
+ * @param {number} index - Shelf index
+ * @returns {HTMLElement} - New shelf element
+ */
+function createNewShelf(index) {
+    const shelf = document.createElement('div');
+    shelf.className = 'shelf';
+    shelf.id = `shelf-${index}`;
+    return shelf;
+}
+
+/**
+ * Creates a book spine element
+ * @param {Object} item - Book/movie object
+ * @returns {HTMLElement} - Book spine element
+ */
+function createBookSpine(item) {
+    const spine = document.createElement('div');
+    spine.className = 'book-spine';
+    
+    // Set spine styling using CSS variables
+    spine.style.setProperty('--spine-color', item.spineColor || '#ca0b0b');
+    spine.style.setProperty('--title-color', item.titleColor || '#ffffff');
+    spine.style.setProperty('--author-color', item.authorColor || '#ffffff');
+    
+    // Create spine content with vertical text
+    spine.innerHTML = `
+        <div class="book-title">${escapeHtml(item.title || 'Untitled')}</div>
+        <div class="book-author">${escapeHtml(item.author || 'Unknown')}</div>
+    `;
+    
+    // Add click event to open overlay
+    spine.onclick = () => openOverlay(item);
+    
+    return spine;
 }
 
 /**

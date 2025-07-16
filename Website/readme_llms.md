@@ -577,6 +577,83 @@ function renderSkills(data) {
 3. **Skill Merging**: UI to merge duplicate skills across categories
 4. **Bulk Import**: Import skills from external sources
 
+## Bookshelf System
+
+### Overview
+
+The bookshelf displays books and movies as vertical spines on wooden shelves. The system uses dynamic multi-shelf creation to handle overflow and provides filtering options for mixed content.
+
+### Visual Design
+
+**Shelf Styling:**
+- Shelves are displayed as thick wooden lines using `border-bottom: 5px solid #8B4513`
+- No background, just the bottom border for a clean look
+- Horizontal scrolling if content exceeds width
+
+**Book Spines:**
+- Fixed width (40px) with 200px height
+- Vertical text using `writing-mode: vertical-rl`
+- Individual spine colors and text colors from admin settings
+- No hover rotation effects for stability
+
+### Dynamic Multi-Shelf System
+
+The bookshelf automatically creates new shelves when content exceeds the container width:
+
+```javascript
+// Check if shelf is overflowing
+if (currentShelf.scrollWidth > currentShelf.clientWidth) {
+    // Remove overflowing item
+    currentShelf.removeChild(spine);
+    // Create new shelf
+    currentShelf = createNewShelf(++shelfCount);
+    // Add item to new shelf
+    currentShelf.appendChild(spine);
+}
+```
+
+### Filtering System
+
+**Type Filter:**
+- All items (books and movies mixed)
+- Books only
+- Movies only
+
+**Other Filters:**
+- Genre filter (dynamically populated)
+- Rating filter (1-5 stars)
+- Sort options (date, rating)
+
+### Data Model
+
+Items have a `type` field to distinguish between books and movies:
+```json
+{
+    "title": "Example Book",
+    "author": "Author Name",
+    "type": "book",  // or "movie"
+    "spineColor": "#ca0b0b",
+    "titleColor": "#ffffff",
+    "authorColor": "#ffffff",
+    "rating": 5,
+    "genre": "Fiction",
+    "review": "Full review text..."
+}
+```
+
+### Admin Features
+
+- Type dropdown to select Book or Movie when adding/editing
+- Color pickers for spine, title, and author text colors
+- All items managed in single books.json file
+
+### Extension Points
+
+1. **Shelf Indicators**: Add visual indicators for scrollable shelves
+2. **Shelf Labels**: Add shelf category labels (e.g., "Fiction", "Non-Fiction")
+3. **Spine Heights**: Variable spine heights based on book page count
+4. **Spine Textures**: Add texture patterns to spines for realism
+
 ## Future Enhancements
 
 The structure is prepared for:

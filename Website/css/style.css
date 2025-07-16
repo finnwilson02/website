@@ -283,26 +283,29 @@ body {
 .contact-banner {
   text-align: center;
   padding: 20px;
-  background-color: #f8f9fa;
-  border-top: 1px solid #ddd;
+  background-color: #333; /* A consistent, modern dark grey */
+  border: none;
 }
 
-/* Ensure no bullet points or unwanted styling in contact area */
+/* Force all children to inherit the background color to fix the "stripes" bug */
+.contact-banner,
+.contact-banner *,
+.contact-banner > div,
 .contact-banner ul,
-.contact-banner ol {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.contact-banner li {
-  list-style: none;
+.contact-banner ol,
+.contact-banner li,
+.contact-banner a {
+  background: inherit !important;
+  border: none !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .banner-header {
   font-size: 14px;
-  color: #666;
-  margin-bottom: 15px;
+  color: #000;
+  margin-bottom: 23px !important; /* Increased spacing by ~50% */
   font-weight: 500;
 }
 
@@ -320,10 +323,9 @@ body {
 }
 
 .social-icons a {
-  display: inline-block;
-  padding: 4px;
+  display: inline-block !important; /* Restore display property */
+  padding: 4px !important; /* Restore padding */
   border-radius: 4px;
-  background-color: transparent;
   transition: transform 0.2s ease;
 }
 
@@ -339,7 +341,7 @@ body {
 @media (max-width: 768px) {
   .banner-header {
     font-size: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 15px !important; /* Increased spacing by ~50% */
   }
   
   .social-icons {
@@ -352,7 +354,7 @@ body {
   }
   
   .social-icons a {
-    padding: 6px;
+    padding: 6px !important; /* Restore padding */
   }
 }
   

@@ -29,6 +29,7 @@ const titleColorInput = document.getElementById('titleColor');
 const authorColorInput = document.getElementById('authorColor');
 const ratingInput = document.getElementById('rating');
 const genreInput = document.getElementById('genre');
+const bookTypeInput = document.getElementById('bookType');
 const datesReadInput = document.getElementById('datesRead');
 const reviewInput = document.getElementById('review');
 const saveBookBtn = document.getElementById('saveBookBtn');
@@ -735,6 +736,7 @@ function handleEditBook(event) {
     authorColorInput.value = book.authorColor || '#ffffff';
     ratingInput.value = book.rating || '5';
     genreInput.value = book.genre || '';
+    bookTypeInput.value = book.type || 'book';
     datesReadInput.value = book.datesRead || '';
     reviewInput.value = book.review || '';
     
@@ -782,10 +784,11 @@ function resetBookForm() {
     formTitle.textContent = 'Add New Book';
     bookIndex.value = '';
     bookForm.reset();
-    // Set default colors
+    // Set default colors and type
     spineColorInput.value = '#ca0b0b';
     titleColorInput.value = '#ffffff';
     authorColorInput.value = '#ffffff';
+    bookTypeInput.value = 'book';
 }
 
 // Book form submission handler
@@ -801,6 +804,7 @@ if (bookForm) {
             authorColor: authorColorInput.value,
             rating: parseInt(ratingInput.value),
             genre: genreInput.value,
+            type: bookTypeInput.value || 'book',
             datesRead: datesReadInput.value,
             review: reviewInput.value
         };
@@ -4784,11 +4788,11 @@ if (contactCancelButton) {
 // === Homepage Content Management ===
 
 /**
- * Loads homepage content from the server and populates the textarea
+ * Loads homepage content from the server and populates the textarea and image preview
  */
 async function loadHomepage() {
     try {
-        const response = await fetch('/api/data/homepage', {
+        const response = await fetch(`/api/data/homepage?t=${Date.now()}`, {
             credentials: 'include'
         });
         
@@ -4797,11 +4801,30 @@ async function loadHomepage() {
         }
         
         const data = await response.json();
+        console.log('Loaded json:', data); // TEMP LOG
+        
         const homepageTextarea = document.getElementById('homepageContent');
+        const currentImage = document.getElementById('currentImage');
+        const noImageText = document.getElementById('noImageText');
         
         if (homepageTextarea) {
             homepageTextarea.value = data.content || '';
         }
+        
+        // Update image preview
+        if (data.image && data.image.trim() !== '') {
+            currentImage.src = `img/${data.image}`;
+            currentImage.style.display = 'block';
+            noImageText.style.display = 'none';
+            console.log('Image found in data:', data.image); // TEMP LOG
+        } else {
+            currentImage.style.display = 'none';
+            noImageText.style.display = 'block';
+            console.warn('Image missing in loaded data'); // TEMP LOG
+        }
+        
+        // Store current image for later use
+        window.currentHomepageImage = data.image || '';
         
         console.log('Homepage content loaded successfully');
     } catch (error) {
@@ -4821,12 +4844,15 @@ async function saveHomepage() {
         }
         
         const content = homepageTextarea.value;
+        const image = window.currentHomepageImage || '';
+        
+        console.log('Saving homepage with image:', image); // TEMP LOG
         
         const response = await fetch('/api/save/homepage', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ content })
+            body: JSON.stringify({ content, image })
         });
         
         if (!response.ok) {
@@ -4834,8 +4860,14 @@ async function saveHomepage() {
             throw new Error(errorData.error || 'Failed to save homepage content');
         }
         
+        const result = await response.json();
+        console.log('Server response:', result); // TEMP LOG
+        
         showNotification('Homepage content saved successfully!', 'success');
         console.log('Homepage content saved successfully');
+        
+        // Reload homepage data to refresh preview
+        await loadHomepage();
     } catch (error) {
         console.error('Error saving homepage content:', error);
         showNotification('Error saving homepage content: ' + error.message, 'error');
@@ -4876,6 +4908,107 @@ function previewHomepage() {
     }
 }
 
+/**
+ * Handles homepage image upload
+ */
+async function uploadHomepageImage() {
+    try {
+        const fileInput = document.getElementById('homepageImageUpload');
+        if (!fileInput || !fileInput.files[0]) {
+            throw new Error('Please select an image file first');
+        }
+        
+        const file = fileInput.files[0];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            throw new Error('Please select a valid image file');
+        }
+        
+        // Validate file size (max 5MB) - check before upload
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification('Image too large (max 5MB)', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('uploadedImage', file); // match server field
+        
+        showNotification('Uploading image...', 'info');
+        
+        const response = await fetch('/api/upload/image', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            let errorMessage = 'Failed to upload image';
+            try {
+                const errorData = await response.json();
+                if (errorData.error) {
+                    errorMessage = errorData.error;
+                    // Provide specific message for field mismatch
+                    if (errorData.error.includes('Unexpected field')) {
+                        errorMessage = 'Upload failed: Field mismatch with server';
+                    }
+                }
+            } catch (parseError) {
+                // If response isn't JSON, use default message
+            }
+            throw new Error(errorMessage);
+        }
+        
+        const data = await response.json();
+        console.log('Upload successful, response:', data); // TEMP LOG
+        
+        // Update current image tracking
+        window.currentHomepageImage = data.filename;
+        
+        // Update preview
+        const currentImage = document.getElementById('currentImage');
+        const noImageText = document.getElementById('noImageText');
+        
+        currentImage.src = `img/${data.filename}`;
+        currentImage.style.display = 'block';
+        noImageText.style.display = 'none';
+        
+        // Clear file input
+        fileInput.value = '';
+        
+        showNotification('Image uploaded successfully!', 'success');
+        console.log('Homepage image uploaded:', data.filename);
+        
+        // Save to homepage.json immediately after upload
+        try {
+            const homepageContent = document.getElementById('homepageContent').value || '';
+            const saveResponse = await fetch('/api/save/homepage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    content: homepageContent,
+                    image: data.filename 
+                })
+            });
+            
+            if (!saveResponse.ok) {
+                throw new Error('Failed to save image to homepage data');
+            }
+            
+            console.log(`Updated homepage.json image: ${data.filename}`); // TEMP LOG
+            showNotification('Image saved to homepage!', 'success');
+        } catch (saveError) {
+            console.error('Error saving image to homepage:', saveError);
+            showNotification('Image uploaded but not saved to homepage', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('Error uploading homepage image:', error);
+        showNotification('Error uploading image: ' + error.message, 'error');
+    }
+}
+
 // Homepage Save button event listener
 const saveHomepageButton = document.getElementById('saveHomepage');
 if (saveHomepageButton) {
@@ -4887,6 +5020,31 @@ const previewHomepageButton = document.getElementById('previewHomepage');
 if (previewHomepageButton) {
     previewHomepageButton.addEventListener('click', previewHomepage);
 }
+
+// Homepage Image Upload button event listener
+const uploadImageButton = document.getElementById('uploadImageBtn');
+if (uploadImageButton) {
+    uploadImageButton.addEventListener('click', uploadHomepageImage);
+}
+
+// Auto-reload homepage data when tab becomes visible
+let currentActiveTab = 'bookManagementSection'; // default tab
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentActiveTab === 'homepageSection') {
+        console.log('Tab became visible, reloading homepage data...'); // TEMP LOG
+        loadHomepage();
+    }
+});
+
+// Track active tab
+document.querySelectorAll('.tab-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        const target = e.target.getAttribute('data-tab-target');
+        if (target) {
+            currentActiveTab = target.substring(1); // remove #
+        }
+    });
+});
 
 // === Separate Header Text Save Functionality ===
 

@@ -14,6 +14,11 @@
     <section id="bookshelf-section">
       <h2>bookshelf</h2>
       <div id="filters">
+        <select id="typeFilter">
+          <option value="all">All</option>
+          <option value="book">Books</option>
+          <option value="movie">Movies</option>
+        </select>
         <select id="genreFilter">
           <option value="all">all genres</option>
         </select>
@@ -32,8 +37,9 @@
           <option value="rating-asc">lowest rated</option>
         </select>
       </div>
-      <div id="books-row" class="books-row"></div>
-      <div id="bookshelf"></div>
+      <div id="bookshelf-container">
+        <!-- Shelves will be dynamically created here -->
+      </div>
     </section>
   </main>
 
