@@ -1,5 +1,0 @@
-{
-  "programming": ["C", "C++", "Python", "Assembly", "R", "MATLAB", "Solidity", "Verilog", "JavaScript", "AutoHotkey"],
-  "software": ["Git", "LaTeX", "Arduino", "Raspberry Pi OS", "ROS", "SolidWorks", "Altium", "Ubuntu", "TensorFlow", "PyTorch", "FreeRTOS", "ZeroMQ"],
-  "technical": ["3D Printing", "Electronics/Mechanical Prototyping", "CAD", "Sensors", "Digital Signal Processing", "Microcontrollers", "Orbital Mechanics", "Bayesian Statistics", "Linear Algebra", "Machine Learning", "PCB Design", "Systems Control/Design", "Acoustics"]
-}

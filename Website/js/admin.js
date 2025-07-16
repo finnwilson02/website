@@ -205,7 +205,11 @@ async function uploadFile(fileInputId) {
     }
 }
 
-// Helper function for showing notifications
+/**
+ * Shows a notification message to the user
+ * @param {string} message - The message to display
+ * @param {string} type - Type of notification: 'success', 'error', 'warning', or 'info'
+ */
 function showNotification(message, type = 'info') {
   if (!notificationArea) return;
   
@@ -276,7 +280,10 @@ function showNotification(message, type = 'info') {
   }
 }
 
-// Helper function to show/hide loading indicator
+/**
+ * Shows or hides the loading indicator
+ * @param {boolean} show - Whether to show (true) or hide (false) the loading indicator
+ */
 function toggleLoading(show) {
   if (loadingIndicator) {
     loadingIndicator.style.display = show ? 'flex' : 'none';
@@ -504,6 +511,16 @@ function setupTabNavigation() {
                         // If not initialized, try initializing now
                         initializeMarkdownEditor();
                     }
+                }
+                
+                // Special case: Load contact details if the Contact Details tab becomes active
+                if (targetPaneSelector === '#contactDetailsSection') {
+                    loadContactDetails();
+                }
+                
+                // Special case: Load homepage content if the Homepage Content tab becomes active
+                if (targetPaneSelector === '#homepageSection') {
+                    loadHomepage();
                 }
                 
                 // Refresh page content editors if CV or Research tab becomes active
@@ -1832,12 +1849,14 @@ async function loadProjects() {
             projects = Array.isArray(data) ? data : [];
         }
         renderProjectList();
+        // Set up skills autocomplete after loading projects
+        await setupSkillsAutocomplete();
     } catch (error) {
         console.error("Could not load projects:", error);
         showNotification("Error loading projects: " + error.message, 'error');
         projects = []; // Use empty array
         if (projectTableBody) {
-            projectTableBody.innerHTML = `<tr><td colspan="3">Error loading projects. Check console or ensure 'data/projects.json' exists and is valid JSON. ${error.message}</td></tr>`;
+            projectTableBody.innerHTML = `<tr><td colspan="4">Error loading projects. Check console or ensure 'data/projects.json' exists and is valid JSON. ${error.message}</td></tr>`;
         }
     } finally {
         toggleLoading(false);
@@ -1855,7 +1874,7 @@ function renderProjectList() {
     console.log(`DEBUG renderProjectList: Projects array length: ${projects.length}`);
     if (projects.length === 0) {
         console.log("DEBUG renderProjectList: No projects found");
-        projectTableBody.innerHTML = '<tr><td colspan="3">No projects found. Use "Generate Projects JSON" to create initial data.</td></tr>';
+        projectTableBody.innerHTML = '<tr><td colspan="4">No projects found. Use "Generate Projects JSON" to create initial data.</td></tr>';
         return;
     }
     
@@ -1864,6 +1883,14 @@ function renderProjectList() {
         console.log(`DEBUG renderProjectList: Project image path: "${project.image}"`);
         
         const row = projectTableBody.insertRow();
+        row.className = 'sortable-row';
+        row.dataset.id = project.id || `project-${index}`;
+        
+        // Add drag handle
+        const dragCell = row.insertCell();
+        dragCell.className = 'drag-handle';
+        dragCell.innerHTML = '☰';
+        
         row.insertCell().textContent = project.title || 'N/A';
         row.insertCell().textContent = project.status || 'N/A';
         const actionsCell = row.insertCell();
@@ -1881,6 +1908,68 @@ function renderProjectList() {
     document.querySelectorAll('.delete-project-btn').forEach(button => {
         button.addEventListener('click', handleDeleteProject);
     });
+    
+    // Initialize sortable on the project table
+    initializeProjectSortable();
+}
+
+/**
+ * Initializes sortable functionality on the project table.
+ */
+function initializeProjectSortable() {
+    if (typeof Sortable === 'undefined') {
+        console.warn('Sortable.js not loaded, skipping project sortable initialization');
+        return;
+    }
+    
+    const tbody = document.getElementById('projectTableBody');
+    if (!tbody) return;
+    
+    new Sortable(tbody, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: handleProjectReorder
+    });
+}
+
+/**
+ * Handles project reorder after drag.
+ * @param {Event} evt - Sortable event object
+ */
+async function handleProjectReorder(evt) {
+    // Collect current row order
+    const rows = Array.from(projectTableBody.querySelectorAll('tr'));
+    const reorderedData = rows.map((row, idx) => ({
+        id: row.dataset.id,
+        idx: idx
+    }));
+    
+    try {
+        const response = await fetch('/api/projects/reorder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(reorderedData)
+        });
+        
+        if (response.ok) {
+            showNotification('Project order saved successfully', 'success');
+            // Reload projects to sync with server
+            await loadProjects();
+        } else {
+            const error = await response.json();
+            showNotification('Failed to save project order: ' + (error.error || 'Unknown error'), 'error');
+            // Reload to restore original order
+            await loadProjects();
+        }
+    } catch (error) {
+        console.error('Error reordering projects:', error);
+        showNotification('Error saving project order: ' + error.message, 'error');
+        // Reload to restore original order
+        await loadProjects();
+    }
 }
 
 function handleEditProject(event) {
@@ -1898,9 +1987,13 @@ function handleEditProject(event) {
     document.getElementById('projectFile').value = null;
     
     projectSummaryInput.value = project.summary || '';
+    // Populate CV Summary - use cvSummary if available, otherwise fall back to general summary
+    document.getElementById('projectCvSummary').value = project.cvSummary || project.summary || '';
     projectRoleInput.value = project.role || '';
     projectSkillsInput.value = Array.isArray(project.skills) ? project.skills.join(', ') : '';
     projectStatusInput.value = project.status || '';
+    // Set showOnCv checkbox - default to true if not specified
+    document.getElementById('projectShowOnCv').checked = project.showOnCv !== false;
     
     // Populate dynamic links
     projectLinksContainer.innerHTML = ''; // Clear existing rows first
@@ -2066,10 +2159,12 @@ if (projectForm) {
                 title: projectTitleInput.value,
                 image: imageFilename, // Just storing the filename
                 summary: projectSummaryInput.value,
+                cvSummary: document.getElementById('projectCvSummary').value || '', // Add CV-specific summary
                 role: projectRoleInput.value,
                 skills: skillsArray,
                 links: collectedLinks,
                 status: projectStatusInput.value,
+                showOnCv: document.getElementById('projectShowOnCv').checked, // Add CV visibility flag
                 fullWidth: fullWidth, // Add width from hidden input
                 fullHeight: fullHeight, // Add height from hidden input
                 detailMarkdown: markdownContent
@@ -2126,6 +2221,80 @@ if (projectCancelButton) {
     projectCancelButton.addEventListener('click', resetProjectForm);
 }
 
+/**
+ * Sets up autocomplete for project skills input using allSkillsCache.
+ */
+async function setupSkillsAutocomplete() {
+    try {
+        // Fetch skills data to get allSkillsCache
+        const response = await fetch('/api/data/cv/skills', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            console.warn('Could not fetch skills for autocomplete');
+            return;
+        }
+        
+        const skillsData = await response.json();
+        const allSkills = skillsData.allSkillsCache || [];
+        
+        // Create or update datalist
+        let datalist = document.getElementById('skillsSuggestions');
+        if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = 'skillsSuggestions';
+            document.body.appendChild(datalist);
+        }
+        
+        // Clear existing options
+        datalist.innerHTML = '';
+        
+        // Add options for each skill
+        allSkills.forEach(skill => {
+            const option = document.createElement('option');
+            option.value = skill;
+            datalist.appendChild(option);
+        });
+        
+        // Set the datalist on all skill inputs
+        const skillInputs = [
+            document.getElementById('projectSkills'),
+            document.getElementById('workSkills'),
+            document.getElementById('researchSkills')
+        ];
+        
+        skillInputs.forEach(skillsInput => {
+            if (skillsInput) {
+                skillsInput.setAttribute('list', 'skillsSuggestions');
+                
+                // Add custom autocomplete for comma-separated values
+                skillsInput.addEventListener('input', function(e) {
+                    const value = e.target.value;
+                    const parts = value.split(',');
+                    const lastPart = parts[parts.length - 1].trim();
+                    
+                    if (lastPart.length > 0) {
+                        // Filter suggestions based on the last part
+                        datalist.innerHTML = '';
+                        allSkills
+                            .filter(skill => skill.toLowerCase().startsWith(lastPart.toLowerCase()))
+                            .forEach(skill => {
+                                const option = document.createElement('option');
+                                // Set value to complete the current input
+                                const prefix = parts.slice(0, -1).join(', ');
+                                option.value = prefix ? prefix + ', ' + skill : skill;
+                                datalist.appendChild(option);
+                            });
+                    }
+                });
+            }
+        });
+    } catch (error) {
+        console.error('Error setting up skills autocomplete:', error);
+    }
+}
+
 // Manual save section has been removed as we now save directly to the API
 
 // CV Management Functions
@@ -2166,7 +2335,6 @@ async function loadCvData() {
         renderCvEducationTable();
         renderCvWorkTable();
         renderCvResearchTable();
-        renderCvProjectsTable();
         renderCvSkillsForm();
         renderCvAchievementsTable();
         renderCvPositionsTable();
@@ -2237,7 +2405,11 @@ async function saveCvData(section, data, buttonElement = null) {
     return await saveData(`cv/${section}`, data, buttonElement);
 }
 
-// Helper function to setup CV sub-tab navigation
+// CV Sub-Tab Handling
+
+/**
+ * Sets up the CV sub-tab navigation
+ */
 function setupCvTabNavigation() {
     const cvTabNav = document.querySelector('.cv-tab-nav');
     
@@ -2419,6 +2591,7 @@ function handleEditWork(event) {
     document.getElementById('workCompany').value = item.company || '';
     document.getElementById('workDates').value = item.dates || '';
     document.getElementById('workDescription').value = item.description || '';
+    document.getElementById('workSkills').value = (item.skills || []).join(', ');
     
     document.getElementById('workSubmitButton').textContent = 'Update Entry';
     document.getElementById('workCancelButton').style.display = 'inline-block';
@@ -2464,7 +2637,9 @@ if (workForm) {
             title: document.getElementById('workTitle').value,
             company: document.getElementById('workCompany').value,
             dates: document.getElementById('workDates').value,
-            description: document.getElementById('workDescription').value
+            description: document.getElementById('workDescription').value,
+            skills: document.getElementById('workSkills').value
+                .split(',').map(s => s.trim()).filter(s => s)
         };
         
         const editIndex = document.getElementById('workEditIndex').value;
@@ -2533,6 +2708,7 @@ function handleEditResearch(event) {
     document.getElementById('researchOrganization').value = item.organization || '';
     document.getElementById('researchDates').value = item.dates || '';
     document.getElementById('researchDescription').value = item.description || '';
+    document.getElementById('researchSkills').value = (item.skills || []).join(', ');
     
     document.getElementById('researchSubmitButton').textContent = 'Update Entry';
     document.getElementById('researchCancelButton').style.display = 'inline-block';
@@ -2578,7 +2754,9 @@ if (researchForm) {
             title: document.getElementById('researchTitle').value,
             organization: document.getElementById('researchOrganization').value,
             dates: document.getElementById('researchDates').value,
-            description: document.getElementById('researchDescription').value
+            description: document.getElementById('researchDescription').value,
+            skills: document.getElementById('researchSkills').value
+                .split(',').map(s => s.trim()).filter(s => s)
         };
         
         const editIndex = document.getElementById('researchEditIndex').value;
@@ -2608,160 +2786,238 @@ if (researchCancelButton) {
     researchCancelButton.addEventListener('click', resetResearchForm);
 }
 
-// --- Projects Management ---
-function renderCvProjectsTable() {
-    const tableBody = document.getElementById('cvProjectsTableBody');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = '';
-    
-    cvProjects.forEach((item, index) => {
-        const row = tableBody.insertRow();
-        row.insertCell().textContent = item.title || 'N/A';
-        row.insertCell().textContent = item.dates || 'N/A';
-        
-        const actionsCell = row.insertCell();
-        actionsCell.innerHTML = `
-            <button data-index="${index}" class="edit-cvprojects-btn">Edit</button>
-            <button data-index="${index}" class="delete-cvprojects-btn">Delete</button>
-        `;
-    });
-    
-    // Add event listeners
-    document.querySelectorAll('.edit-cvprojects-btn').forEach(btn => {
-        btn.addEventListener('click', handleEditCvProjects);
-    });
-    
-    document.querySelectorAll('.delete-cvprojects-btn').forEach(btn => {
-        btn.addEventListener('click', handleDeleteCvProjects);
-    });
-}
-
-function handleEditCvProjects(event) {
-    const index = event.target.dataset.index;
-    const item = cvProjects[index];
-    
-    document.getElementById('cvProjectsEditIndex').value = index;
-    document.getElementById('cvProjectsTitle').value = item.title || '';
-    document.getElementById('cvProjectsDates').value = item.dates || '';
-    document.getElementById('cvProjectsDescription').value = item.description || '';
-    
-    document.getElementById('cvProjectsSubmitButton').textContent = 'Update Entry';
-    document.getElementById('cvProjectsCancelButton').style.display = 'inline-block';
-    
-    document.getElementById('cvProjectsForm').scrollIntoView({ behavior: 'smooth' });
-}
-
-async function handleDeleteCvProjects(event) {
-    const index = parseInt(event.target.dataset.index);
-    const item = cvProjects[index];
-    
-    if (confirm(`Are you sure you want to delete the project entry "${item.title || 'Unknown Project'}"?`)) {
-        const updatedProjects = [...cvProjects];
-        updatedProjects.splice(index, 1);
-        
-        const isSuccess = await saveCvData('projects', updatedProjects);
-        
-        if (isSuccess) {
-            cvProjects = updatedProjects;
-            renderCvProjectsTable();
-            
-            if (parseInt(document.getElementById('cvProjectsEditIndex').value) === index) {
-                resetCvProjectsForm();
-            }
-        }
-    }
-}
-
-function resetCvProjectsForm() {
-    document.getElementById('cvProjectsEditIndex').value = '-1';
-    document.getElementById('cvProjectsForm').reset();
-    document.getElementById('cvProjectsSubmitButton').textContent = 'Add Entry';
-    document.getElementById('cvProjectsCancelButton').style.display = 'none';
-}
-
-// CV Projects form submit handler
-const cvProjectsForm = document.getElementById('cvProjectsForm');
-if (cvProjectsForm) {
-    cvProjectsForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
-        
-        const formData = {
-            title: document.getElementById('cvProjectsTitle').value,
-            dates: document.getElementById('cvProjectsDates').value,
-            description: document.getElementById('cvProjectsDescription').value
-        };
-        
-        const editIndex = document.getElementById('cvProjectsEditIndex').value;
-        const index = editIndex === '-1' ? -1 : parseInt(editIndex);
-        
-        const updatedProjects = [...cvProjects];
-        
-        if (index === -1) {
-            updatedProjects.unshift(formData);
-        } else {
-            updatedProjects[index] = formData;
-        }
-        
-        const isSuccess = await saveCvData('projects', updatedProjects);
-        
-        if (isSuccess) {
-            cvProjects = updatedProjects;
-            renderCvProjectsTable();
-            resetCvProjectsForm();
-        }
-    });
-}
-
-// CV Projects cancel button
-const cvProjectsCancelButton = document.getElementById('cvProjectsCancelButton');
-if (cvProjectsCancelButton) {
-    cvProjectsCancelButton.addEventListener('click', resetCvProjectsForm);
-}
-
 // --- Skills Management ---
-function renderCvSkillsForm() {
-    const programmingSkillsInput = document.getElementById('programmingSkills');
-    const softwareSkillsInput = document.getElementById('softwareSkills');
-    const technicalSkillsInput = document.getElementById('technicalSkills');
-    
-    if (programmingSkillsInput) {
-        programmingSkillsInput.value = cvSkills.programming ? cvSkills.programming.join(', ') : '';
-    }
-    
-    if (softwareSkillsInput) {
-        softwareSkillsInput.value = cvSkills.software ? cvSkills.software.join(', ') : '';
-    }
-    
-    if (technicalSkillsInput) {
-        technicalSkillsInput.value = cvSkills.technical ? cvSkills.technical.join(', ') : '';
+let skillSortables = []; // Store sortable instances
+
+/**
+ * Loads and renders skills with drag init.
+ */
+async function loadSkills() {
+    try {
+        const response = await fetch('/api/data/cv/skills', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load skills: ${response.statusText}`);
+        }
+        
+        cvSkills = await response.json();
+        renderSkills();
+    } catch (error) {
+        console.error('Error loading skills:', error);
+        showNotification('Failed to load skills: ' + error.message, 'error');
     }
 }
 
-// Skills form submit handler
-const skillsForm = document.getElementById('skillsForm');
-if (skillsForm) {
-    skillsForm.addEventListener('submit', async function(event) {
+/**
+ * Renders skill boxes in their respective categories.
+ */
+function renderSkills() {
+    const categories = ['programming', 'software', 'technical', 'uncategorized'];
+    
+    categories.forEach(category => {
+        const container = document.querySelector(`#${category}Skills .skills-list`);
+        if (!container) return;
+        
+        // Clear existing content
+        container.innerHTML = '';
+        
+        // Get skills for this category
+        const skills = cvSkills[category] || [];
+        
+        // Render each skill
+        skills.forEach(skill => {
+            const skillBox = document.createElement('div');
+            skillBox.className = 'skill-box';
+            
+            // Handle both string and object formats
+            let projects = [];
+            if (typeof skill === 'string') {
+                skillBox.textContent = skill;
+                skillBox.dataset.name = skill;
+                skillBox.dataset.projects = '';
+            } else if (skill && skill.name) {
+                skillBox.textContent = skill.name;
+                skillBox.dataset.name = skill.name;
+                projects = skill.projects || [];
+                skillBox.dataset.projects = projects.join(',');
+            }
+            
+            // Add color coding based on skill source
+            if (skill.source === 'role') {
+                skillBox.classList.add('skill-role-only');
+            } else if (projects.length > 0) {
+                skillBox.classList.add('skill-derived');
+            } else {
+                skillBox.classList.add('skill-manual');
+            }
+            
+            container.appendChild(skillBox);
+        });
+    });
+    
+    initializeSkillSortables();
+}
+
+/**
+ * Initializes sortable on all skill categories.
+ */
+function initializeSkillSortables() {
+    if (typeof Sortable === 'undefined') {
+        console.warn('Sortable.js not loaded, skipping skills sortable initialization');
+        return;
+    }
+    
+    // Clean up existing sortables
+    skillSortables.forEach(sortable => sortable.destroy());
+    skillSortables = [];
+    
+    const categories = ['programming', 'software', 'technical', 'uncategorized'];
+    
+    categories.forEach(category => {
+        const container = document.querySelector(`#${category}Skills .skills-list`);
+        if (!container) return;
+        
+        const sortable = new Sortable(container, {
+            group: 'skills', // Shared group allows cross-category dragging
+            animation: 150,
+            onAdd: handleSkillMove,
+            onSort: handleSkillMove // Also handle reordering within same category
+        });
+        
+        skillSortables.push(sortable);
+    });
+}
+
+/**
+ * Handles skill move between categories.
+ * @param {Event} evt - Sortable event
+ */
+async function handleSkillMove(evt) {
+    // Reconstruct the skills data from DOM
+    const updatedSkills = {
+        programming: [],
+        software: [],
+        technical: [],
+        uncategorized: [],
+        allSkillsCache: cvSkills.allSkillsCache || []
+    };
+    
+    const categories = ['programming', 'software', 'technical', 'uncategorized'];
+    
+    categories.forEach(category => {
+        const container = document.querySelector(`#${category}Skills .skills-list`);
+        if (!container) return;
+        
+        const skillBoxes = container.querySelectorAll('.skill-box');
+        updatedSkills[category] = Array.from(skillBoxes).map(box => ({
+            name: box.dataset.name,
+            projects: box.dataset.projects ? box.dataset.projects.split(',').filter(p => p) : []
+        }));
+    });
+    
+    // Save to server
+    try {
+        const response = await fetch('/api/save/cv/skills', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(updatedSkills)
+        });
+        
+        if (response.ok) {
+            showNotification('Skills updated successfully', 'success');
+            cvSkills = updatedSkills;
+        } else {
+            const error = await response.json();
+            showNotification('Failed to save skills: ' + (error.error || 'Unknown error'), 'error');
+            // Reload to restore original state
+            await loadSkills();
+        }
+    } catch (error) {
+        console.error('Error saving skills:', error);
+        showNotification('Error saving skills: ' + error.message, 'error');
+        // Reload to restore original state
+        await loadSkills();
+    }
+}
+
+// Add skill form handler
+const addSkillForm = document.getElementById('addSkillForm');
+if (addSkillForm) {
+    addSkillForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         
-        const programmingSkills = document.getElementById('programmingSkills').value.split(',').map(s => s.trim()).filter(s => s);
-        const softwareSkills = document.getElementById('softwareSkills').value.split(',').map(s => s.trim()).filter(s => s);
-        const technicalSkills = document.getElementById('technicalSkills').value.split(',').map(s => s.trim()).filter(s => s);
+        const name = document.getElementById('newSkillName').value.trim();
+        const category = document.getElementById('newSkillCategory').value;
+        const projectsInput = document.getElementById('newSkillProjects').value;
+        const projects = projectsInput ? projectsInput.split(',').map(p => p.trim()).filter(p => p) : [];
         
-        const updatedSkills = {
-            programming: programmingSkills,
-            software: softwareSkills,
-            technical: technicalSkills
-        };
+        if (!name) {
+            showNotification('Please enter a skill name', 'error');
+            return;
+        }
         
-        const submitButton = document.getElementById('saveSkillsButton');
-        const isSuccess = await saveCvData('skills', updatedSkills, submitButton);
+        // Add to the appropriate category
+        if (!cvSkills[category]) {
+            cvSkills[category] = [];
+        }
         
-        if (isSuccess) {
-            cvSkills = updatedSkills;
-            // Notification shown by saveData function
+        // Check if skill already exists
+        const exists = cvSkills[category].some(skill => 
+            (typeof skill === 'string' && skill === name) ||
+            (skill && skill.name === name)
+        );
+        
+        if (exists) {
+            showNotification('Skill already exists in this category', 'warning');
+            return;
+        }
+        
+        // Add the new skill
+        cvSkills[category].push({
+            name: name,
+            projects: projects
+        });
+        
+        // Save to server
+        try {
+            const response = await fetch('/api/save/cv/skills', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(cvSkills)
+            });
+            
+            if (response.ok) {
+                showNotification('Skill added successfully', 'success');
+                // Clear form
+                addSkillForm.reset();
+                // Re-render skills
+                renderSkills();
+            } else {
+                const error = await response.json();
+                showNotification('Failed to add skill: ' + (error.error || 'Unknown error'), 'error');
+                // Remove the added skill
+                cvSkills[category].pop();
+            }
+        } catch (error) {
+            console.error('Error adding skill:', error);
+            showNotification('Error adding skill: ' + error.message, 'error');
+            // Remove the added skill
+            cvSkills[category].pop();
         }
     });
+}
+
+// Replace the old renderCvSkillsForm with a call to loadSkills
+function renderCvSkillsForm() {
+    loadSkills();
 }
 
 // --- Achievements Management ---
@@ -3595,7 +3851,11 @@ if (addPatentLinkButton) {
 
 // --- Generic Research Entry Form Functions ---
 
-// Show the form for adding or editing a research entry
+/**
+ * Shows the form for adding or editing a research entry
+ * @param {string} type - Type of research entry: 'journal', 'conference', or 'patent'
+ * @param {number} index - Index of the entry to edit, or -1 for a new entry
+ */
 function showResearchEntryForm(type, index = -1) {
     // Get form and relevant data
     const formId = `research${type.charAt(0).toUpperCase() + type.slice(1)}Form`;
@@ -4208,3 +4468,471 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// === Contact Banner Management ===
+
+let contactData = [];
+let contactSortable = null;
+
+/**
+ * Loads and renders contact banner items with sortable functionality.
+ */
+async function loadContactDetails() {
+    try {
+        const response = await fetch('/api/data/contactBanner', {
+            credentials: 'include'
+        });
+        
+        if (response.status === 404) {
+            // File doesn't exist, create empty structure
+            contactData = { headerText: '', items: [] };
+        } else if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        } else {
+            const data = await response.json();
+            // Handle both old array format and new object format
+            if (Array.isArray(data)) {
+                contactData = { headerText: '', items: data };
+            } else {
+                contactData = data;
+            }
+        }
+        
+        // Load headerText into form
+        const headerTextElement = document.getElementById('contactHeaderText');
+        if (headerTextElement) {
+            headerTextElement.value = contactData.headerText || '';
+        }
+        
+        renderContactTable();
+        initializeContactSortable();
+    } catch (error) {
+        console.error('Error loading contact details:', error);
+        showNotification('Error loading contact details: ' + error.message, 'error');
+        contactData = { headerText: '', items: [] };
+        renderContactTable();
+    }
+}
+
+/**
+ * Renders the contact items table.
+ */
+function renderContactTable() {
+    const tableBody = document.getElementById('contactTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    // Ensure contactData has items array
+    const items = contactData.items || [];
+    
+    // Sort by order
+    const sortedContacts = [...items].sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    sortedContacts.forEach((item, index) => {
+        const row = tableBody.insertRow();
+        row.className = 'sortable-row';
+        row.dataset.order = item.order || index;
+        
+        // Drag handle
+        const dragCell = row.insertCell();
+        dragCell.innerHTML = '<span class="drag-handle">⋮⋮</span>';
+        
+        // Icon
+        const iconCell = row.insertCell();
+        iconCell.innerHTML = `<img src="icons/${item.icon}" alt="${item.label || 'Icon'}" style="width: 24px; height: 24px;">`;
+        
+        // Link
+        const linkCell = row.insertCell();
+        linkCell.innerHTML = `<a href="${item.link}" target="_blank">${item.label || item.link}</a>`;
+        
+        // Actions
+        const actionsCell = row.insertCell();
+        actionsCell.innerHTML = `
+            <button class="admin-small-button edit-contact-btn" data-index="${index}">Edit</button>
+            <button class="admin-small-button delete-contact-btn" data-index="${index}">Delete</button>
+        `;
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.edit-contact-btn').forEach(btn => {
+        btn.addEventListener('click', handleEditContact);
+    });
+    
+    document.querySelectorAll('.delete-contact-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeleteContact);
+    });
+}
+
+/**
+ * Initializes sortable functionality for contact table.
+ */
+function initializeContactSortable() {
+    if (typeof Sortable === 'undefined') {
+        console.warn('Sortable.js not loaded, skipping contact sortable initialization');
+        return;
+    }
+    
+    // Clean up existing sortable
+    if (contactSortable) {
+        contactSortable.destroy();
+    }
+    
+    const tableBody = document.getElementById('contactTableBody');
+    if (!tableBody) return;
+    
+    contactSortable = new Sortable(tableBody, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: async function(evt) {
+            // Update order based on new positions
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            const reorderedItems = rows.map((row, index) => {
+                const originalIndex = parseInt(row.querySelector('.edit-contact-btn').dataset.index);
+                const item = { ...contactData.items[originalIndex] };
+                item.order = index;
+                return item;
+            });
+            
+            // Save reordered data with headerText preserved
+            const updatedData = {
+                headerText: contactData.headerText || '',
+                items: reorderedItems
+            };
+            
+            try {
+                const response = await fetch('/api/save/contactBanner', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(updatedData)
+                });
+                
+                if (response.ok) {
+                    contactData = updatedData;
+                    showNotification('Contact items reordered successfully!', 'success');
+                } else {
+                    throw new Error('Failed to save reordered contact items');
+                }
+            } catch (error) {
+                console.error('Error saving reordered contact items:', error);
+                showNotification('Error saving reordered contact items', 'error');
+                // Reload to reset order
+                loadContactDetails();
+            }
+        }
+    });
+}
+
+/**
+ * Handles editing a contact item.
+ */
+function handleEditContact(event) {
+    const index = parseInt(event.target.dataset.index);
+    const item = contactData.items[index];
+    
+    document.getElementById('contactEditIndex').value = index;
+    document.getElementById('contactLink').value = item.link || '';
+    document.getElementById('contactLabel').value = item.label || '';
+    
+    document.getElementById('contactSubmitButton').textContent = 'Update Contact Item';
+    document.getElementById('contactCancelButton').style.display = 'inline-block';
+    
+    document.getElementById('contactForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+/**
+ * Handles deleting a contact item.
+ */
+async function handleDeleteContact(event) {
+    const index = parseInt(event.target.dataset.index);
+    const item = contactData.items[index];
+    
+    if (confirm(`Are you sure you want to delete the ${item.label || 'contact'} item?`)) {
+        try {
+            const updatedItems = contactData.items.filter((_, i) => i !== index);
+            const updatedData = {
+                headerText: contactData.headerText || '',
+                items: updatedItems
+            };
+            
+            const response = await fetch('/api/save/contactBanner', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(updatedData)
+            });
+            
+            if (response.ok) {
+                contactData = updatedData;
+                renderContactTable();
+                initializeContactSortable();
+                showNotification('Contact item deleted successfully!', 'success');
+            } else {
+                throw new Error('Failed to delete contact item');
+            }
+        } catch (error) {
+            console.error('Error deleting contact item:', error);
+            showNotification('Error deleting contact item', 'error');
+        }
+    }
+}
+
+/**
+ * Resets the contact form.
+ */
+function resetContactForm() {
+    document.getElementById('contactEditIndex').value = '-1';
+    document.getElementById('contactForm').reset();
+    document.getElementById('contactSubmitButton').textContent = 'Add Contact Item';
+    document.getElementById('contactCancelButton').style.display = 'none';
+}
+
+// Contact form submit handler
+const contactForm = document.getElementById('contactForm');
+if (contactForm) {
+    contactForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const editIndex = document.getElementById('contactEditIndex').value;
+        const index = editIndex === '-1' ? -1 : parseInt(editIndex);
+        const link = document.getElementById('contactLink').value;
+        const label = document.getElementById('contactLabel').value;
+        const iconFile = document.getElementById('contactIconUpload').files[0];
+        
+        // For editing, use existing icon if no new file is uploaded
+        let iconFilename = '';
+        if (index !== -1 && !iconFile) {
+            iconFilename = contactData.items[index].icon;
+        } else if (iconFile) {
+            // Upload new icon
+            try {
+                const formData = new FormData();
+                formData.append('image', iconFile);
+                
+                const uploadResponse = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload icon');
+                }
+                
+                const uploadResult = await uploadResponse.json();
+                iconFilename = uploadResult.filename;
+            } catch (error) {
+                console.error('Error uploading icon:', error);
+                showNotification('Error uploading icon: ' + error.message, 'error');
+                return;
+            }
+        } else {
+            showNotification('Please select an icon file', 'error');
+            return;
+        }
+        
+        const contactItem = {
+            icon: iconFilename,
+            link: link,
+            label: label,
+            order: index === -1 ? Math.max(...(contactData.items || []).map(c => c.order || 0), -1) + 1 : contactData.items[index].order
+        };
+        
+        const updatedItems = [...(contactData.items || [])];
+        if (index === -1) {
+            updatedItems.push(contactItem);
+        } else {
+            updatedItems[index] = contactItem;
+        }
+        
+        const updatedData = {
+            headerText: contactData.headerText || '',
+            items: updatedItems
+        };
+        
+        try {
+            const response = await fetch('/api/save/contactBanner', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(updatedData)
+            });
+            
+            if (response.ok) {
+                contactData = updatedData;
+                renderContactTable();
+                initializeContactSortable();
+                resetContactForm();
+                showNotification('Contact item saved successfully!', 'success');
+            } else {
+                throw new Error('Failed to save contact item');
+            }
+        } catch (error) {
+            console.error('Error saving contact item:', error);
+            showNotification('Error saving contact item', 'error');
+        }
+    });
+}
+
+// Contact cancel button
+const contactCancelButton = document.getElementById('contactCancelButton');
+if (contactCancelButton) {
+    contactCancelButton.addEventListener('click', resetContactForm);
+}
+
+// === Homepage Content Management ===
+
+/**
+ * Loads homepage content from the server and populates the textarea
+ */
+async function loadHomepage() {
+    try {
+        const response = await fetch('/api/data/homepage', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const homepageTextarea = document.getElementById('homepageContent');
+        
+        if (homepageTextarea) {
+            homepageTextarea.value = data.content || '';
+        }
+        
+        console.log('Homepage content loaded successfully');
+    } catch (error) {
+        console.error('Error loading homepage content:', error);
+        showNotification('Error loading homepage content: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Saves homepage content to the server
+ */
+async function saveHomepage() {
+    try {
+        const homepageTextarea = document.getElementById('homepageContent');
+        if (!homepageTextarea) {
+            throw new Error('Homepage content textarea not found');
+        }
+        
+        const content = homepageTextarea.value;
+        
+        const response = await fetch('/api/save/homepage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ content })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to save homepage content');
+        }
+        
+        showNotification('Homepage content saved successfully!', 'success');
+        console.log('Homepage content saved successfully');
+    } catch (error) {
+        console.error('Error saving homepage content:', error);
+        showNotification('Error saving homepage content: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Previews homepage content by rendering Markdown to HTML
+ */
+function previewHomepage() {
+    try {
+        const homepageTextarea = document.getElementById('homepageContent');
+        const previewDiv = document.getElementById('homepagePreview');
+        
+        if (!homepageTextarea || !previewDiv) {
+            throw new Error('Homepage content elements not found');
+        }
+        
+        const markdownContent = homepageTextarea.value;
+        
+        // Check if marked.js is available
+        if (typeof marked === 'undefined') {
+            throw new Error('Markdown parser (marked.js) not available');
+        }
+        
+        // Parse Markdown to HTML
+        const htmlContent = marked.parse(markdownContent);
+        
+        // Display preview
+        previewDiv.innerHTML = htmlContent;
+        previewDiv.style.display = 'block';
+        
+        showNotification('Homepage preview generated', 'info');
+        console.log('Homepage preview generated');
+    } catch (error) {
+        console.error('Error generating homepage preview:', error);
+        showNotification('Error generating preview: ' + error.message, 'error');
+    }
+}
+
+// Homepage Save button event listener
+const saveHomepageButton = document.getElementById('saveHomepage');
+if (saveHomepageButton) {
+    saveHomepageButton.addEventListener('click', saveHomepage);
+}
+
+// Homepage Preview button event listener
+const previewHomepageButton = document.getElementById('previewHomepage');
+if (previewHomepageButton) {
+    previewHomepageButton.addEventListener('click', previewHomepage);
+}
+
+// === Separate Header Text Save Functionality ===
+
+/**
+ * Saves only the header text without affecting contact items
+ */
+async function saveContactHeader() {
+    try {
+        const headerTextElement = document.getElementById('contactHeaderText');
+        if (!headerTextElement) {
+            throw new Error('Header text element not found');
+        }
+        
+        const headerText = headerTextElement.value || '';
+        
+        // Preserve existing items, only update headerText
+        const updatedData = {
+            headerText: headerText,
+            items: contactData.items || []
+        };
+        
+        const response = await fetch('/api/save/contactBanner', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(updatedData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to save header text');
+        }
+        
+        // Update local data
+        contactData.headerText = headerText;
+        
+        showNotification('Header text saved successfully!', 'success');
+        console.log('Header text saved successfully');
+    } catch (error) {
+        console.error('Error saving header text:', error);
+        showNotification('Error saving header text: ' + error.message, 'error');
+    }
+}
+
+// Header Save button event listener
+const saveHeaderButton = document.getElementById('saveHeaderBtn');
+if (saveHeaderButton) {
+    saveHeaderButton.addEventListener('click', saveContactHeader);
+}

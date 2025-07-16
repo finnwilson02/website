@@ -34,6 +34,35 @@
     border-top: 2px solid #99caff;
 }
 
+/* General sortable row styling */
+.sortable-row {
+    cursor: grab;
+}
+
+.sortable-row:active {
+    cursor: grabbing;
+    opacity: 0.6;
+}
+
+.sortable-row.dragging-over {
+    background-color: #e0f0ff;
+    border-top: 2px solid #99caff;
+}
+
+/* Drag handle styling */
+.drag-handle {
+    cursor: move;
+    width: 20px;
+    text-align: center;
+    color: #666;
+    font-size: 1.2em;
+    padding: 5px;
+}
+
+.drag-handle:hover {
+    color: #333;
+}
+
 /* Small button styling for admin interface */
 .admin-small-button {
     margin-left: 15px;
@@ -124,23 +153,43 @@ button:disabled {
 
 /* Tab styles */
 .admin-tabs {
-  border-bottom: 1px solid #ccc;
-  margin-bottom: 20px;
+  position: relative;
+  border: none;
+  margin-bottom: 0;
+}
+
+/* Create the horizontal line that goes under tabs */
+.admin-tabs::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: #ccc;
+  z-index: 1;
 }
 
 ul.tab-nav {
   list-style: none;
   padding: 0;
   margin: 0;
+  margin-bottom: 0;
   display: flex; /* Arrange tabs horizontally */
+  flex-wrap: nowrap; /* Prevent wrapping */
+  overflow-x: auto; /* Add horizontal scroll when needed */
+  white-space: nowrap; /* Keep tabs on single line */
 }
 
 ul.tab-nav li {
   margin-right: 5px;
+  margin-bottom: -1px; /* Overlap with the border line */
+  flex: 0 0 auto; /* Prevent shrinking and maintain size */
 }
 
 a.tab-link {
   display: inline-block;
+  position: relative;
   padding: 10px 15px;
   text-decoration: none;
   color: #007bff;
@@ -148,6 +197,7 @@ a.tab-link {
   border-bottom: none;
   border-radius: 4px 4px 0 0; /* Rounded top corners */
   background-color: #f8f9fa; /* Light background for inactive tabs */
+  z-index: 1; /* Below active tab but above line */
 }
 
 a.tab-link:hover {
@@ -158,16 +208,19 @@ a.tab-link:hover {
 /* Active tab styling */
 a.tab-link.active {
   background-color: #fff; /* White background for active tab */
-  border-color: #ccc #ccc #fff; /* Border to blend with content area */
+  border: 1px solid #ccc; /* Full border */
+  border-bottom: 1px solid #fff; /* White bottom border to cover the line */
   color: #495057;
   font-weight: bold;
+  z-index: 2; /* Above the line and other tabs */
+  bottom: -1px; /* Move down to overlap the line */
 }
 
 /* Content pane visibility */
 .tab-content {
   padding: 20px;
   border: 1px solid #ccc;
-  border-top: none;
+  border-top: none; /* Remove top border to avoid double line */
   background-color: #fff;
 }
 
@@ -229,24 +282,39 @@ input[readonly], textarea[readonly] {
 
 /* CV Content Section Styles */
 .cv-section-tabs {
-  margin: 15px 0;
+  position: relative;
+  margin: 15px 0 0 0;
+}
+
+/* Create the horizontal line that goes under CV tabs */
+.cv-section-tabs::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: #ddd;
+  z-index: 1;
 }
 
 ul.cv-tab-nav {
   margin: 0;
   padding: 0;
+  margin-bottom: 0;
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 1px solid #ddd;
 }
 
 ul.cv-tab-nav li {
   margin-right: 2px;
+  margin-bottom: -1px; /* Overlap with the border line */
 }
 
 a.cv-tab-link {
   display: inline-block;
+  position: relative;
   padding: 8px 12px;
   text-decoration: none;
   color: #007bff;
@@ -255,6 +323,7 @@ a.cv-tab-link {
   border-radius: 4px 4px 0 0;
   background-color: #f8f9fa;
   font-size: 0.9em;
+  z-index: 1; /* Below active tab but above line */
 }
 
 a.cv-tab-link:hover {
@@ -264,16 +333,19 @@ a.cv-tab-link:hover {
 
 a.cv-tab-link.active {
   background-color: #fff;
-  border-color: #ddd #ddd #fff;
+  border: 1px solid #ddd; /* Full border */
+  border-bottom: 1px solid #fff; /* White bottom border to cover the line */
   color: #495057;
   font-weight: bold;
+  z-index: 2; /* Above the line and other tabs */
+  bottom: -1px; /* Move down to overlap the line */
 }
 
 .cv-tab-pane {
   display: none;
   padding: 15px;
   border: 1px solid #ddd;
-  border-top: none;
+  border-top: none; /* Remove top border to avoid double line */
   margin-bottom: 20px;
 }
 
@@ -308,11 +380,28 @@ a.cv-tab-link.active {
   
   ul.cv-tab-nav li {
     margin-bottom: 2px;
+    margin-right: 0;
   }
   
   a.cv-tab-link {
     width: 100%;
     box-sizing: border-box;
+    border-radius: 4px;
+    margin-bottom: 5px;
+  }
+  
+  a.cv-tab-link.active {
+    bottom: 0; /* Reset overlap on mobile */
+    border-bottom-color: #ddd; /* Show full border on mobile */
+  }
+  
+  /* Hide the pseudo-element line on mobile */
+  .cv-section-tabs::after {
+    display: none;
+  }
+  
+  .cv-tab-pane {
+    border-top: 1px solid #ddd; /* Add top border back on mobile */
   }
 }
 
@@ -418,4 +507,163 @@ a.cv-tab-link.active {
     background-color: #fff3cd;
     color: #856404;
     border: 1px solid #ffeeba;
+}
+
+/* Research Admin Subsection Styles */
+.research-admin-subsection {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fafafa;
+}
+
+.research-admin-subsection h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.admin-entry-form {
+    margin-top: 15px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.admin-add-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 3px;
+    margin-bottom: 10px;
+}
+
+.admin-add-button:hover {
+    background-color: #218838;
+}
+
+/* Skill Box Styles */
+.category-box {
+    border: 1px dashed #ccc;
+    padding: 10px;
+    margin: 10px;
+    min-height: 100px;
+    border-radius: 4px;
+    background-color: #fafafa;
+}
+
+.category-box h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.skills-list {
+    min-height: 60px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.skill-box {
+    background: #f0f0f0;
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: grab;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    display: inline-block;
+    font-size: 0.9em;
+}
+
+.skill-box:hover {
+    background: #e8e8e8;
+    border-color: #999;
+}
+
+.skill-box:active {
+    cursor: grabbing;
+    opacity: 0.6;
+}
+
+.skill-box.sortable-ghost {
+    opacity: 0.4;
+}
+
+.skill-box.sortable-chosen {
+    background: #d0e0f0;
+}
+
+/* Skills container layout */
+#skillsContainers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+@media (max-width: 768px) {
+    #skillsContainers {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Color-coded skill boxes */
+.skill-derived {
+    background: #d0eaff;
+    border-color: #9ec8ff;
+}
+
+.skill-derived:hover {
+    background: #b5deff;
+    border-color: #7ab8ff;
+}
+
+.skill-manual {
+    background: #d4edda;
+    border-color: #b1dfbb;
+}
+
+.skill-manual:hover {
+    background: #c1e9cc;
+    border-color: #95d4a4;
+}
+
+/* Role-only skills (from work/research) */
+.skill-role-only {
+    background: #ffd0d0;
+    border-color: #ffb0b0;
+}
+
+.skill-role-only:hover {
+    background: #ffb5b5;
+    border-color: #ff9595;
+}
+
+/* Responsive adjustments for admin tabs on narrow screens */
+@media (max-width: 768px) {
+  ul.tab-nav {
+    padding: 0;
+    margin: 0;
+    margin-bottom: 0;
+  }
+  
+  ul.tab-nav li {
+    flex: 0 0 auto;
+    margin-right: 2px;
+  }
+  
+  a.tab-link {
+    padding: 8px 12px;
+    font-size: 0.9em;
+    border-radius: 4px 4px 0 0;
+  }
+  
+  a.tab-link.active {
+    border-radius: 4px 4px 0 0;
+  }
 }

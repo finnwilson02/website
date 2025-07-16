@@ -48,6 +48,8 @@
         <li><a href="#trips" data-tab-target="#tripManagementSection" class="tab-link">Manage Trips</a></li>
         <li><a href="#cv-content" data-tab-target="#cvContentSection" class="tab-link">CV Content</a></li>
         <li><a href="#research-content" data-tab-target="#researchContentSection" class="tab-link">Edit Research</a></li>
+        <li><a href="#contact-details" data-tab-target="#contactDetailsSection" class="tab-link">Contact Details</a></li>
+        <li><a href="#homepage" data-tab-target="#homepageSection" class="tab-link">Homepage Content</a></li>
         <!-- Add future tabs here -->
       </ul>
     </div>
@@ -172,9 +174,10 @@
         <h2>Manage Projects</h2>
         <div id="projectListSection">
           <!-- Placeholder for project list -->
-           <table>
+           <table class="sortable">
              <thead>
                <tr>
+                 <th class="drag-handle"></th>
                  <th>Title</th>
                  <th>Status</th>
                  <th>Actions</th>
@@ -204,6 +207,9 @@
                <label for="projectSummary">Summary (Short, for card):</label>
                <textarea id="projectSummary" rows="3"></textarea>
                
+               <label for="projectCvSummary">CV Summary (short for CV display):</label>
+               <textarea id="projectCvSummary" rows="3" placeholder="Optional: specific summary for CV. If empty, will use general summary."></textarea>
+               
                <label for="projectRole">My Role:</label>
                <textarea id="projectRole" rows="3"></textarea>
                
@@ -219,6 +225,11 @@
                
                <label for="projectStatus">Status:</label>
                <input type="text" id="projectStatus">
+               
+               <label>
+                 <input type="checkbox" id="projectShowOnCv" checked>
+                 Show on CV
+               </label>
                
                <label for="projectDetailMarkdown">Detail Page Content (Markdown):</label>
                <textarea id="projectDetailMarkdown"></textarea>
@@ -239,7 +250,6 @@
             <li><a href="#" data-cv-tab="education" class="cv-tab-link active">Education</a></li>
             <li><a href="#" data-cv-tab="work" class="cv-tab-link">Work Experience</a></li>
             <li><a href="#" data-cv-tab="research" class="cv-tab-link">Research</a></li>
-            <li><a href="#" data-cv-tab="projects" class="cv-tab-link">Projects</a></li>
             <li><a href="#" data-cv-tab="skills" class="cv-tab-link">Skills</a></li>
             <li><a href="#" data-cv-tab="achievements" class="cv-tab-link">Achievements</a></li>
             <li><a href="#" data-cv-tab="positions" class="cv-tab-link">Positions</a></li>
@@ -322,6 +332,9 @@
                 <label for="workDescription">Description:</label>
                 <textarea id="workDescription" rows="5"></textarea>
                 
+                <label for="workSkills">Skills (comma-separated):</label>
+                <input type="text" id="workSkills" list="skillsSuggestions" placeholder="e.g., Python, Project Management, Data Analysis">
+                
                 <div class="form-buttons">
                   <button type="submit" id="workSubmitButton">Add Entry</button>
                   <button type="button" id="workCancelButton" style="display: none;">Cancel</button>
@@ -363,6 +376,9 @@
                 <label for="researchDescription">Description:</label>
                 <textarea id="researchDescription" rows="5"></textarea>
                 
+                <label for="researchSkills">Skills (comma-separated):</label>
+                <input type="text" id="researchSkills" list="skillsSuggestions" placeholder="e.g., Machine Learning, Data Analysis, Python">
+                
                 <div class="form-buttons">
                   <button type="submit" id="researchSubmitButton">Add Entry</button>
                   <button type="button" id="researchCancelButton" style="display: none;">Cancel</button>
@@ -371,63 +387,56 @@
             </div>
           </div>
           
-          <!-- Projects Section -->
-          <div id="cvProjectsSection" class="cv-tab-pane">
-            <h3>Manage CV Projects</h3>
-            <div class="cv-list-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Dates</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="cvProjectsTableBody"></tbody>
-              </table>
-            </div>
-            <div class="cv-form-container">
-              <form id="cvProjectsForm" class="cv-form">
-                <h4>Add/Edit Project</h4>
-                <input type="hidden" id="cvProjectsEditIndex" value="-1">
-                
-                <label for="cvProjectsTitle">Title:</label>
-                <input type="text" id="cvProjectsTitle" required>
-                
-                <label for="cvProjectsDates">Dates:</label>
-                <input type="text" id="cvProjectsDates" placeholder="Jan 2020 - Mar 2021">
-                
-                <label for="cvProjectsDescription">Description:</label>
-                <textarea id="cvProjectsDescription" rows="5"></textarea>
-                
-                <div class="form-buttons">
-                  <button type="submit" id="cvProjectsSubmitButton">Add Entry</button>
-                  <button type="button" id="cvProjectsCancelButton" style="display: none;">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
           <!-- Skills Section -->
           <div id="cvSkillsSection" class="cv-tab-pane">
             <h3>Manage Skills</h3>
-            <div class="cv-form-container" style="width: 100%;">
-              <form id="skillsForm" class="cv-form">
-                <h4>Edit Skills</h4>
+            
+            <!-- Manual Add Form -->
+            <div class="cv-form-container" style="width: 100%; margin-bottom: 20px;">
+              <form id="addSkillForm" class="cv-form">
+                <h4>Add New Skill</h4>
                 
-                <label for="programmingSkills">Programming Skills:</label>
-                <input type="text" id="programmingSkills" placeholder="Comma-separated list of skills">
+                <label for="newSkillName">Skill Name:</label>
+                <input type="text" id="newSkillName" required placeholder="e.g., Python, Docker">
                 
-                <label for="softwareSkills">Software Skills:</label>
-                <input type="text" id="softwareSkills" placeholder="Comma-separated list of skills">
+                <label for="newSkillCategory">Category:</label>
+                <select id="newSkillCategory">
+                  <option value="programming">Programming</option>
+                  <option value="software">Software</option>
+                  <option value="technical">Technical</option>
+                  <option value="uncategorized" selected>Uncategorized</option>
+                </select>
                 
-                <label for="technicalSkills">Technical Skills:</label>
-                <input type="text" id="technicalSkills" placeholder="Comma-separated list of skills">
+                <label for="newSkillProjects">Related Projects (optional):</label>
+                <input type="text" id="newSkillProjects" placeholder="Comma-separated project IDs">
                 
                 <div class="form-buttons">
-                  <button type="submit" id="skillsSubmitButton">Save Skills</button>
+                  <button type="submit" id="addSkillButton">Add Skill</button>
                 </div>
               </form>
+            </div>
+            
+            <!-- Drag and Drop Zones -->
+            <div id="skillsContainers">
+              <div id="programmingSkills" class="category-box">
+                <h4>Programming</h4>
+                <div class="skills-list sortable"></div>
+              </div>
+              
+              <div id="softwareSkills" class="category-box">
+                <h4>Software</h4>
+                <div class="skills-list sortable"></div>
+              </div>
+              
+              <div id="technicalSkills" class="category-box">
+                <h4>Technical</h4>
+                <div class="skills-list sortable"></div>
+              </div>
+              
+              <div id="uncategorizedSkills" class="category-box">
+                <h4>Uncategorized (Not shown on CV)</h4>
+                <div class="skills-list sortable"></div>
+              </div>
             </div>
           </div>
           
@@ -731,12 +740,95 @@
           </form>
         </div>
       </section>
+
+      <!-- Contact Details Section -->
+      <section id="contactDetailsSection" class="tab-pane">
+        <h2>Manage Contact Details</h2>
+        
+        <!-- Header Text Section -->
+        <div style="margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+          <h3>Email/Phone Header Text</h3>
+          <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">This text appears above the social media icons in the contact banner.</p>
+          
+          <label for="contactHeaderText">Header Text:</label>
+          <textarea id="contactHeaderText" rows="2" placeholder="Email: example@domain.com | Phone: +1 (555) 123-4567" style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+          
+          <button id="saveHeaderBtn" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Save Header</button>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <h3>Contact Banner Items</h3>
+          <table class="sortable" style="width: 100%; margin-bottom: 20px;">
+            <thead>
+              <tr>
+                <th style="width: 30px;">Drag</th>
+                <th style="width: 60px;">Icon</th>
+                <th>Link</th>
+                <th style="width: 120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contactTableBody">
+              <!-- Contact items will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="cv-form-container">
+          <form id="contactForm" class="cv-form">
+            <h4>Add/Edit Contact Item</h4>
+            <input type="hidden" id="contactEditIndex" value="-1">
+            
+            <label for="contactIconUpload">Icon (SVG/PNG recommended):</label>
+            <input type="file" id="contactIconUpload" accept="image/*,.svg">
+            
+            <label for="contactLink">Link URL:</label>
+            <input type="text" id="contactLink" placeholder="https://example.com" required>
+            
+            <label for="contactLabel">Label (optional):</label>
+            <input type="text" id="contactLabel" placeholder="e.g., LinkedIn, GitHub">
+            
+            <div class="form-buttons">
+              <button type="submit" id="contactSubmitButton">Add Contact Item</button>
+              <button type="button" id="contactCancelButton" style="display: none;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Homepage Content Section -->
+      <section id="homepageSection" class="tab-pane">
+        <h2>Edit Homepage</h2>
+        
+        <div style="margin-bottom: 20px;">
+          <h3>Homepage Content (Markdown)</h3>
+          <p>Edit the homepage content using Markdown syntax. Changes will be reflected on the main homepage.</p>
+          
+          <div style="margin-bottom: 15px;">
+            <label for="homepageContent">Homepage Content:</label>
+            <textarea id="homepageContent" rows="20" style="width: 100%; font-family: monospace; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Enter Markdown content here..."></textarea>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <button id="saveHomepage" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; margin-right: 10px; cursor: pointer;">Save Content</button>
+            <button id="previewHomepage" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Preview</button>
+          </div>
+          
+          <div id="homepagePreview" style="border: 1px solid #ddd; padding: 15px; background: #f9f9f9; border-radius: 4px; min-height: 100px; display: none;">
+            <h4>Preview:</h4>
+            <div id="homepagePreviewContent"></div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
+
+  <!-- Datalist for skills autocomplete -->
+  <datalist id="skillsSuggestions"></datalist>
 
   <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

@@ -375,6 +375,84 @@ app.get('/api/data/projects', async (req, res) => {
   }
 });
 
+// GET Homepage Data
+app.get('/api/data/homepage', async (req, res) => {
+  const filePath = path.join(dataPath, 'homepage.md');
+  console.log(`GET /api/data/homepage - Reading: ${filePath}`);
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    res.json({ content });
+  } catch (error) {
+    console.error(`Error reading ${filePath}:`, error);
+    if (error.code === 'ENOENT') {
+      res.status(404).json({ error: 'Homepage file not found.' });
+    } else {
+      res.status(500).json({ error: 'Failed to retrieve homepage content.' });
+    }
+  }
+});
+
+// GET Contact Banner Data
+app.get('/api/data/contactBanner', async (req, res) => {
+  const filePath = path.join(dataPath, 'contactBanner.json');
+  console.log(`GET /api/data/contactBanner - Reading: ${filePath}`);
+  try {
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const jsonData = JSON.parse(fileContent);
+    
+    // Handle both old array format and new object format for backward compatibility
+    if (Array.isArray(jsonData)) {
+      // Convert old array format to new object format
+      res.json({ headerText: '', items: jsonData });
+    } else if (typeof jsonData === 'object' && jsonData !== null) {
+      // Validate new object format
+      if (!jsonData.hasOwnProperty('headerText') || !Array.isArray(jsonData.items)) {
+        throw new Error('Invalid format: Expected object with headerText string and items array.');
+      }
+      res.json(jsonData);
+    } else {
+      throw new Error('Invalid format: Expected object with headerText and items array.');
+    }
+  } catch (error) {
+    console.error(`Error reading or parsing ${filePath}:`, error);
+    if (error.code === 'ENOENT') {
+      res.status(404).json({ error: 'Contact banner data file not found.' });
+    } else if (error instanceof SyntaxError || error.message.includes('Expected')) {
+      res.status(500).json({ error: 'Failed to parse contact banner data file. Invalid JSON format.'});
+    } else {
+      res.status(500).json({ error: 'Failed to retrieve contact banner data.' });
+    }
+  }
+});
+
+// POST Homepage Data
+app.post('/api/save/homepage', requireAuth, async (req, res) => {
+  const filePath = path.join(dataPath, 'homepage.md');
+  const backupFilePath = filePath + '.bak';
+  console.log(`POST /api/save/homepage - Saving to: ${filePath}`);
+  
+  if (!req.body.content || typeof req.body.content !== 'string') {
+    return res.status(400).json({ error: 'Invalid data format. Expected object with content string.' });
+  }
+  
+  try {
+    // Backup logic
+    try { 
+      await fs.copyFile(filePath, backupFilePath); 
+      console.log(`Backup created: ${backupFilePath}`); 
+    } catch (backupError) { 
+      if (backupError.code !== 'ENOENT') 
+        console.warn(`Warning: Could not create backup for ${filePath}:`, backupError); 
+    }
+    
+    await fs.writeFile(filePath, req.body.content, 'utf8');
+    res.status(200).json({ message: 'Homepage content saved successfully.' });
+  } catch (error) {
+    console.error(`Error writing ${filePath}:`, error);
+    res.status(500).json({ error: 'Failed to save homepage content.' });
+  }
+});
+
 // API Endpoint to SAVE Books data
 app.post('/api/save/books', requireAuth, async (req, res) => {
   const filePath = path.join(dataPath, 'books.json');
@@ -528,12 +606,326 @@ app.post('/api/save/projects', requireAuth, async (req, res) => {
 
      const jsonString = JSON.stringify(req.body, null, 2);
      await fs.writeFile(filePath, jsonString, 'utf8');
+     
+     // Update CV skills cache after saving projects
+     await updateCvSkillsCache();
+     
      res.status(200).json({ message: 'Projects data saved successfully.' });
    } catch (error) {
      console.error(`Error writing ${filePath}:`, error);
      res.status(500).json({ error: 'Failed to save projects data.' });
    }
 });
+
+/**
+ * POST /api/projects/reorder
+ * Reorders projects based on provided indices
+ * @param {Array} req.body - Array of {id, idx} pairs
+ * @returns {204} No content on success
+ */
+app.post('/api/projects/reorder', requireAuth, async (req, res) => {
+    const filePath = path.join(dataPath, 'projects.json');
+    const backupFilePath = filePath + '.bak';
+    console.log(`POST /api/projects/reorder - Reordering projects`);
+    
+    try {
+        const payload = req.body; // [{id: 'project-id', idx: 0}, ...]
+        
+        if (!Array.isArray(payload)) {
+            return res.status(400).json({ error: 'Invalid data format. Expected an array.' });
+        }
+        
+        // Create backup
+        try {
+            await fs.copyFile(filePath, backupFilePath);
+            console.log(`Backup created: ${backupFilePath}`);
+        } catch (backupError) {
+            if (backupError.code !== 'ENOENT') {
+                console.warn(`Warning: Could not create backup for ${filePath}:`, backupError);
+            }
+        }
+        
+        // Load current projects
+        const fileContent = await fs.readFile(filePath, 'utf8');
+        const projects = JSON.parse(fileContent);
+        
+        // Create mapping from id to new index
+        const posMap = new Map(payload.map(item => [item.id, item.idx]));
+        
+        // Sort projects: mentioned ones first by idx, others maintain relative order
+        projects.sort((a, b) => {
+            const idA = a.id;
+            const idB = b.id;
+            const inA = posMap.has(idA);
+            const inB = posMap.has(idB);
+            
+            if (inA && inB) return posMap.get(idA) - posMap.get(idB);
+            if (inA) return -1;
+            if (inB) return 1;
+            return (a.order || 0) - (b.order || 0); // maintain existing order
+        });
+        
+        // Re-index order field
+        projects.forEach((project, index) => {
+            project.order = index;
+        });
+        
+        // Save updated projects
+        await fs.writeFile(filePath, JSON.stringify(projects, null, 2), 'utf8');
+        
+        console.log(`Reordered ${payload.length} projects`); // TODO: Remove after debugging
+        
+        res.sendStatus(204); // No content
+    } catch (error) {
+        console.error('Error reordering projects:', error);
+        res.status(500).json({ error: 'Failed to reorder projects.' });
+    }
+});
+
+// SAVE Contact Banner Data (Authenticated)
+app.post('/api/save/contactBanner', requireAuth, async (req, res) => {
+    const filePath = path.join(dataPath, 'contactBanner.json');
+    const backupFilePath = filePath + '.bak';
+    console.log(`POST /api/save/contactBanner - Saving to: ${filePath}`);
+    
+    // Validate new object format with headerText and items
+    if (typeof req.body !== 'object' || req.body === null || 
+        typeof req.body.headerText !== 'string' || 
+        !Array.isArray(req.body.items)) {
+        return res.status(400).json({ error: 'Invalid data format. Expected object with headerText string and items array.' });
+    }
+    try {
+        // Backup logic
+        try { 
+            await fs.copyFile(filePath, backupFilePath); 
+            console.log(`Backup created: ${backupFilePath}`); 
+        } catch (backupError) { 
+            if (backupError.code !== 'ENOENT') 
+                console.warn(`Warning: Could not create backup for ${filePath}:`, backupError); 
+        }
+        
+        const jsonString = JSON.stringify(req.body, null, 2);
+        await fs.writeFile(filePath, jsonString, 'utf8');
+        res.status(200).json({ message: 'Contact banner data saved successfully.' });
+    } catch (error) {
+        console.error(`Error writing ${filePath}:`, error);
+        res.status(500).json({ error: 'Failed to save contact banner data.' });
+    }
+});
+
+// === Skill Derivation Functions ===
+
+/**
+ * Derives skills from projects.json.
+ * @param {Array} projects - Array of project objects
+ * @returns {Object} skill to project IDs map
+ */
+function deriveSkillsFromProjects(projects) {
+    const skillMap = {};
+    
+    if (!Array.isArray(projects)) {
+        console.warn('deriveSkillsFromProjects: Invalid projects input, expected array');
+        return skillMap;
+    }
+    
+    projects.forEach(project => {
+        if (project.id && project.skills) {
+            // Handle both array and comma-separated string formats
+            let skillsArray = [];
+            if (Array.isArray(project.skills)) {
+                skillsArray = project.skills;
+            } else if (typeof project.skills === 'string') {
+                skillsArray = project.skills.split(',').map(s => s.trim()).filter(s => s);
+            }
+            
+            skillsArray.forEach(skill => {
+                if (!skillMap[skill]) {
+                    skillMap[skill] = [];
+                }
+                if (!skillMap[skill].includes(project.id)) {
+                    skillMap[skill].push(project.id);
+                }
+            });
+        }
+    });
+    
+    console.log(`Derived ${Object.keys(skillMap).length} unique skills from projects`); // TODO: Remove after debugging
+    return skillMap;
+}
+
+/**
+ * Updates cv_skills.json cache with derived skills from projects.
+ * Merges manual skills with derived ones (manual takes precedence).
+ * @returns {Promise<void>}
+ */
+async function updateCvSkillsCache() {
+    const cvSkillsPath = path.join(dataPath, 'cv_skills.json');
+    const projectsPath = path.join(dataPath, 'projects.json');
+    const workPath = path.join(dataPath, 'cv_work.json');
+    const researchPath = path.join(dataPath, 'cv_research.json');
+    
+    try {
+        // Load existing cv_skills, projects, work, and research
+        let cvSkills = {};
+        let projects = [];
+        let workData = [];
+        let researchData = [];
+        
+        try {
+            const cvSkillsContent = await fs.readFile(cvSkillsPath, 'utf8');
+            cvSkills = JSON.parse(cvSkillsContent);
+        } catch (error) {
+            console.log('cv_skills.json not found or invalid, creating new structure');
+            cvSkills = {
+                programming: [],
+                software: [],
+                technical: [],
+                uncategorized: [],
+                allSkillsCache: []
+            };
+        }
+        
+        try {
+            const projectsContent = await fs.readFile(projectsPath, 'utf8');
+            projects = JSON.parse(projectsContent);
+        } catch (error) {
+            console.log('projects.json not found or invalid');
+        }
+        
+        try {
+            const workContent = await fs.readFile(workPath, 'utf8');
+            workData = JSON.parse(workContent);
+        } catch (error) {
+            console.log('cv_work.json not found or invalid');
+        }
+        
+        try {
+            const researchContent = await fs.readFile(researchPath, 'utf8');
+            researchData = JSON.parse(researchContent);
+        } catch (error) {
+            console.log('cv_research.json not found or invalid');
+        }
+        
+        // Derive skills from projects
+        const derivedSkillMap = deriveSkillsFromProjects(projects);
+        
+        // Ensure all required fields exist
+        if (!cvSkills.uncategorized) cvSkills.uncategorized = [];
+        if (!cvSkills.allSkillsCache) cvSkills.allSkillsCache = [];
+        
+        // Get all manual skills
+        const manualSkills = new Set();
+        let duplicateCount = 0;
+        
+        // Add projects field to existing manual skills
+        ['programming', 'software', 'technical'].forEach(category => {
+            if (Array.isArray(cvSkills[category])) {
+                cvSkills[category] = cvSkills[category].map(skill => {
+                    if (typeof skill === 'string') {
+                        manualSkills.add(skill);
+                        return {
+                            name: skill,
+                            projects: derivedSkillMap[skill] || []
+                        };
+                    } else if (skill && skill.name) {
+                        manualSkills.add(skill.name);
+                        // Update projects for existing skill objects
+                        skill.projects = derivedSkillMap[skill.name] || [];
+                        return skill;
+                    }
+                    return skill;
+                });
+            }
+        });
+        
+        // Add new derived skills to uncategorized (avoiding duplicates)
+        Object.entries(derivedSkillMap).forEach(([skill, projectIds]) => {
+            if (!manualSkills.has(skill)) {
+                // Check if already in uncategorized
+                const existingIndex = cvSkills.uncategorized.findIndex(s => s.name === skill);
+                if (existingIndex === -1) {
+                    cvSkills.uncategorized.push({
+                        name: skill,
+                        projects: projectIds
+                    });
+                } else {
+                    // Update existing uncategorized skill's projects
+                    cvSkills.uncategorized[existingIndex].projects = projectIds;
+                    duplicateCount++;
+                }
+            } else {
+                duplicateCount++;
+            }
+        });
+        
+        // Process work and research skills (add to uncategorized if not already existing)
+        const processRoleSkills = (roles, sourceType) => {
+            if (Array.isArray(roles)) {
+                roles.forEach(role => {
+                    if (role.skills && Array.isArray(role.skills)) {
+                        role.skills.forEach(skillName => {
+                            // Check if skill exists in any category
+                            let skillExists = false;
+                            ['programming', 'software', 'technical'].forEach(category => {
+                                if (cvSkills[category] && cvSkills[category].some(s => s.name === skillName)) {
+                                    skillExists = true;
+                                }
+                            });
+                            
+                            // If skill doesn't exist anywhere, add to uncategorized
+                            if (!skillExists) {
+                                const existingIndex = cvSkills.uncategorized.findIndex(s => s.name === skillName);
+                                if (existingIndex === -1) {
+                                    cvSkills.uncategorized.push({
+                                        name: skillName,
+                                        projects: [],
+                                        source: sourceType
+                                    });
+                                } else {
+                                    // Update source if skill exists
+                                    cvSkills.uncategorized[existingIndex].source = sourceType;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        };
+        
+        processRoleSkills(workData, 'role');
+        processRoleSkills(researchData, 'role');
+        
+        // Build allSkillsCache - sorted unique array of all skill names
+        const allSkills = new Set();
+        ['programming', 'software', 'technical'].forEach(category => {
+            if (Array.isArray(cvSkills[category])) {
+                cvSkills[category].forEach(skill => {
+                    if (skill && skill.name) {
+                        allSkills.add(skill.name);
+                    }
+                });
+            }
+        });
+        
+        if (Array.isArray(cvSkills.uncategorized)) {
+            cvSkills.uncategorized.forEach(skill => {
+                if (skill && skill.name) {
+                    allSkills.add(skill.name);
+                }
+            });
+        }
+        
+        cvSkills.allSkillsCache = Array.from(allSkills).sort();
+        
+        // Save updated cv_skills.json
+        await fs.writeFile(cvSkillsPath, JSON.stringify(cvSkills, null, 2), 'utf8');
+        
+        console.log(`Processed ${allSkills.size} skills, ${duplicateCount} duplicates avoided`); // TODO: Remove after debugging
+        
+    } catch (error) {
+        console.error('Error updating CV skills cache:', error);
+    }
+}
 
 // === CV API Endpoints ===
 
@@ -626,6 +1018,10 @@ app.post('/api/save/cv/work', requireAuth, async (req, res) => {
         
         const jsonString = JSON.stringify(req.body, null, 2);
         await fs.writeFile(filePath, jsonString, 'utf8');
+        
+        // Update skills cache to include work-related skills
+        await updateCvSkillsCache();
+        
         res.status(200).json({ message: 'CV Work data saved successfully.' });
     } catch (error) {
         console.error(`Error writing ${filePath}:`, error);
@@ -674,6 +1070,10 @@ app.post('/api/save/cv/research', requireAuth, async (req, res) => {
         
         const jsonString = JSON.stringify(req.body, null, 2);
         await fs.writeFile(filePath, jsonString, 'utf8');
+        
+        // Update skills cache to include research-related skills
+        await updateCvSkillsCache();
+        
         res.status(200).json({ message: 'CV Research data saved successfully.' });
     } catch (error) {
         console.error(`Error writing ${filePath}:`, error);
@@ -771,6 +1171,10 @@ app.post('/api/save/cv/skills', requireAuth, async (req, res) => {
         
         const jsonString = JSON.stringify(req.body, null, 2);
         await fs.writeFile(filePath, jsonString, 'utf8');
+        
+        // Update CV skills cache after manual save
+        await updateCvSkillsCache();
+        
         res.status(200).json({ message: 'CV Skills data saved successfully.' });
     } catch (error) {
         console.error(`Error writing ${filePath}:`, error);
