@@ -621,7 +621,7 @@ if (currentShelf.scrollWidth > currentShelf.clientWidth) {
 
 **Other Filters:**
 - Genre filter (dynamically populated)
-- Rating filter (1-5 stars)
+- Rating filter (1-10 stars)
 - Sort options (date, rating)
 
 ### Data Model
@@ -635,7 +635,7 @@ Items have a `type` field to distinguish between books and movies:
     "spineColor": "#ca0b0b",
     "titleColor": "#ffffff",
     "authorColor": "#ffffff",
-    "rating": 5,
+    "rating": 8,  // Integer value 1-10
     "genre": "Fiction",
     "review": "Full review text..."
 }
@@ -645,7 +645,15 @@ Items have a `type` field to distinguish between books and movies:
 
 - Type dropdown to select Book or Movie when adding/editing
 - Color pickers for spine, title, and author text colors
+- Rating select with stars (1-10 range)
 - All items managed in single books.json file
+
+### Server Validation
+
+The `/api/save/books` endpoint validates:
+- Required fields: title, author (non-empty strings)
+- Rating: Must be a number between 1-10 (if provided)
+- Returns specific error messages for validation failures
 
 ### Extension Points
 

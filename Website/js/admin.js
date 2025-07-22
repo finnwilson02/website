@@ -686,10 +686,10 @@ function renderBookTable() {
         row.insertCell().textContent = book.title || 'No Title';
         row.insertCell().textContent = book.author || 'No Author';
         
-        // Create star rating display
+        // Create rating display
         const ratingCell = row.insertCell();
-        const rating = parseInt(book.rating) || 0;
-        ratingCell.textContent = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        const rating = parseFloat(book.rating) || 0;
+        ratingCell.textContent = rating.toFixed(1) + '/10';
         
         // Actions cell with edit and delete buttons
         const actionsCell = row.insertCell();
@@ -734,7 +734,7 @@ function handleEditBook(event) {
     spineColorInput.value = book.spineColor || '#ca0b0b';
     titleColorInput.value = book.titleColor || '#ffffff';
     authorColorInput.value = book.authorColor || '#ffffff';
-    ratingInput.value = book.rating || '5';
+    ratingInput.value = book.rating || 5.0;
     genreInput.value = book.genre || '';
     bookTypeInput.value = book.type || 'book';
     datesReadInput.value = book.datesRead || '';
@@ -789,6 +789,7 @@ function resetBookForm() {
     titleColorInput.value = '#ffffff';
     authorColorInput.value = '#ffffff';
     bookTypeInput.value = 'book';
+    ratingInput.value = 5.0;
 }
 
 // Book form submission handler
@@ -802,7 +803,7 @@ if (bookForm) {
             spineColor: spineColorInput.value,
             titleColor: titleColorInput.value,
             authorColor: authorColorInput.value,
-            rating: parseInt(ratingInput.value),
+            rating: parseFloat(ratingInput.value),
             genre: genreInput.value,
             type: bookTypeInput.value || 'book',
             datesRead: datesReadInput.value,

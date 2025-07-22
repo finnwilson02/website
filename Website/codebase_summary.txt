@@ -305,6 +305,12 @@ if __name__ == '__main__':
             <label for="genre">Genre(s) (comma-separated):</label>
             <input type="text" id="genre" placeholder="Fiction, Literature, etc.">
             
+            <label for="bookType">Type:</label>
+            <select id="bookType">
+              <option value="book" selected>Book</option>
+              <option value="movie">Movie</option>
+            </select>
+            
             <label for="datesRead">Date Read:</label>
             <input type="text" id="datesRead" placeholder="month year">
             
@@ -1072,6 +1078,11 @@ if __name__ == '__main__':
     <section id="bookshelf-section">
       <h2>bookshelf</h2>
       <div id="filters">
+        <select id="typeFilter">
+          <option value="all">all types</option>
+          <option value="book">books</option>
+          <option value="movie">movies</option>
+        </select>
         <select id="genreFilter">
           <option value="all">all genres</option>
         </select>
@@ -1090,7 +1101,6 @@ if __name__ == '__main__':
           <option value="rating-asc">lowest rated</option>
         </select>
       </div>
-      <div id="books-row" class="books-row"></div>
       <div id="bookshelf"></div>
     </section>
   </main>
@@ -1853,85 +1863,9 @@ a.cv-tab-link.active {
   /* container for each row of books */
   .books-row {
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-bottom: 2rem;
-  }
-
-  /* book card styles for new card layout */
-  .book-card {
-    width: 250px;
-    min-height: 320px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px;
-    background: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-  }
-
-  .book-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    border-color: #007bff;
-  }
-
-  .book-card-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .book-card .book-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin: 0 0 0.5rem 0;
-    color: #333;
-    line-height: 1.3;
-    min-height: 2.6rem;
-  }
-
-  .book-card .book-author {
-    font-size: 1rem;
-    color: #666;
-    margin: 0 0 1rem 0;
-    font-style: italic;
-  }
-
-  .book-card .book-rating {
-    font-size: 1.1rem;
-    color: #ffa500;
-    margin: 0.5rem 0;
-  }
-
-  .book-card .book-genre {
-    font-size: 0.9rem;
-    color: #888;
-    margin: 0.5rem 0 0 0;
-    flex: 1;
-    display: flex;
     align-items: flex-end;
-  }
-
-  /* Filter styles */
-  #filters {
-    margin-bottom: 2rem;
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  #filters select {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    font-size: 1rem;
-    min-width: 120px;
+    margin-bottom: 0;
+    gap: 10px;
   }
   
   /* shelf bar for a realistic wood shelf */
@@ -2010,81 +1944,6 @@ a.cv-tab-link.active {
   }
   #overlayReviewText {
     white-space: pre-line;
-  }
-
-  /* Updated overlay styles for card layout */
-  #reviewOverlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.7) !important;
-    display: none !important;
-    z-index: 1000 !important;
-    overflow: auto !important;
-  }
-
-  #overlayContent {
-    max-width: 700px !important;
-    margin: 3rem auto !important;
-    padding: 2rem !important;
-    background: white !important;
-    border-radius: 8px !important;
-    position: relative !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
-  }
-
-  #closeOverlay {
-    position: absolute !important;
-    top: 1rem !important;
-    right: 1rem !important;
-    background: none !important;
-    border: none !important;
-    font-size: 2rem !important;
-    line-height: 1 !important;
-    cursor: pointer !important;
-    color: #333 !important;
-    padding: 0 !important;
-    width: 2rem !important;
-    height: 2rem !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  #closeOverlay:hover {
-    background: #f0f0f0 !important;
-    border-radius: 50% !important;
-  }
-
-  #overlayTitle {
-    margin: 0 0 0.5rem 0 !important;
-    font-size: 1.8rem !important;
-    color: #333 !important;
-  }
-
-  #overlayAuthor {
-    margin: 0 0 1rem 0 !important;
-    font-size: 1.2rem !important;
-    color: #666 !important;
-    font-style: italic !important;
-  }
-
-  #overlayDetails {
-    margin: 0 0 1.5rem 0 !important;
-    font-size: 1rem !important;
-    color: #555 !important;
-    padding: 1rem !important;
-    background: #f8f9fa !important;
-    border-radius: 4px !important;
-  }
-
-  #overlayReviewText {
-    white-space: pre-line !important;
-    line-height: 1.6 !important;
-    font-size: 1rem !important;
-    color: #333 !important;
   }
   -e 
 ```
@@ -3746,6 +3605,7 @@ const titleColorInput = document.getElementById('titleColor');
 const authorColorInput = document.getElementById('authorColor');
 const ratingInput = document.getElementById('rating');
 const genreInput = document.getElementById('genre');
+const bookTypeInput = document.getElementById('bookType');
 const datesReadInput = document.getElementById('datesRead');
 const reviewInput = document.getElementById('review');
 const saveBookBtn = document.getElementById('saveBookBtn');
@@ -4452,6 +4312,7 @@ function handleEditBook(event) {
     authorColorInput.value = book.authorColor || '#ffffff';
     ratingInput.value = book.rating || '5';
     genreInput.value = book.genre || '';
+    bookTypeInput.value = book.type || 'book';
     datesReadInput.value = book.datesRead || '';
     reviewInput.value = book.review || '';
     
@@ -4499,10 +4360,11 @@ function resetBookForm() {
     formTitle.textContent = 'Add New Book';
     bookIndex.value = '';
     bookForm.reset();
-    // Set default colors
+    // Set default colors and type
     spineColorInput.value = '#ca0b0b';
     titleColorInput.value = '#ffffff';
     authorColorInput.value = '#ffffff';
+    bookTypeInput.value = 'book';
 }
 
 // Book form submission handler
@@ -4518,6 +4380,7 @@ if (bookForm) {
             authorColor: authorColorInput.value,
             rating: parseInt(ratingInput.value),
             genre: genreInput.value,
+            type: bookTypeInput.value || 'book',
             datesRead: datesReadInput.value,
             review: reviewInput.value
         };
@@ -8505,7 +8368,7 @@ if (contactCancelButton) {
  */
 async function loadHomepage() {
     try {
-        const response = await fetch('/api/data/homepage', {
+        const response = await fetch(`/api/data/homepage?t=${Date.now()}`, {
             credentials: 'include'
         });
         
@@ -8514,6 +8377,8 @@ async function loadHomepage() {
         }
         
         const data = await response.json();
+        console.log('Loaded json:', data); // TEMP LOG
+        
         const homepageTextarea = document.getElementById('homepageContent');
         const currentImage = document.getElementById('currentImage');
         const noImageText = document.getElementById('noImageText');
@@ -8527,9 +8392,11 @@ async function loadHomepage() {
             currentImage.src = `img/${data.image}`;
             currentImage.style.display = 'block';
             noImageText.style.display = 'none';
+            console.log('Image found in data:', data.image); // TEMP LOG
         } else {
             currentImage.style.display = 'none';
             noImageText.style.display = 'block';
+            console.warn('Image missing in loaded data'); // TEMP LOG
         }
         
         // Store current image for later use
@@ -8555,6 +8422,8 @@ async function saveHomepage() {
         const content = homepageTextarea.value;
         const image = window.currentHomepageImage || '';
         
+        console.log('Saving homepage with image:', image); // TEMP LOG
+        
         const response = await fetch('/api/save/homepage', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -8567,8 +8436,14 @@ async function saveHomepage() {
             throw new Error(errorData.error || 'Failed to save homepage content');
         }
         
+        const result = await response.json();
+        console.log('Server response:', result); // TEMP LOG
+        
         showNotification('Homepage content saved successfully!', 'success');
         console.log('Homepage content saved successfully');
+        
+        // Reload homepage data to refresh preview
+        await loadHomepage();
     } catch (error) {
         console.error('Error saving homepage content:', error);
         showNotification('Error saving homepage content: ' + error.message, 'error');
@@ -8661,6 +8536,7 @@ async function uploadHomepageImage() {
         }
         
         const data = await response.json();
+        console.log('Upload successful, response:', data); // TEMP LOG
         
         // Update current image tracking
         window.currentHomepageImage = data.filename;
@@ -8678,6 +8554,30 @@ async function uploadHomepageImage() {
         
         showNotification('Image uploaded successfully!', 'success');
         console.log('Homepage image uploaded:', data.filename);
+        
+        // Save to homepage.json immediately after upload
+        try {
+            const homepageContent = document.getElementById('homepageContent').value || '';
+            const saveResponse = await fetch('/api/save/homepage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    content: homepageContent,
+                    image: data.filename 
+                })
+            });
+            
+            if (!saveResponse.ok) {
+                throw new Error('Failed to save image to homepage data');
+            }
+            
+            console.log(`Updated homepage.json image: ${data.filename}`); // TEMP LOG
+            showNotification('Image saved to homepage!', 'success');
+        } catch (saveError) {
+            console.error('Error saving image to homepage:', saveError);
+            showNotification('Image uploaded but not saved to homepage', 'warning');
+        }
         
     } catch (error) {
         console.error('Error uploading homepage image:', error);
@@ -8702,6 +8602,25 @@ const uploadImageButton = document.getElementById('uploadImageBtn');
 if (uploadImageButton) {
     uploadImageButton.addEventListener('click', uploadHomepageImage);
 }
+
+// Auto-reload homepage data when tab becomes visible
+let currentActiveTab = 'bookManagementSection'; // default tab
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentActiveTab === 'homepageSection') {
+        console.log('Tab became visible, reloading homepage data...'); // TEMP LOG
+        loadHomepage();
+    }
+});
+
+// Track active tab
+document.querySelectorAll('.tab-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        const target = e.target.getAttribute('data-tab-target');
+        if (target) {
+            currentActiveTab = target.substring(1); // remove #
+        }
+    });
+});
 
 // === Separate Header Text Save Functionality ===
 
@@ -8756,250 +8675,174 @@ if (saveHeaderButton) {
 ### ./js/bookshelf.js
 
 ```js
-/* bookshelf.js - Enhanced bookshelf with dynamic loading, filtering, and overlay */
+/* bookshelf.js */
+let booksData = [];
 
-// Global books array to store fetched data
-let books = [];
-
-/**
- * Fetches and loads books from JSON API
- */
-async function loadBooks() {
-    try {
-        const response = await fetch('/api/data/books');
-        if (!response.ok) {
-            throw new Error(`Failed to fetch books: ${response.status}`);
-        }
-        
-        books = await response.json();
-        console.log(`Loaded ${books.length} books`);
-        
-        // Initialize filters with dynamic genre options
-        initFilters();
-        
-        // Initial render
-        filterAndSortBooks();
-        
-    } catch (error) {
-        console.error('Error loading books:', error);
-        // Show error message to user
-        const booksRow = document.getElementById('books-row');
-        if (booksRow) {
-            booksRow.innerHTML = '<p style="color: red; padding: 20px;">Error loading books. Please try again later.</p>';
-        }
-    }
-}
-
-/**
- * Initializes filter dropdowns with dynamic options
- */
-function initFilters() {
+// fetch books data from API
+fetch('/api/data/books')
+  .then(response => response.json())
+  .then(data => {
+    booksData = data;
+    initFilters();
+    renderBooks();
+  })
+  .catch(err => console.error('error loading books data:', err));
+  
+  function initFilters() {
     const genreSelect = document.getElementById('genreFilter');
-    
-    // Clear existing options except "all genres"
-    const allOption = genreSelect.querySelector('option[value="all"]');
-    genreSelect.innerHTML = '';
-    genreSelect.appendChild(allOption);
-    
-    // Extract unique genres from books
     const genres = new Set();
-    books.forEach(book => {
-        if (book.genre) {
-            // Handle comma-separated genres
-            book.genre.split(',').forEach(g => {
-                const trimmed = g.trim();
-                if (trimmed) genres.add(trimmed);
-            });
-        }
+    booksData.forEach(book => {
+      if (book.genre) {
+        book.genre.split(',').forEach(g => {
+          const trimmed = g.trim();
+          if (trimmed) genres.add(trimmed);
+        });
+      }
     });
-    
-    // Add genre options to dropdown
-    [...genres].sort().forEach(genre => {
-        const option = document.createElement('option');
-        option.value = genre;
-        option.textContent = genre;
-        genreSelect.appendChild(option);
+    genres.forEach(genre => {
+      const opt = document.createElement('option');
+      opt.value = genre;
+      opt.textContent = genre;
+      genreSelect.appendChild(opt);
     });
-    
-    // Add event listeners for filter changes
-    document.getElementById('genreFilter').addEventListener('change', filterAndSortBooks);
-    document.getElementById('ratingFilter').addEventListener('change', filterAndSortBooks);
-    document.getElementById('sortOrder').addEventListener('change', filterAndSortBooks);
-}
-
-/**
- * Filters and sorts books based on current filter selections, then renders them
- */
-function filterAndSortBooks() {
+    document.getElementById('typeFilter').addEventListener('change', renderBooks);
+    document.getElementById('genreFilter').addEventListener('change', renderBooks);
+    document.getElementById('ratingFilter').addEventListener('change', renderBooks);
+    document.getElementById('sortOrder').addEventListener('change', renderBooks);
+  }
+  
+function renderBooks() {
+    const bookshelf = document.getElementById('bookshelf');
+    bookshelf.innerHTML = ''; // clear previous content
+  
+    const typeFilter = document.getElementById('typeFilter').value;
     const genreFilter = document.getElementById('genreFilter').value;
     const ratingFilter = document.getElementById('ratingFilter').value;
     const sortOrder = document.getElementById('sortOrder').value;
-    
-    // Filter books
-    let filteredBooks = books.filter(book => {
-        // Genre filter
-        const matchGenre = genreFilter === 'all' || 
-            (book.genre && book.genre.includes(genreFilter));
-        
-        // Rating filter
-        const matchRating = ratingFilter === 'all' || 
-            book.rating >= parseInt(ratingFilter, 10);
-        
-        return matchGenre && matchRating;
+  
+    let filtered = booksData.filter(book => {
+      const matchType = (typeFilter === 'all') || ((book.type || 'book') === typeFilter);
+      const bookGenres = (book.genre || '').split(',').map(g => g.trim());
+      const matchGenre = (genreFilter === 'all' || bookGenres.includes(genreFilter));
+      const matchRating = (ratingFilter === 'all' || book.rating >= parseInt(ratingFilter, 10));
+      return matchType && matchGenre && matchRating;
     });
-    
-    // Sort books
-    switch (sortOrder) {
-        case 'date-desc':
-            filteredBooks.sort((a, b) => new Date(b.datesRead || 0) - new Date(a.datesRead || 0));
-            break;
-        case 'date-asc':
-            filteredBooks.sort((a, b) => new Date(a.datesRead || 0) - new Date(b.datesRead || 0));
-            break;
-        case 'rating-desc':
-            filteredBooks.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-            break;
-        case 'rating-asc':
-            filteredBooks.sort((a, b) => (a.rating || 0) - (b.rating || 0));
-            break;
-        default:
-            // Default to date-desc
-            filteredBooks.sort((a, b) => new Date(b.datesRead || 0) - new Date(a.datesRead || 0));
+  
+    if (sortOrder === 'date-asc') {
+      filtered = filtered.slice().reverse();
+    } else if (sortOrder === 'rating-desc') {
+      filtered.sort((a, b) => b.rating - a.rating);
+    } else if (sortOrder === 'rating-asc') {
+      filtered.sort((a, b) => a.rating - b.rating);
     }
-    
-    // Render filtered and sorted books
-    renderBooks(filteredBooks);
-}
-
-/**
- * Renders books as cards in the books-row container
- * @param {Array} booksToRender - Array of book objects to render
- */
-function renderBooks(booksToRender) {
-    const booksRow = document.getElementById('books-row');
-    if (!booksRow) {
-        console.error('books-row element not found');
-        return;
+    // default: date-desc
+  
+    const shelfWidth = bookshelf.clientWidth;
+    const gap = 10;
+    let currentRow = document.createElement('div');
+    currentRow.className = 'books-row';
+    let currentRowWidth = 0;
+  
+    // constants for dynamic width calc
+    const verticalPadding = 10;  // in px
+    const horizontalPadding = 20; // extra width for padding
+    const bookHeight = 240;       // fixed book height from css
+    const lineHeight = 20;        // estimated line height in px
+    const availableWidth = bookHeight - (2 * verticalPadding); // max width for unrotated text
+  
+    // helper function: measure how many lines text takes when wrapped to availableWidth
+    function measureLines(text) {
+      const temp = document.createElement('div');
+      temp.style.position = 'absolute';
+      temp.style.visibility = 'hidden';
+      temp.style.width = availableWidth + 'px';
+      temp.style.fontSize = '1rem';   // match .book-spine font-size
+      temp.style.lineHeight = lineHeight + 'px';
+      temp.style.whiteSpace = 'normal';
+      temp.innerText = text;
+      document.body.appendChild(temp);
+      const height = temp.offsetHeight;
+      document.body.removeChild(temp);
+      return Math.ceil(height / lineHeight);
     }
-    
-    // Clear existing books
-    booksRow.innerHTML = '';
-    
-    if (!booksToRender || booksToRender.length === 0) {
-        booksRow.innerHTML = '<p style="padding: 20px; color: #666;">No books match the current filters.</p>';
-        return;
-    }
-    
-    // Create book cards
-    booksToRender.forEach(book => {
-        const bookCard = document.createElement('div');
-        bookCard.className = 'book-card';
-        bookCard.onclick = () => openOverlay(book);
-        
-        // Generate star rating display
-        const stars = '★'.repeat(book.rating || 0) + '☆'.repeat(5 - (book.rating || 0));
-        
-        // Create card content
-        bookCard.innerHTML = `
-            <div class="book-card-content">
-                <h3 class="book-title">${escapeHtml(book.title || 'Untitled')}</h3>
-                <p class="book-author">${escapeHtml(book.author || 'Unknown Author')}</p>
-                <div class="book-rating">${stars}</div>
-                <p class="book-genre">${escapeHtml(book.genre || '')}</p>
-            </div>
-        `;
-        
-        booksRow.appendChild(bookCard);
+  
+    filtered.forEach(book => {
+      const bookEl = document.createElement('div');
+      bookEl.className = 'book';
+      bookEl.style.backgroundColor = book.spineColor || '#ddd';
+  
+      const spine = document.createElement('div');
+      spine.className = 'book-spine';
+      spine.innerHTML = `<span class="book-title" style="color:${book.titleColor}">${book.title}</span><br>
+                         <span class="book-author" style="color:${book.authorColor}">${book.author}</span>`;
+      bookEl.appendChild(spine);
+  
+      // measure the required number of lines for title and author (separately)
+      const titleLines = measureLines(book.title);
+      const authorLines = measureLines(book.author);
+      const totalLines = titleLines + authorLines;
+      const finalWidth = (totalLines * lineHeight) + horizontalPadding;
+      bookEl.style.width = finalWidth + "px";
+  
+      // check if adding this book exceeds the shelf width
+      if (currentRowWidth + finalWidth + gap > shelfWidth) {
+        bookshelf.appendChild(currentRow);
+        const shelfBar = document.createElement('div');
+        shelfBar.className = 'shelf-bar';
+        bookshelf.appendChild(shelfBar);
+        currentRow = document.createElement('div');
+        currentRow.className = 'books-row';
+        currentRowWidth = 0;
+      }
+  
+      bookEl.addEventListener('click', () => openReview(book));
+      currentRow.appendChild(bookEl);
+      currentRowWidth += finalWidth + gap;
     });
-    
-    console.log(`Rendered ${booksToRender.length} books`);
-}
-
-/**
- * Opens the review overlay popup with book details
- * @param {Object} book - Book object containing title, author, rating, etc.
- */
-function openOverlay(book) {
-    console.log("Opening overlay for:", book.title);
-    
-    // Set overlay content
-    document.getElementById('overlayTitle').textContent = book.title || 'Untitled';
-    document.getElementById('overlayAuthor').textContent = book.author || 'Unknown Author';
-    
-    // Create details string with rating, genre, and read date
-    const stars = '★'.repeat(book.rating || 0) + '☆'.repeat(5 - (book.rating || 0));
-    const details = [
-        `Rating: ${stars}`,
-        book.genre ? `Genre: ${book.genre}` : '',
-        book.datesRead ? `Read: ${book.datesRead}` : ''
-    ].filter(Boolean).join(' | ');
-    
-    document.getElementById('overlayDetails').textContent = details;
-    
-    // Set review text (escape HTML for security)
-    const reviewElement = document.getElementById('overlayReviewText');
-    reviewElement.textContent = book.review || 'No review available.';
-    
-    // Show overlay
-    const overlay = document.getElementById('reviewOverlay');
-    overlay.style.display = 'block';
-}
-
-/**
- * Closes the review overlay popup
- */
-function closeOverlay() {
-    const overlay = document.getElementById('reviewOverlay');
-    overlay.style.display = 'none';
-}
-
-/**
- * Escapes HTML characters to prevent XSS
- * @param {string} text - Text to escape
- * @returns {string} - Escaped text
- */
-function escapeHtml(text) {
-    if (typeof text !== 'string') return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Event listeners
-document.addEventListener('DOMContentLoaded', () => {
-    // Load books when page loads
-    loadBooks();
-    
-    // Close overlay event listeners
-    const closeButton = document.getElementById('closeOverlay');
-    if (closeButton) {
-        closeButton.addEventListener('click', closeOverlay);
+  
+    if (currentRow.childNodes.length > 0) {
+      bookshelf.appendChild(currentRow);
+      const shelfBar = document.createElement('div');
+      shelfBar.className = 'shelf-bar';
+      bookshelf.appendChild(shelfBar);
     }
-    
-    // Close overlay when clicking outside content
-    const overlay = document.getElementById('reviewOverlay');
-    if (overlay) {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                closeOverlay();
-            }
-        });
-    }
-    
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        if (books.length > 0) {
-            filterAndSortBooks();
-        }
-    });
+  }
+  
+  
+  function openReview(book) {
+    console.log("openReview triggered for:", book); // debug log
+    document.getElementById('overlayTitle').textContent = book.title;
+    document.getElementById('overlayAuthor').textContent = book.author;
+    const stars = '★'.repeat(book.rating) + '☆'.repeat(5 - book.rating);
+    document.getElementById('overlayDetails').innerHTML =
+      `<span>rating: ${stars}</span> 
+       <span>genre: ${book.genre}</span> 
+       <span>read: ${book.datesRead}</span>`;
+    document.getElementById('overlayReviewText').textContent = book.review;
+    document.getElementById('reviewOverlay').classList.add('open');
+  }
+  
+  
+
+// helper: measure natural width of an element by cloning it and removing transforms
+function measureElementWidth(elem) {
+    const clone = elem.cloneNode(true);
+    clone.style.transform = "none";
+    clone.style.position = "absolute";
+    clone.style.visibility = "hidden";
+    clone.style.whiteSpace = "nowrap"; // force single-line measurement
+    document.body.appendChild(clone);
+    const width = clone.offsetWidth;
+    document.body.removeChild(clone);
+    return width;
+}
+
+document.getElementById('closeOverlay').addEventListener('click', () => {
+  document.getElementById('reviewOverlay').classList.remove('open');
 });
 
-// Close overlay with Escape key
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeOverlay();
-    }
-});-e 
+window.addEventListener('resize', renderBooks);
+-e 
 ```
 -e 
 ### ./js/cv.js
@@ -10071,6 +9914,7 @@ async function loadHomeContent() {
         }
         
         const data = await response.json();
+        console.log('Homepage data loaded:', data); // TEMP LOG
         
         let htmlContent = '';
         
@@ -10084,7 +9928,11 @@ async function loadHomeContent() {
 
         // 2. Add the image after the text content.
         if (data.image && data.image.trim() !== '') {
-            htmlContent += `<img src="img/${data.image}" class="profile-pic" alt="Homepage Image">`;
+            const imageSrc = `img/${data.image}`;
+            console.log('Rendering image src:', imageSrc); // TEMP LOG
+            htmlContent += `<img src="${imageSrc}" class="profile-pic" alt="Homepage Image">`;
+        } else {
+            console.log('No image in data:', data); // TEMP LOG
         }
         
         insertHomeContent(htmlContent);
@@ -13261,7 +13109,12 @@ app.post('/api/save/homepage', requireAuth, async (req, res) => {
     };
     
     await fs.writeFile(filePath, JSON.stringify(updatedData, null, 2), 'utf8');
-    res.status(200).json({ message: 'Homepage content saved successfully.' });
+    console.log('Homepage data saved successfully:', { content: updatedData.content.substring(0, 50) + '...', image: updatedData.image });
+    res.status(200).json({ 
+      success: true, 
+      message: 'Homepage content saved successfully.',
+      data: updatedData 
+    });
   } catch (error) {
     console.error(`Error writing ${filePath}:`, error);
     res.status(500).json({ error: 'Failed to save homepage content.' });

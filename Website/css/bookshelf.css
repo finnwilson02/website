@@ -1,65 +1,16 @@
 /* bookshelf.css */
 
-/* Shelf styles */
-.shelf {
-  border-bottom: 5px solid #8B4513; /* thick wood-like line */
-  height: auto;
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding: 10px 0;
-  background: none;
-  margin-bottom: 20px;
-  gap: 5px;
-}
-
-/* Book spine styles */
-.book-spine {
-  width: 40px;
-  height: 200px;
-  background: var(--spine-color, #8b4513);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 5px;
-  text-align: center;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(0);
-  cursor: pointer;
-  box-shadow: 2px 0 4px rgba(0,0,0,0.3);
-  border-radius: 2px 2px 0 0;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-/* Text styles on spines */
-.book-title, .book-author {
-  color: var(--title-color, #ffffff);
-  font-size: 0.8em;
-}
-
-.book-author {
-  color: var(--author-color, #ffffff);
-  font-size: 0.7em;
-}
-
-  /* Filter styles */
-  #filters {
-    margin-bottom: 2rem;
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    align-items: center;
+/* bookshelf container with extra bottom padding so books don't overlap footer */
+#bookshelf {
+    padding: 2rem 0 100px;
   }
-
-  #filters select {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    font-size: 1rem;
-    min-width: 120px;
+  
+  /* container for each row of books */
+  .books-row {
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 0;
+    gap: 10px;
   }
   
   /* shelf bar for a realistic wood shelf */
@@ -138,80 +89,5 @@
   }
   #overlayReviewText {
     white-space: pre-line;
-  }
-
-  /* Updated overlay styles for card layout */
-  #reviewOverlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.7) !important;
-    display: none !important;
-    z-index: 1000 !important;
-    overflow: auto !important;
-  }
-
-  #overlayContent {
-    max-width: 700px !important;
-    margin: 3rem auto !important;
-    padding: 2rem !important;
-    background: white !important;
-    border-radius: 8px !important;
-    position: relative !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
-  }
-
-  #closeOverlay {
-    position: absolute !important;
-    top: 1rem !important;
-    right: 1rem !important;
-    background: none !important;
-    border: none !important;
-    font-size: 2rem !important;
-    line-height: 1 !important;
-    cursor: pointer !important;
-    color: #333 !important;
-    padding: 0 !important;
-    width: 2rem !important;
-    height: 2rem !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  #closeOverlay:hover {
-    background: #f0f0f0 !important;
-    border-radius: 50% !important;
-  }
-
-  #overlayTitle {
-    margin: 0 0 0.5rem 0 !important;
-    font-size: 1.8rem !important;
-    color: #333 !important;
-  }
-
-  #overlayAuthor {
-    margin: 0 0 1rem 0 !important;
-    font-size: 1.2rem !important;
-    color: #666 !important;
-    font-style: italic !important;
-  }
-
-  #overlayDetails {
-    margin: 0 0 1.5rem 0 !important;
-    font-size: 1rem !important;
-    color: #555 !important;
-    padding: 1rem !important;
-    background: #f8f9fa !important;
-    border-radius: 4px !important;
-  }
-
-  #overlayReviewText {
-    white-space: pre-line !important;
-    line-height: 1.6 !important;
-    font-size: 1rem !important;
-    color: #333 !important;
   }
   

@@ -516,10 +516,10 @@ app.post('/api/save/books', requireAuth, async (req, res) => {
     }
     
     // Optional fields validation (with defaults if missing)
-    if (book.rating !== undefined && (typeof book.rating !== 'number' || book.rating < 1 || book.rating > 5)) {
+    if (book.rating !== undefined && (typeof book.rating !== 'number' || book.rating < 1 || book.rating > 10)) {
       return res.status(400).json({ 
         success: false, 
-        error: `Invalid 'rating' at index ${i}. Expected a number between 1 and 5.` 
+        error: `Invalid 'rating' at index ${i}. Expected a number between 1 and 10.` 
       });
     }
   }
