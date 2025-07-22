@@ -65,8 +65,8 @@ function displayProjectDetails(project) {
     // Set banner image
     const bannerImg = document.getElementById('projectBannerImage');
     if (bannerImg && project.image) {
-        // Prepend the img/ directory to the filename stored in project.image
-        bannerImg.src = `img/${project.image}`; // Add img/ prefix to filename
+        // Use the image path directly from the project data
+        bannerImg.src = project.image;
         bannerImg.alt = project.title + " Banner";
         bannerImg.style.display = 'block';
     } else if (bannerImg) {

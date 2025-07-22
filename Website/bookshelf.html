@@ -14,16 +14,21 @@
     <section id="bookshelf-section">
       <h2>bookshelf</h2>
       <div id="filters">
+        <select id="typeFilter">
+          <option value="all">all types</option>
+          <option value="book">books</option>
+          <option value="movie">movies</option>
+        </select>
         <select id="genreFilter">
           <option value="all">all genres</option>
         </select>
         <select id="ratingFilter">
-          <option value="all">all ratings</option>
-          <option value="5">★★★★★</option>
-          <option value="4">★★★★☆</option>
-          <option value="3">★★★☆☆</option>
-          <option value="2">★★☆☆☆</option>
-          <option value="1">★☆☆☆☆</option>
+          <option value="all">any rating</option>
+          <option value="9">9+ rating</option>
+          <option value="8">8+ rating</option>
+          <option value="7">7+ rating</option>
+          <option value="5">5+ rating</option>
+          <option value="1">1+ rating</option>
         </select>
         <select id="sortOrder">
           <option value="date-desc">newest first</option>

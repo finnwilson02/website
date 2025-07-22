@@ -183,62 +183,101 @@ function renderResearch(data) {
     });
 }
 
-function renderProjects(data) {
-    if (!Array.isArray(data) || data.length === 0) {
-        console.warn("No projects data available or invalid format");
-        return;
-    }
-    
-    const container = document.querySelector('#projects .project-list');
-    if (!container) return;
-    
-    // Clear existing content
-    container.innerHTML = '';
-    
-    data.forEach(item => {
-        const title = document.createElement('h3');
-        
-        // Check if this project has an associated link
-        let linkHtml = '';
-        
-        // Handle different link formats
-        if (Array.isArray(item.links)) {
-            // Array format
-            item.links.forEach(link => {
-                linkHtml += ` <a href="${link.url}" class="small-link">[${link.text}]</a>`;
-            });
-        } else if (item.links && typeof item.links === 'object') {
-            // Object format with multiple links
-            Object.entries(item.links).forEach(([type, url]) => {
-                linkHtml += ` <a href="${url}" class="small-link">[${type.charAt(0).toUpperCase() + type.slice(1)}]</a>`;
-            });
-        } else if (item.link && item.link.url) {
-            // Single link object format
-            linkHtml = ` <a href="${item.link.url}" class="small-link">[${item.link.text || 'Details'}]</a>`;
+/**
+ * Renders CV projects by fetching from projects.json and filtering by showOnCv flag.
+ * Uses cvSummary if available, otherwise falls back to general summary.
+ * @param {Array} data - Legacy parameter, not used (fetches fresh data)
+ */
+async function renderProjects(data) {
+    // Fetch projects from projects.json instead of cv_projects.json
+    try {
+        const response = await fetch('/api/data/projects');
+        if (!response.ok) {
+            throw new Error('Failed to fetch projects');
         }
         
-        title.innerHTML = `${item.title} <span>(${item.dates})</span>${linkHtml}`;
+        const allProjects = await response.json();
+        // Filter and sort projects that should show on CV
+        const cvProjects = allProjects
+            .filter(p => p.showOnCv === true)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
         
-        // Create description list from markdown content
-        const description = document.createElement('ul');
+        const container = document.querySelector('#projects .project-list');
+        if (!container) return;
         
-        if (item.description) {
-            // Split the markdown bullet points and create list items
-            const points = item.description.split('\n').filter(point => point.trim().startsWith('-'));
+        // Clear existing content
+        container.innerHTML = '';
+        
+        if (cvProjects.length === 0) {
+            container.innerHTML = '<p>No projects available.</p>';
+            return;
+        }
+        
+        cvProjects.forEach(project => {
+            // Create clickable project item container
+            const projectDiv = document.createElement('div');
+            projectDiv.className = 'project-item';
+            projectDiv.dataset.id = project.id;
+            projectDiv.style.cursor = 'pointer';
+            projectDiv.style.marginBottom = '20px';
             
-            points.forEach(point => {
-                const li = document.createElement('li');
-                // Remove the leading dash and trim
-                li.textContent = point.substring(1).trim();
-                description.appendChild(li);
+            const title = document.createElement('h3');
+            
+            // Handle status display
+            let statusHtml = project.status ? ` <span style="font-weight: normal; font-size: 0.9em;">(${project.status})</span>` : '';
+            
+            // Handle links
+            let linkHtml = '';
+            if (project.links && typeof project.links === 'object') {
+                Object.entries(project.links).forEach(([type, url]) => {
+                    if (url && url !== '#') {
+                        linkHtml += ` <a href="${url}" class="small-link" onclick="event.stopPropagation()">[${type.charAt(0).toUpperCase() + type.slice(1)}]</a>`;
+                    }
+                });
+            }
+            
+            title.innerHTML = `${project.title}${statusHtml}${linkHtml}`;
+            
+            // Use CV-specific summary if available, otherwise fall back to general summary
+            const summary = document.createElement('p');
+            summary.textContent = project.cvSummary || project.summary || '';
+            summary.style.marginTop = '5px';
+            
+            projectDiv.appendChild(title);
+            projectDiv.appendChild(summary);
+            
+            // Add click handler for project detail navigation
+            projectDiv.addEventListener('click', (e) => {
+                // Don't navigate if clicking on a link
+                if (e.target.tagName !== 'A') {
+                    window.location.href = `project-detail.html?id=${project.id}`;
+                }
             });
+            
+            // Add hover effect
+            projectDiv.addEventListener('mouseenter', () => {
+                projectDiv.style.backgroundColor = '#f5f5f5';
+            });
+            projectDiv.addEventListener('mouseleave', () => {
+                projectDiv.style.backgroundColor = '';
+            });
+            
+            container.appendChild(projectDiv);
+        });
+    } catch (error) {
+        console.error('Error loading projects:', error);
+        const container = document.querySelector('#projects .project-list');
+        if (container) {
+            container.innerHTML = '<p style="color: red;">Failed to load projects.</p>';
         }
-        
-        container.appendChild(title);
-        container.appendChild(description);
-    });
+    }
 }
 
+/**
+ * Renders skill names with clickable items and tooltips showing linked projects.
+ * Filters out uncategorized skills from display.
+ * @param {Object} data - Skills data object with categories containing skill objects
+ */
 function renderSkills(data) {
     if (typeof data !== 'object' || data === null) {
         console.warn("No skills data available or invalid format");
@@ -250,25 +289,222 @@ function renderSkills(data) {
     
     container.innerHTML = ''; // Clear existing content
     
-    // Programming Languages
-    if (Array.isArray(data.programming) && data.programming.length > 0) {
+    // Helper function to render skills from a category
+    const renderSkillCategory = (categoryName, displayName, skills) => {
+        if (!Array.isArray(skills) || skills.length === 0) return;
+        
         const li = document.createElement('li');
-        li.innerHTML = `<strong>Programming Languages:</strong> ${data.programming.join(', ')}`;
+        const categorySpan = document.createElement('span');
+        categorySpan.innerHTML = `<strong>${displayName}:</strong> `;
+        li.appendChild(categorySpan);
+        
+        // Create clickable skill items
+        const skillSpans = skills.map((skill, index) => {
+            const span = document.createElement('span');
+            span.className = 'skill-item';
+            span.textContent = typeof skill === 'object' ? skill.name : skill;
+            
+            // Store project data if available and add linked-skill class
+            if (skill.projects && skill.projects.length > 0) {
+                span.classList.add('linked-skill');
+                span.dataset.projects = JSON.stringify(skill.projects);
+                span.dataset.skillName = skill.name;
+            }
+            
+            return span;
+        });
+        
+        // Add skill spans with comma separators
+        skillSpans.forEach((span, index) => {
+            li.appendChild(span);
+            if (index < skillSpans.length - 1) {
+                li.appendChild(document.createTextNode(', '));
+            }
+        });
+        
         container.appendChild(li);
-    }
+    };
     
-    // Software & Tools
-    if (Array.isArray(data.software) && data.software.length > 0) {
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>Software &amp; Tools:</strong> ${data.software.join(', ')}`;
-        container.appendChild(li);
-    }
+    // Render each category (excluding uncategorized)
+    renderSkillCategory('programming', 'Programming Languages', data.programming);
+    renderSkillCategory('software', 'Software &amp; Tools', data.software);
+    renderSkillCategory('technical', 'Technical Skills', data.technical);
     
-    // Technical Skills
-    if (Array.isArray(data.technical) && data.technical.length > 0) {
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>Technical Skills:</strong> ${data.technical.join(', ')}`;
-        container.appendChild(li);
+    // Add click handlers and tooltips after rendering
+    addSkillInteractions();
+}
+
+/**
+ * Adds click handlers and hover tooltips to skill items.
+ * Shows linked projects on hover and opens modal with clickable links on click.
+ */
+function addSkillInteractions() {
+    const skillItems = document.querySelectorAll('.skill-item[data-projects]');
+    let currentTooltip = null;
+    
+    // Setup modal close handlers
+    const modal = document.getElementById('skillModal');
+    const closeBtn = document.querySelector('.close');
+    
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    skillItems.forEach(item => {
+        const projects = JSON.parse(item.dataset.projects || '[]');
+        const skillName = item.dataset.skillName;
+        
+        if (projects.length === 0) return;
+        
+        // Add hover tooltip
+        item.addEventListener('mouseenter', (e) => {
+            // Remove any existing tooltip
+            if (currentTooltip) {
+                currentTooltip.remove();
+            }
+            
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'skill-tooltip';
+            tooltip.textContent = `Projects: ${projects.join(', ')}`;
+            
+            // Position tooltip
+            const rect = item.getBoundingClientRect();
+            tooltip.style.position = 'absolute';
+            tooltip.style.left = rect.left + 'px';
+            tooltip.style.top = (rect.bottom + 5) + 'px';
+            tooltip.style.background = '#333';
+            tooltip.style.color = '#fff';
+            tooltip.style.padding = '5px 10px';
+            tooltip.style.borderRadius = '3px';
+            tooltip.style.fontSize = '0.9em';
+            tooltip.style.zIndex = '1000';
+            tooltip.style.whiteSpace = 'nowrap';
+            
+            document.body.appendChild(tooltip);
+            currentTooltip = tooltip;
+        });
+        
+        item.addEventListener('mouseleave', () => {
+            if (currentTooltip) {
+                currentTooltip.remove();
+                currentTooltip = null;
+            }
+        });
+        
+        // Add click handler to open modal
+        item.addEventListener('click', () => {
+            openSkillModal(skillName, projects);
+        });
+    });
+}
+
+/**
+ * Opens modal with skill details and clickable project links.
+ * @param {string} skillName - The name of the skill
+ * @param {Array} projects - Array of project IDs associated with the skill
+ */
+async function openSkillModal(skillName, projects) {
+    const modal = document.getElementById('skillModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalList = document.getElementById('modalList');
+    
+    // Set title
+    modalTitle.textContent = `${skillName} - Associated Items`;
+    
+    // Clear previous content
+    modalList.innerHTML = '';
+    
+    // Create a loading message
+    const loadingLi = document.createElement('li');
+    loadingLi.textContent = 'Loading...';
+    modalList.appendChild(loadingLi);
+    
+    // Show modal immediately
+    modal.style.display = 'flex';
+    
+    try {
+        // Fetch all data in parallel
+        const [projectsData, workData, researchData] = await Promise.all([
+            fetch('/api/data/projects').then(r => r.json()).catch(() => []),
+            fetch('/api/data/cv/work').then(r => r.json()).catch(() => []),
+            fetch('/api/data/cv/research').then(r => r.json()).catch(() => [])
+        ]);
+        
+        // Clear loading message
+        modalList.innerHTML = '';
+        
+        let hasItems = false;
+        
+        // Add project links with titles
+        if (projects && projects.length > 0) {
+            const projectHeader = document.createElement('li');
+            projectHeader.innerHTML = '<strong>Projects:</strong>';
+            modalList.appendChild(projectHeader);
+            
+            projects.forEach(projectId => {
+                const project = projectsData.find(p => p.id === projectId);
+                const li = document.createElement('li');
+                const link = document.createElement('a');
+                link.href = `project-detail.html?id=${projectId}`;
+                link.textContent = project ? project.title : projectId;
+                li.appendChild(link);
+                modalList.appendChild(li);
+                hasItems = true;
+            });
+        }
+        
+        // Add work roles with skills
+        const workRoles = workData.filter(role => 
+            role.skills && role.skills.includes(skillName)
+        );
+        if (workRoles.length > 0) {
+            const workHeader = document.createElement('li');
+            workHeader.innerHTML = '<strong>Work Experience:</strong>';
+            workHeader.style.marginTop = hasItems ? '10px' : '0';
+            modalList.appendChild(workHeader);
+            
+            workRoles.forEach(role => {
+                const li = document.createElement('li');
+                li.textContent = `${role.title} - ${role.company}`;
+                modalList.appendChild(li);
+                hasItems = true;
+            });
+        }
+        
+        // Add research roles with skills
+        const researchRoles = researchData.filter(role => 
+            role.skills && role.skills.includes(skillName)
+        );
+        if (researchRoles.length > 0) {
+            const researchHeader = document.createElement('li');
+            researchHeader.innerHTML = '<strong>Research Experience:</strong>';
+            researchHeader.style.marginTop = hasItems ? '10px' : '0';
+            modalList.appendChild(researchHeader);
+            
+            researchRoles.forEach(role => {
+                const li = document.createElement('li');
+                li.textContent = `${role.title} - ${role.organization}`;
+                modalList.appendChild(li);
+                hasItems = true;
+            });
+        }
+        
+        if (!hasItems) {
+            const li = document.createElement('li');
+            li.textContent = 'No associated items found';
+            modalList.appendChild(li);
+        }
+        
+    } catch (error) {
+        console.error('Error loading skill details:', error);
+        modalList.innerHTML = '<li>Error loading details</li>';
     }
 }
 

@@ -39,9 +39,17 @@ async function initializeGlobeViewer() {
     // --- Set Token and Initialize Viewer ---
     Cesium.Ion.defaultAccessToken = cesiumToken;
 
+    // Check if container exists before initialization
+    const cesiumContainer = document.getElementById('cesiumContainer');
+    if (!cesiumContainer) {
+        console.error('Globe container not found - cesiumContainer element missing');
+        alert('Globe container not found. Please ensure the page has a cesiumContainer element.');
+        return;
+    }
+
     try {
         console.log("Initializing Cesium.Viewer with pickers ENABLED initially...");
-        const viewer = new Cesium.Viewer('cesiumContainer', {
+        const viewer = new Cesium.Viewer(cesiumContainer, {
             // --- Let Viewer choose defaults & Ensure pickers initialize ---
             // No explicit imageryProvider or terrainProvider - use defaults
             
@@ -236,8 +244,8 @@ async function initializeGlobeViewer() {
     } catch (error) {
         console.error("Error initializing Cesium Viewer:", error);
         alert(`Failed to initialize 3D Globe Viewer: ${error.message}`);
-        const container = document.getElementById('cesiumContainer');
-        if(container) container.innerHTML = `<p style="color:red; padding: 20px;">Viewer Error: ${error.message}</p>`;
+        // Use the container we already found and verified exists
+        if(cesiumContainer) cesiumContainer.innerHTML = `<p style="color:red; padding: 20px;">Viewer Error: ${error.message}</p>`;
     }
 }
 

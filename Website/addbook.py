@@ -51,7 +51,7 @@ form_html = '''
     <label>spine color:<br><input type="color" name="spineColor" value="#ffffff" required></label>
     <label>title color:<br><input type="color" name="titleColor" value="#000000" required></label>
     <label>author color:<br><input type="color" name="authorColor" value="#000000" required></label>
-    <label>rating (1-5):<br><input type="number" name="rating" min="1" max="5" required></label>
+    <label>rating (1-10):<br><input type="number" name="rating" min="1" max="10" step="0.1" required></label>
     
     <label>genre (separate multiple genres with commas):</label>
     <div id="genreTags">
@@ -139,7 +139,7 @@ def add_book():
             "spineColor": request.form['spineColor'],
             "titleColor": request.form['titleColor'],
             "authorColor": request.form['authorColor'],
-            "rating": int(request.form['rating']),
+            "rating": float(request.form['rating']),
             "genre": request.form['genre'],
             "datesRead": dates_read,
             "review": request.form['review']

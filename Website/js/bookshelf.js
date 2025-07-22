@@ -28,6 +28,7 @@ fetch('/api/data/books')
       opt.textContent = genre;
       genreSelect.appendChild(opt);
     });
+    document.getElementById('typeFilter').addEventListener('change', renderBooks);
     document.getElementById('genreFilter').addEventListener('change', renderBooks);
     document.getElementById('ratingFilter').addEventListener('change', renderBooks);
     document.getElementById('sortOrder').addEventListener('change', renderBooks);
@@ -37,14 +38,17 @@ function renderBooks() {
     const bookshelf = document.getElementById('bookshelf');
     bookshelf.innerHTML = ''; // clear previous content
   
+    const typeFilter = document.getElementById('typeFilter').value;
     const genreFilter = document.getElementById('genreFilter').value;
     const ratingFilter = document.getElementById('ratingFilter').value;
     const sortOrder = document.getElementById('sortOrder').value;
   
     let filtered = booksData.filter(book => {
-      const matchGenre = (genreFilter === 'all' || book.genre === genreFilter);
+      const matchType = (typeFilter === 'all') || ((book.type || 'book') === typeFilter);
+      const bookGenres = (book.genre || '').split(',').map(g => g.trim());
+      const matchGenre = (genreFilter === 'all' || bookGenres.includes(genreFilter));
       const matchRating = (ratingFilter === 'all' || book.rating >= parseInt(ratingFilter, 10));
-      return matchGenre && matchRating;
+      return matchType && matchGenre && matchRating;
     });
   
     if (sortOrder === 'date-asc') {
@@ -132,9 +136,9 @@ function renderBooks() {
     console.log("openReview triggered for:", book); // debug log
     document.getElementById('overlayTitle').textContent = book.title;
     document.getElementById('overlayAuthor').textContent = book.author;
-    const stars = '★'.repeat(book.rating) + '☆'.repeat(5 - book.rating);
+    const ratingText = book.rating ? `${Number(book.rating).toFixed(1)}/10` : 'Not Rated';
     document.getElementById('overlayDetails').innerHTML =
-      `<span>rating: ${stars}</span> 
+      `<span>rating: ${ratingText}</span> 
        <span>genre: ${book.genre}</span> 
        <span>read: ${book.datesRead}</span>`;
     document.getElementById('overlayReviewText').textContent = book.review;

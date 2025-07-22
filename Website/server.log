@@ -1,0 +1,1048 @@
+Loading country boundaries from: persist/data/countries.geojson
+Server is running!
+Static files served from: /Users/wadvisersllm/finn_work/website/Website
+Access your site at: http://localhost:3000
+Successfully loaded 176 country features.
+Request: GET /api/data/homepage - Authenticated: false
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: false
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /home.html - Authenticated: true
+Request: GET /home.html - Authenticated: true
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /data/countries.geojson - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Successfully read research journal data (2 articles)
+Successfully read thesis data
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Successfully read books data (2 books)
+Request: GET /data/countries.geojson - Authenticated: true
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/config/cesium-token - Authenticated: false
+Request: GET /data/countries.geojson - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /.well-known/appspecific/com.chrome.devtools.json - Authenticated: true
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /img/placeholder_uav.jpg - Authenticated: true
+Request: GET /img/placeholder_mining.jpg - Authenticated: true
+Request: GET /data/countries.geojson - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/books - Authenticated: false
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Successfully read books data (2 books)
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: POST /api/save/images - Authenticated: true
+POST /api/save/images - Saving to: persist/data/images.json
+POST persist/data/images.json - Received 122 images.
+Point [177.257888, -17.653853] not found in any country polygon.
+Point [177.284758, -17.101378] not found in any country polygon.
+Point [177.26102, -17.115755] not found in any country polygon.
+Point [177.270693, -17.113536] not found in any country polygon.
+Point [177.2761, -17.10857] not found in any country polygon.
+Point [177.260331, -17.113962] not found in any country polygon.
+Point [177.263056, -17.111389] not found in any country polygon.
+Point [130.315111, 33.663292] not found in any country polygon.
+Point [13.525078, 68.199301] not found in any country polygon.
+Point [13.398196, 68.128982] not found in any country polygon.
+Point [13.243529, 68.098593] not found in any country polygon.
+Point [13.074521, 67.927775] not found in any country polygon.
+Point [14.666155, 68.220862] not found in any country polygon.
+Point [14.732377, 68.189789] not found in any country polygon.
+Point [14.594864, 68.194464] not found in any country polygon.
+Point [121.939314, 11.940031] not found in any country polygon.
+Point [121.921189, 11.966256] not found in any country polygon.
+Point [121.921937, 11.974949] not found in any country polygon.
+Point [125.725258, 7.0077] not found in any country polygon.
+Point [-19.04771, 63.40401] not found in any country polygon.
+Point [-19.988173, 63.615438] not found in any country polygon.
+Point [-19.501104, 63.536067] not found in any country polygon.
+Point [-19.511609, 63.531492] not found in any country polygon.
+Point [-23.643957, 64.781107] not found in any country polygon.
+Point [-23.651526, 64.79898] not found in any country polygon.
+Point [99.787444, 6.186303] not found in any country polygon.
+Point [99.664951, 6.385233] not found in any country polygon.
+Point [114.173172, 22.2361] not found in any country polygon.
+Point [113.540833, 22.196869] not found in any country polygon.
+Point [113.911933, 22.252567] not found in any country polygon.
+Point [143.103848, -38.664321] not found in any country polygon.
+Point [153.235809, -25.270668] not found in any country polygon.
+Point [115.498508, -31.994523] not found in any country polygon.
+Backup created: persist/data/images.json.bak
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /data/countries.geojson - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /img/placeholder_uav.jpg - Authenticated: true
+Request: GET /img/placeholder_mining.jpg - Authenticated: true
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Successfully read books data (2 books)
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Successfully read thesis data
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /img/placeholder_uav.jpg - Authenticated: true
+Request: GET /img/placeholder_mining.jpg - Authenticated: true
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /data/countries.geojson - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/config/cesium-token - Authenticated: true
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: POST /api/upload/image - Authenticated: true
+Multer error during upload: MulterError: Unexpected field
+    at wrappedFileFilter (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/index.js:40:19)
+    at Multipart.<anonymous> (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/lib/make-middleware.js:109:7)
+    at Multipart.emit (node:events:518:28)
+    at HeaderParser.cb (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:358:14)
+    at HeaderParser.push (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:394:37)
+    at feed (/Users/wadvisersllm/finn_work/website/Website/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/Users/wadvisersllm/finn_work/website/Website/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12) {
+  code: 'LIMIT_UNEXPECTED_FILE',
+  field: 'image',
+  storageErrors: []
+}
+Request: POST /api/upload/image - Authenticated: true
+Multer error during upload: MulterError: Unexpected field
+    at wrappedFileFilter (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/index.js:40:19)
+    at Multipart.<anonymous> (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/lib/make-middleware.js:109:7)
+    at Multipart.emit (node:events:518:28)
+    at HeaderParser.cb (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:358:14)
+    at HeaderParser.push (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:394:37)
+    at feed (/Users/wadvisersllm/finn_work/website/Website/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/Users/wadvisersllm/finn_work/website/Website/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12) {
+  code: 'LIMIT_UNEXPECTED_FILE',
+  field: 'image',
+  storageErrors: []
+}
+Request: POST /api/upload/image - Authenticated: true
+Multer error during upload: MulterError: Unexpected field
+    at wrappedFileFilter (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/index.js:40:19)
+    at Multipart.<anonymous> (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/lib/make-middleware.js:109:7)
+    at Multipart.emit (node:events:518:28)
+    at HeaderParser.cb (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:358:14)
+    at HeaderParser.push (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:394:37)
+    at feed (/Users/wadvisersllm/finn_work/website/Website/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/Users/wadvisersllm/finn_work/website/Website/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/Users/wadvisersllm/finn_work/website/Website/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12) {
+  code: 'LIMIT_UNEXPECTED_FILE',
+  field: 'image',
+  storageErrors: []
+}
+Request: GET /.well-known/appspecific/com.chrome.devtools.json - Authenticated: true
+Request: GET /.well-known/appspecific/com.chrome.devtools.json - Authenticated: true
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: POST /api/upload/image - Authenticated: true
+Processing uploaded file: persist/img/upload-1752642540282-257303311.webp, mimetype: image/webp
+Processing with Sharp...
+Error processing image (HEIC or Sharp): Error: Cannot use same file for input and output
+    at Sharp.toFile (/Users/wadvisersllm/finn_work/website/Website/node_modules/sharp/lib/output.js:78:11)
+    at /Users/wadvisersllm/finn_work/website/Website/server.js:1737:18
+    at done (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/lib/make-middleware.js:47:7)
+    at indicateDone (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/lib/make-middleware.js:51:68)
+    at /Users/wadvisersllm/finn_work/website/Website/node_modules/multer/lib/make-middleware.js:157:11
+    at WriteStream.<anonymous> (/Users/wadvisersllm/finn_work/website/Website/node_modules/multer/storage/disk.js:43:9)
+    at WriteStream.emit (node:events:530:35)
+    at finish (node:internal/streams/writable:955:10)
+    at node:internal/streams/writable:936:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+Request: GET /.well-known/appspecific/com.chrome.devtools.json - Authenticated: true
+Request: POST /api/upload/image - Authenticated: true
+Processing uploaded file: persist/img/upload-1752642554015-397342125.jpg, mimetype: image/jpeg
+Processing with Sharp...
+Image processed and saved successfully: persist/img/upload-1752642554015-397342125.webp
+Original temporary upload deleted: persist/img/upload-1752642554015-397342125.jpg
+Request: POST /api/save/homepage - Authenticated: true
+POST /api/save/homepage - Saving to: persist/data/homepage.md
+Backup created: persist/data/homepage.md.bak
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /.well-known/appspecific/com.chrome.devtools.json - Authenticated: true
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: POST /api/upload/image - Authenticated: true
+Processing uploaded file: persist/img/upload-1752643111807-829501741.jpg, mimetype: image/jpeg
+Processing with Sharp...
+Image processed and saved successfully: persist/img/upload-1752643111807-829501741.webp
+Original temporary upload deleted: persist/img/upload-1752643111807-829501741.jpg
+Request: POST /api/save/homepage - Authenticated: true
+POST /api/save/homepage - Saving to: persist/data/homepage.md
+Backup created: persist/data/homepage.md.bak
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Successfully read books data (2 books)
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Successfully read books data (2 books)
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: POST /api/upload/image - Authenticated: true
+Processing uploaded file: persist/img/upload-1752643441467-714106086.jpg, mimetype: image/jpeg
+Processing with Sharp...
+Image processed and saved successfully: persist/img/upload-1752643441467-714106086.webp
+Original temporary upload deleted: persist/img/upload-1752643441467-714106086.jpg
+Request: POST /api/save/homepage - Authenticated: true
+POST /api/save/homepage - Saving to: persist/data/homepage.md
+Backup created: persist/data/homepage.md.bak
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /.well-known/appspecific/com.chrome.devtools.json - Authenticated: true
+Request: GET /api/auth/status - Authenticated: true
+Request: GET /api/data/trips - Authenticated: true
+GET persist/data/trips.json
+Request: GET /api/data/images - Authenticated: true
+GET /api/data/images - Reading: persist/data/images.json
+Request: GET /api/data/books - Authenticated: true
+GET /api/data/books - Reading: persist/data/books.json
+Request: GET /api/data/projects - Authenticated: true
+GET /api/data/projects - Reading: persist/data/projects.json
+Request: GET /api/data/page_content - Authenticated: true
+GET /api/data/page_content - Reading: persist/data/page_content.json
+Successfully read books data (2 books)
+Request: GET /api/data/cv/education - Authenticated: true
+GET /api/data/cv/education - Reading: persist/data/cv_education.json
+Request: GET /api/data/cv/work - Authenticated: true
+GET /api/data/cv/work - Reading: persist/data/cv_work.json
+Request: GET /api/data/cv/research - Authenticated: true
+GET /api/data/cv/research - Reading: persist/data/cv_research.json
+Request: GET /api/data/cv/projects - Authenticated: true
+GET /api/data/cv/projects - Reading: persist/data/cv_projects.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/achievements - Authenticated: true
+GET /api/data/cv/achievements - Reading: persist/data/cv_achievements.json
+Request: GET /api/data/cv/positions - Authenticated: true
+GET /api/data/cv/positions - Reading: persist/data/cv_positions.json
+Request: GET /api/data/research/journal - Authenticated: true
+GET /api/data/research/journal - Reading: persist/data/research_journal.json
+Successfully read research journal data (2 articles)
+Request: GET /api/data/research/thesis - Authenticated: true
+GET /api/data/research/thesis - Reading: persist/data/research_thesis.json
+Successfully read thesis data
+Request: GET /api/data/research/conference - Authenticated: true
+GET /api/data/research/conference - Reading: persist/data/research_conference.json
+Request: GET /api/data/research/patent - Authenticated: true
+GET /api/data/research/patent - Reading: persist/data/research_patent.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/cv/skills - Authenticated: true
+GET /api/data/cv/skills - Reading: persist/data/cv_skills.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: POST /api/upload/image - Authenticated: true
+Processing uploaded file: persist/img/upload-1752643482293-383971453.jpg, mimetype: image/jpeg
+Processing with Sharp...
+Image processed and saved successfully: persist/img/upload-1752643482293-383971453.webp
+Original temporary upload deleted: persist/img/upload-1752643482293-383971453.jpg
+Request: POST /api/save/homepage - Authenticated: true
+POST /api/save/homepage - Saving to: persist/data/homepage.md
+Backup created: persist/data/homepage.md.bak
+Request: POST /api/save/homepage - Authenticated: true
+POST /api/save/homepage - Saving to: persist/data/homepage.md
+Backup created: persist/data/homepage.md.bak
+Request: GET /.well-known/appspecific/com.chrome.devtools.json - Authenticated: true
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /api/data/contactBanner - Authenticated: true
+GET /api/data/contactBanner - Reading: persist/data/contactBanner.json
+Request: GET /api/data/homepage - Authenticated: true
+GET /api/data/homepage - Reading: persist/data/homepage.md
+Request: GET /.well-known/appspecific/com.chrome.devtools.json - Authenticated: true

@@ -39,16 +39,83 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(error => console.error("Error loading header:", error));
 
-  // Load footer
+  // Load footer with dynamic contact banner
+  loadContactBanner();
+});
+
+/**
+ * Loads and renders the contact banner dynamically
+ */
+async function loadContactBanner() {
+  try {
+    const response = await fetch('/api/data/contactBanner');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    renderContactBanner(data);
+    
+  } catch (error) {
+    console.error('Error loading contact banner:', error);
+    // Load fallback static footer
+    loadStaticFooter();
+  }
+}
+
+/**
+ * Renders the contact banner with header text and icons
+ * @param {Object} data - Contact banner data with headerText and items
+ */
+function renderContactBanner(data) {
+  const footerElement = document.getElementById("footer");
+  if (!footerElement) {
+    console.warn("Footer element not found in the page");
+    return;
+  }
+  
+  let bannerHTML = '<div class="contact-banner">';
+  
+  // Add header text if available
+  if (data.headerText && data.headerText.trim()) {
+    bannerHTML += `<div class="banner-header">${data.headerText}</div>`;
+  }
+  
+  // Add social media icons
+  if (data.items && data.items.length > 0) {
+    bannerHTML += '<div class="social-icons">';
+    
+    // Sort items by order
+    const sortedItems = [...data.items].sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    sortedItems.forEach(item => {
+      bannerHTML += `
+        <a href="${item.link}" target="_blank" title="${item.label || 'Social Link'}">
+          <img src="icons/${item.icon}" alt="${item.label || 'Icon'}" class="social-icon">
+        </a>
+      `;
+    });
+    
+    bannerHTML += '</div>';
+  }
+  
+  bannerHTML += '</div>';
+  
+  footerElement.innerHTML = bannerHTML;
+}
+
+/**
+ * Fallback to load static footer.html if dynamic loading fails
+ */
+function loadStaticFooter() {
   fetch("footer.html")
     .then(response => response.text())
     .then(data => {
       const footerElement = document.getElementById("footer");
       if (footerElement) {
         footerElement.innerHTML = data;
-      } else {
-        console.warn("Footer element not found in the page");
       }
     })
-    .catch(error => console.error("Error loading footer:", error));
-});
+    .catch(error => console.error("Error loading static footer:", error));
+}

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finn Wilson - Photography</title>
+  
+  <!-- Leaflet CSS for Map View -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  
+  <!-- Cesium CSS for Globe View -->
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  
+  <!-- GLightbox CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css" />
+  
+  <!-- Site Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/worldmap.css" />
+  <link rel="stylesheet" href="css/photography.css" />
+</head>
+<body>
+  <!-- Include header -->
+  <div id="header-placeholder"></div>
+  <script>
+    fetch('includes/header.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('header-placeholder').innerHTML = html;
+        // Highlight the current page in navigation
+        document.getElementById('nav-photography').classList.add('active');
+      });
+  </script>
+  
+  <!-- View Toggle Button -->
+  <div id="viewToggle" class="toggle-button">
+    <span id="globeToggle" class="active">Globe</span> | <span id="mapToggle">Map</span>
+  </div>
+  
+  <!-- Map Controls (shown only for map view) -->
+  <div id="mapControls" style="padding: 10px; background: #f8f8f8; border-bottom: 1px solid #ccc; display: none; flex-wrap: wrap; gap: 20px;">
+    <!-- Filter Section -->
+    <div id="filterSection">
+      <h3>Filter Photos</h3>
+      <div>
+        <label for="filterDateStart">From:</label>
+        <input type="text" id="filterDateStart" placeholder="YYYY-MM-DD" style="margin-right: 5px;">
+        <label for="filterDateEnd">To:</label>
+        <input type="text" id="filterDateEnd" placeholder="YYYY-MM-DD">
+      </div>
+      <div style="position: relative;">
+        <label for="filterTagsInput">Tags:</label>
+        <input type="text" id="filterTagsInput" placeholder="e.g., landscape, paris">
+        <div id="tagSuggestions" class="autocomplete-suggestions"></div>
+      </div>
+      
+      <div style="margin-top: 5px;">
+        <label for="filterCountrySelect">Country:</label>
+        <select id="filterCountrySelect">
+          <option value="">-- All Countries --</option>
+          <!-- Country options added by JS -->
+        </select>
+      </div>
+      <div>
+        <button id="applyFiltersButton">Apply Filters</button>
+        <button id="clearFiltersButton">Clear Filters</button>
+      </div>
+      
+      <!-- Active Filters Display -->
+      <div id="activeFilters" style="width: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc;">
+        <span>Active Filters: </span>
+        <span id="activeFiltersList">
+          <!-- Active filter badges will be added here by JS -->
+          <span class="no-filters" style="font-style: italic; color: #888;">None</span>
+        </span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Globe Container -->
+  <div id="globeContainer" style="height: calc(100vh - 120px);">
+    <!-- Cesium container will be created dynamically inside globeContainer -->
+    <div id="cesiumContainer" style="width: 100%; height: 100%;"></div>
+  </div>
+  
+  <!-- Map Container -->
+  <div id="mapContainer" style="display: none; height: calc(100vh - 120px);">
+    <div id="map" style="height: 100%; width: 100%;"></div>
+  </div>
+  
+  <!-- Footer -->
+  <footer id="footer"></footer>
+
+  <!-- JavaScript Libraries -->
+  <!-- Leaflet for Map -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  
+  <!-- Cesium for Globe -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Cesium.js"></script>
+  
+  <!-- GLightbox for Image Gallery -->
+  <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+  
+  <!-- Site Scripts -->
+  <script src="js/script.js"></script>
+  <script src="js/globe.js"></script>
+  <script src="js/worldmap.js"></script>
+  <script src="js/photography.js"></script>
+</body>
+</html>
